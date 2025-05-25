@@ -1,0 +1,74 @@
+<?php
+
+namespace Dybasedev\LunaPrototype\Showcase\Structures;
+
+class Column extends Field
+{
+    /**
+     * @var bool 可否排序
+     */
+    protected(set) bool $sortable = false;
+
+    /**
+     * @var bool 可否搜索
+     */
+    protected(set) bool $searchable = false;
+
+    /**
+     * @var bool 可否复制
+     */
+    protected(set) bool $copyable = false;
+
+    /**
+     * @var bool 是否省略
+     */
+    protected(set) bool $ellipsis = false;
+
+    /**
+     * @var array 透传至搜索字段的属性
+     */
+    protected(set) array $searchFieldProperties = [];
+
+    /**
+     * @var string|null 列组件，用于针对特定情况选用特定组件，主要用于前端渲染场景
+     */
+    protected(set) ?string $columnComponent = null;
+
+    public function sortable(bool $sortable = true): Column
+    {
+        $this->sortable = $sortable;
+        return $this;
+    }
+
+    public function searchable(bool $searchable = true): Column
+    {
+        $this->searchable = $searchable;
+        return $this;
+    }
+
+    public function copyable(bool $copyable = true): Column
+    {
+        $this->copyable = $copyable;
+        return $this;
+    }
+
+    public function ellipsis(bool $ellipsis = true): Column
+    {
+        $this->ellipsis = $ellipsis;
+        return $this;
+    }
+
+    public function searchFieldProperties(array $searchFieldProperties): Column
+    {
+        $this->searchFieldProperties = $searchFieldProperties;
+        return $this;
+    }
+
+    public function columnComponent(?string $columnComponent): Column
+    {
+        $this->columnComponent = $columnComponent;
+        return $this;
+    }
+
+
+}
