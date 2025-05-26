@@ -16,6 +16,7 @@
     ],
     "require": {
         "php": "^8.4",
-        "laravel/framework": "^12.0"
+        "laravel/framework": "^12.0",
+        "ckr/arraymerger": "^3.0"
     }
 }

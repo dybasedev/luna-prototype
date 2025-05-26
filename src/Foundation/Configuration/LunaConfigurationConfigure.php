@@ -59,8 +59,13 @@ class LunaConfigurationConfigure extends LunaModuleConfigure
 
     public function register(Container $container): void
     {
-        $container->singleton('luna.config', LunaConfiguration::class);
-//        $container->alias('luna.config', LunaConfiguration::class);
+        $container->singleton('luna.config', function ($app) {
+            return new LunaConfiguration(
+                $app->make(LunaConfigurationConfigure::class),
+                $app->make('cache.store'),
+            );
+        });
+        $container->alias('luna.config', LunaConfiguration::class);
     }
 
 

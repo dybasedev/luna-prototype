@@ -38,7 +38,7 @@ class ConfigurationValue extends Model
 
     public function index(): BelongsTo
     {
-        return $this->belongsTo($this->indexModel(), 'configuration_id', 'id');
+        return $this->belongsTo($this->indexModel(), 'index_id', 'id');
     }
 
     protected function casts(): array

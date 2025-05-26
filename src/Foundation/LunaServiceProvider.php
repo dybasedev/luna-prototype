@@ -3,7 +3,10 @@
 namespace Dybasedev\LunaPrototype\Foundation;
 
 use Closure;
+use Dybasedev\LunaPrototype\Foundation\BusinessEvent\LunaBusinessConfigure;
 use Dybasedev\LunaPrototype\Foundation\Configuration\LunaConfigurationConfigure;
+use Dybasedev\LunaPrototype\Foundation\Exception\LunaExceptionConfigure;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,6 +16,11 @@ class LunaServiceProvider extends ServiceProvider
      * @var LunaModuleConfigure[]
      */
     private array $modules = [];
+
+    /**
+     * @var ServiceProvider[]
+     */
+    protected array $instances = [];
 
     /**
      * @throws BindingResolutionException
@@ -30,9 +38,12 @@ class LunaServiceProvider extends ServiceProvider
     /**
      * @throws BindingResolutionException
      */
-    protected function registerDefaultModules():void
+    protected function registerDefaultModules(): void
     {
         $this->registerModule(LunaConfigurationConfigure::create()->build());
+        $this->registerModule(LunaExceptionConfigure::create()->build());
+        $this->registerModule(LunaBusinessConfigure::create()->build());
+        $this->registerModule(LunaHandlerConfigure::create()->build());
     }
 
     public function customRegister(): void
@@ -48,14 +59,21 @@ class LunaServiceProvider extends ServiceProvider
 
     private function registerLunaModules(): void
     {
+        $this->instances = [];
+
         foreach ($this->modules as $module) {
             if ($module instanceof Closure) {
-                $this->app->singleton($module::class, $module);
+                $this->app->instance($module::class, $module = $this->app->call($module));
             } else {
                 $this->app->instance($module::class, $module);
             }
 
             $module->register($this->app);
+
+            $provider = $module->serviceProvider();
+            if ($provider) {
+                $this->instances[] = $this->app->register($provider);
+            }
         }
     }
 
@@ -68,5 +86,34 @@ class LunaServiceProvider extends ServiceProvider
                 Consoles\AppEnvironment::class,
             ]);
         }
+    }
+
+    public function customBoot(): void
+    {
+
+    }
+
+    /**
+     * @throws BindingResolutionException
+     */
+    private function bootLunaPrototypeModules(): void
+    {
+        foreach ($this->modules as $module) {
+            $module = $this->app->make($module::class);
+            $module->boot($this->app);
+        }
+    }
+
+    /**
+     * @throws BindingResolutionException
+     */
+    final public function boot(): void
+    {
+        $this->publishesMigrations([
+            __DIR__ . '/migrations' => database_path('migrations'),
+        ]);
+
+        $this->bootLunaPrototypeModules();
+        $this->customBoot();
     }
 }

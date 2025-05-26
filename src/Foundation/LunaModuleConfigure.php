@@ -39,10 +39,34 @@ abstract class LunaModuleConfigure
     }
 
     /**
+     * 模块服务提供者，用于在 Laravel 服务容器中注册模块服务
+     *
+     * 基本上可以直接使用 register 和 boot 来实现，但对于需要依赖服务提供者提供的功能时，
+     * 可以直接选用该方法返回一个 ServiceProvider 类。
+     *
+     * 注意，该方法和 register 方法以及 boot 方法是可以共存的，请确保顺序正确，否则可能会导致错误。
+     *
+     * @return string|null
+     */
+    public function serviceProvider(): ?string
+    {
+        return null;
+    }
+
+    /**
      * @param Container $container
      * @return void
      */
     public function register(Container $container): void
     {
+    }
+
+    /**
+     * @param Container $container
+     * @return void
+     */
+    public function boot(Container $container): void
+    {
+
     }
 }

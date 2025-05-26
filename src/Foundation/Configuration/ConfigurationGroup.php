@@ -3,7 +3,7 @@
 namespace Dybasedev\LunaPrototype\Foundation\Configuration;
 
 use Dybasedev\LunaPrototype\Foundation\Configuration\Models\Configuration;
-use Dybasedev\LunaPrototype\Foundation\Exceptions\LunaException;
+use Dybasedev\LunaPrototype\Foundation\Exception\LunaException;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\Eloquent\Model;
 use Random\RandomException;

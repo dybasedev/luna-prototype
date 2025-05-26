@@ -6,11 +6,16 @@ use Closure;
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
 use RuntimeException;
 
-class HandlerConfigure extends LunaModuleConfigure
+class LunaHandlerConfigure extends LunaModuleConfigure
 {
     protected(set) array $groups = [];
 
     protected(set) array $handlers = [];
+
+    /**
+     * @var class-string<Models\Handler>
+     */
+    protected(set) string $model = Models\Handler::class;
 
     public function name(): string
     {
@@ -40,7 +45,7 @@ class HandlerConfigure extends LunaModuleConfigure
         if ($handlerRegister) {
             $handlerRegister(
                 new class($this, $handlerAppender) {
-                    public function __construct(protected HandlerConfigure $configure, protected Closure $handlerAppender)
+                    public function __construct(protected LunaHandlerConfigure $configure, protected Closure $handlerAppender)
                     {
                     }
 
@@ -57,6 +62,12 @@ class HandlerConfigure extends LunaModuleConfigure
             );
         }
 
+        return $this;
+    }
+
+    public function useModel(string $model): static
+    {
+        $this->model = $model;
         return $this;
     }
 

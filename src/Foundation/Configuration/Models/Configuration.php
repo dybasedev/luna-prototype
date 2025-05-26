@@ -2,6 +2,7 @@
 
 namespace Dybasedev\LunaPrototype\Foundation\Configuration\Models;
 
+use Dybasedev\LunaPrototype\Foundation\NamedId;
 use Dybasedev\LunaPrototype\Foundation\VersionControlModel\VersionControl;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -38,27 +39,12 @@ use Illuminate\Support\Carbon;
  */
 class Configuration extends Model
 {
-    use VersionControl;
-
-    public $incrementing = false;
+    use VersionControl, NamedId;
 
     public $table = 'luna_configurations';
 
     public function versionValueModel(): string
     {
         return ConfigurationValue::class;
-    }
-
-    /**
-     * @return Attribute
-     */
-    protected function name(): Attribute
-    {
-        return Attribute::make(
-            set: fn ($value) => [
-                'name' => $value,
-                'id' => hash_code($value),
-            ],
-        );
     }
 }
