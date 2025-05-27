@@ -39,6 +39,11 @@ class ConfigurationGroup
             ->first();
     }
 
+    public function exists(string $name)
+    {
+
+    }
+
     /**
      * @throws RandomException
      * @throws Throwable
@@ -54,12 +59,16 @@ class ConfigurationGroup
         }
 
         Model::unguarded(function () use ($name, $displayName, $initialValues, $description) {
-            $configuration = $this->configure->model::query()->create([
-                'name' => $name,
-                'group_id' => hash_code($this->group),
-                'display_name' => $displayName,
-                'description' => $description,
-            ]);
+            $configuration = $this->configure->model::query()->firstOrCreate(
+                [
+                    'name' => $name,
+                    'group_id' => hash_code($this->group),
+                ],
+                [
+                    'display_name' => $displayName,
+                    'description' => $description,
+                ]
+            );
 
             $configuration->createVersionValue([
                 'value' => $initialValues,
@@ -96,7 +105,7 @@ class ConfigurationGroup
         }
 
         // 配置项不存在
-        throw new LunaException();
+        throw new LunaException('Configuration not exists');
     }
 
     protected function target(string $key): array

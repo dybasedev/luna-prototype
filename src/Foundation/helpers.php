@@ -95,7 +95,7 @@ if (!function_exists('err')) {
         }
 
         return luna_response(
-            $throwable->displayMessage,
+            $throwable->displayMessage ?: $throwable->getMessage(),
             $throwable->data,
             $throwable->behaviour,
             false,

@@ -44,6 +44,7 @@ class LunaServiceProvider extends ServiceProvider
         $this->registerModule(LunaExceptionConfigure::create()->build());
         $this->registerModule(LunaBusinessConfigure::create()->build());
         $this->registerModule(LunaHandlerConfigure::create()->build());
+        $this->registerModule(LunaApplicationConfigure::create()->build());
     }
 
     public function customRegister(): void
@@ -84,6 +85,7 @@ class LunaServiceProvider extends ServiceProvider
             $this->commands([
                 Consoles\AppCurrent::class,
                 Consoles\AppEnvironment::class,
+                Consoles\AppInstall::class,
             ]);
         }
     }

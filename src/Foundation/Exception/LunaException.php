@@ -117,8 +117,10 @@ class LunaException extends RuntimeException
         return false;
     }
 
-    public function render(Request $request, LunaExceptionConfigure $configure): bool|Response
+    public function render(Request $request): bool|Response
     {
+        $configure = app(LunaExceptionConfigure::class);
+
         if ($configure->alwaysJsonRender) {
             return err($this);
         }

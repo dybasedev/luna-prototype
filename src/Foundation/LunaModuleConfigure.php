@@ -5,6 +5,7 @@ namespace Dybasedev\LunaPrototype\Foundation;
 use Closure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Foundation\Application;
 
 /**
  * Luna 模块构建配置对象基类
@@ -13,6 +14,12 @@ use Illuminate\Contracts\Container\Container;
  */
 abstract class LunaModuleConfigure
 {
+    protected ?Application $app = null {
+        get {
+            return $this->app ?: $this->app = app();
+        }
+    }
+
     /**
      * 模块名称，用于作为唯一标识，便于覆盖
      *

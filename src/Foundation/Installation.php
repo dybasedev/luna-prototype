@@ -7,11 +7,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class Installation
 {
-    protected ?OutputStyle $output = null;
+    final protected ?OutputStyle $output = null;
 
     protected int $verbosity = OutputInterface::VERBOSITY_NORMAL;
 
-    protected array $verbosityMap = [
+    final protected array $verbosityMap = [
         'v' => OutputInterface::VERBOSITY_VERBOSE,
         'vv' => OutputInterface::VERBOSITY_VERY_VERBOSE,
         'vvv' => OutputInterface::VERBOSITY_DEBUG,
@@ -19,13 +19,13 @@ abstract class Installation
         'normal' => OutputInterface::VERBOSITY_NORMAL,
     ];
 
-    public function withOutput(OutputStyle $output): static
+    final public function withOutput(OutputStyle $output): static
     {
         $this->output = $output;
         return $this;
     }
 
-    protected function parseVerbosity($level = null)
+    private function parseVerbosity($level = null)
     {
         if (isset($this->verbosityMap[$level])) {
             $level = $this->verbosityMap[$level];
@@ -36,7 +36,7 @@ abstract class Installation
         return $level;
     }
 
-    public function writeln(string $string, int|string|null $verbosity = null): void
+    final protected function writeln(string $string, int|string|null $verbosity = null): void
     {
         $this->output?->writeln($string, $this->parseVerbosity($verbosity));
     }
