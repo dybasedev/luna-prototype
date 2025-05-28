@@ -73,8 +73,8 @@ class AntDesignProAdapter extends Adapter
                 $output['valueType'] = 'group';
             }
 
-            $output['columns'] = array_map(function ($field) {
-                return $this->field($field);
+            $output['columns'] = array_map(function ($field) use ($prefix) {
+                return $this->field($field, $prefix);
             }, $source->fields);
         }
 
