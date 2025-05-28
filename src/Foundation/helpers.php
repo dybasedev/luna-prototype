@@ -3,6 +3,8 @@
 use Dybasedev\LunaPrototype\Foundation\Configuration\ConfigurationGroup;
 use Dybasedev\LunaPrototype\Foundation\Configuration\LunaConfiguration;
 use Dybasedev\LunaPrototype\Foundation\Exception\LunaException;
+use Dybasedev\LunaPrototype\Foundation\Exception\LunaExceptionMapperBuilder;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\JsonResponse;
@@ -132,5 +134,31 @@ if (!function_exists('luna_module_configure')) {
     function luna_module_configure(string $configure)
     {
         return app()->make($configure);
+    }
+}
+
+if (!function_exists('luna_handler')) {
+    /**
+     * 获取 LunaHandler 对象
+     *
+     * @return LunaHandler
+     */
+    function luna_handler(): LunaHandler
+    {
+        return app('luna.handler');
+    }
+}
+
+if (!function_exists('luna_exception_mapper')) {
+    /**
+     * 获取异常映射器
+     *
+     * @template TClass of Throwable
+     * @param class-string<TClass> $exceptionClass
+     * @return LunaExceptionMapperBuilder<TClass>
+     */
+    function luna_exception_mapper(string $exceptionClass): LunaExceptionMapperBuilder
+    {
+        return new LunaExceptionMapperBuilder($exceptionClass);
     }
 }

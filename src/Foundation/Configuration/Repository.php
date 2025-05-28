@@ -68,13 +68,12 @@ class Repository implements Arrayable
 
     public static function fromRepository(Repository $repository): static
     {
-        $origin = $repository->hidden;
-        $repository->setHidden([]);
+        return new static($repository->everything());
+    }
 
-        $new = new static($repository->all());
-        $repository->setHidden($origin);
-
-        return $new;
+    public function everything(): array
+    {
+        return $this->config;
     }
 
     public function toArray(): array

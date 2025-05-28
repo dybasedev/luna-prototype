@@ -4,6 +4,7 @@ namespace Dybasedev\LunaPrototype\Showcase;
 
 use Dybasedev\LunaPrototype\Showcase\Structures\Column;
 use Dybasedev\LunaPrototype\Showcase\Structures\Field;
+use Dybasedev\LunaPrototype\Showcase\Structures\FieldGroup;
 
 /**
  * UI 工具类，快速创建组件的工具类
@@ -20,6 +21,18 @@ class UI
     public static function field(string|array $name, ?string $key = null): Field
     {
         return new Field($name, $key);
+    }
+
+    /**
+     * 创建表单字段组或集合
+     *
+     * @param string $name
+     * @param string|null $key
+     * @return FieldGroup
+     */
+    public static function fieldGroup(string $name, ?string $key = null): FieldGroup
+    {
+        return new FieldGroup($name, $key);
     }
 
     /**

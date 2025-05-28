@@ -38,6 +38,22 @@ class LunaException extends RuntimeException
     }
 
     /**
+     * @var bool 是否用用上一次异常的 message 和信息
+     */
+    protected(set) bool $usePrevious = false;
+
+    /**
+     * @var bool 是否进行报告
+     */
+    protected(set) bool $reportable = true;
+
+    public function usePrevious(bool $use = true): static
+    {
+        $this->usePrevious = $use;
+        return $this;
+    }
+
+    /**
      * @param string $message
      * @return $this
      */
@@ -77,35 +93,23 @@ class LunaException extends RuntimeException
         return $this;
     }
 
-    public static function create(Throwable|string $throwable, ?int $code = null): static
+    public static function create(Throwable|string $throwable, ?int $code = null, bool $usePrevious = true): static
     {
         if (is_string($throwable)) {
             return new static($throwable, $code ?? 0);
         }
 
-        return new static($throwable->getMessage(), $code ?? $throwable->getCode(), $throwable);
+        return new static($throwable->getMessage(), $code ?? $throwable->getCode(),
+            $throwable)->usePrevious($usePrevious);
     }
 
     public function report(LunaExceptionConfigure $configure): bool
     {
-        $previous = $this->getPrevious();
-
-        $report = true;
-        if ($previous) {
-            $mapper = $configure->exceptionMappers[$previous::class] ?? null;
-
-            if ($mapper) {
-                $result = $mapper($previous);
-                $report = $result['report'] ?? true;
-
-                $this->withData($result['data'] ?? [])
-                    ->withDisplayMessage($result['message'] ?? null)
-                    ->withBehaviour($result['behaviour'] ?? null)
-                    ->withHttpStatus($result['httpStatus'] ?? 500);
-            }
+        if ($this->usePrevious) {
+            $this->extendPreviousException($configure);
         }
 
-        if ($report) {
+        if ($this->reportable) {
             $reporter = $configure->reporter ?? function (Throwable $throwable) {
                 Log::error($throwable);
             };
@@ -117,9 +121,33 @@ class LunaException extends RuntimeException
         return false;
     }
 
+    private function extendPreviousException(LunaExceptionConfigure $configure): void
+    {
+        $previous = $this->getPrevious();
+
+        if ($previous) {
+            $mapper = $configure->exceptionMappers[$previous::class] ?? null;
+
+            if ($mapper) {
+                $result = $mapper($previous);
+                $this->reportable = $result['report'] ?? true;
+
+                $this->withData($result['data'] ?? [])
+                    ->withDisplayMessage($result['message'] ?? null)
+                    ->withBehaviour($result['behaviour'] ?? null)
+                    ->withHttpStatus($result['httpStatus'] ?? 500);
+            }
+        }
+
+    }
+
     public function render(Request $request): bool|Response
     {
         $configure = app(LunaExceptionConfigure::class);
+
+        if ($this->usePrevious) {
+            $this->extendPreviousException($configure);
+        }
 
         if ($configure->alwaysJsonRender) {
             return err($this);

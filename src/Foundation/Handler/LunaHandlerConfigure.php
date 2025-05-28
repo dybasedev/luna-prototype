@@ -4,12 +4,19 @@ namespace Dybasedev\LunaPrototype\Foundation\Handler;
 
 use Closure;
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
+use Illuminate\Contracts\Container\Container;
 use RuntimeException;
 
 class LunaHandlerConfigure extends LunaModuleConfigure
 {
+    /**
+     * @var array
+     */
     protected(set) array $groups = [];
 
+    /**
+     * @var array
+     */
     protected(set) array $handlers = [];
 
     /**
@@ -22,24 +29,30 @@ class LunaHandlerConfigure extends LunaModuleConfigure
         return 'luna.handler';
     }
 
-    public function handler(string $group, string $name, string $handlerClass): static
+    public function handler(string $group, string $handlerClass): static
     {
-        if (!isset($this->groups[$group])) {
+        if (!isset($this->groups[hash_code($group)])) {
             throw new RuntimeException('Handler group not exists.');
         }
 
-        $this->groups[$group]['handlers'][$name] = $handlerClass;
+        $this->groups[hash_code($group)]['handlers'][] = $handlerClass;
+
+        if (!in_array($handlerClass, $this->handlers)) {
+            $this->handlers[] = $handlerClass;
+        }
+
         return $this;
     }
 
     public function group(string $name, ?string $displayName = null, ?Closure $handlerRegister = null): static
     {
-        $this->groups[$name] = [
+        $this->groups[hash_code($name)] = [
+            'name' => $name,
             'display_name' => $displayName,
         ];
 
-        $handlerAppender = function (string $name, string $handlerClass) {
-            $this->groups[$name]['handlers'][$name] = $handlerClass;
+        $handlerAppender = function (string $handlerClass) use ($name) {
+            $this->handler($name, $handlerClass);
         };
 
         if ($handlerRegister) {
@@ -49,13 +62,13 @@ class LunaHandlerConfigure extends LunaModuleConfigure
                     {
                     }
 
-                    public function handler(string $name, string $handlerClass): static
+                    public function handler(string $handlerClass): static
                     {
                         if (!class_exists($handlerClass)) {
                             throw new RuntimeException('Handler class not exists.');
                         }
 
-                        ($this->handlerAppender)($name, $handlerClass);
+                        ($this->handlerAppender)($handlerClass);
                         return $this;
                     }
                 }
@@ -69,6 +82,18 @@ class LunaHandlerConfigure extends LunaModuleConfigure
     {
         $this->model = $model;
         return $this;
+    }
+
+    public function register(Container $container): void
+    {
+        $container->singleton('luna.handler', function ($app) {
+            return new LunaHandler(
+                $app->make(LunaHandlerConfigure::class),
+                $app->make('cache.store'),
+            );
+        });
+
+        $container->alias('luna.handler', LunaHandler::class);
     }
 
 }

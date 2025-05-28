@@ -12,7 +12,7 @@ class Column extends Field
     /**
      * @var bool 可否搜索
      */
-    protected(set) bool $searchable = false;
+    protected(set) bool $searchable = true;
 
     /**
      * @var bool 可否复制
@@ -23,6 +23,11 @@ class Column extends Field
      * @var bool 是否省略
      */
     protected(set) bool $ellipsis = false;
+
+    /**
+     * @var int|null 在查询表单中的排序
+     */
+    protected(set) ?int $order = null;
 
     /**
      * @var array 透传至搜索字段的属性
@@ -55,6 +60,12 @@ class Column extends Field
     public function ellipsis(bool $ellipsis = true): Column
     {
         $this->ellipsis = $ellipsis;
+        return $this;
+    }
+
+    public function order(?int $order = null): Column
+    {
+        $this->order = $order;
         return $this;
     }
 
