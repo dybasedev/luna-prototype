@@ -60,7 +60,7 @@ class AntDesignProAdapter extends Adapter
         return $output;
     }
 
-    public function field(Field|FieldGroup $source): array
+    public function field(Field|FieldGroup $source, string|array|null $prefix = null): array
     {
         $output = [];
 
@@ -83,7 +83,13 @@ class AntDesignProAdapter extends Adapter
         }
 
         if ($source->name) {
-            $output['dataIndex'] = $source->name;
+            if ($prefix) {
+                $output['dataIndex'] = is_array($source->name)
+                    ? array_merge(is_array($prefix) ? $prefix : [$prefix], $source->name)
+                    : (is_array($prefix) ? array_merge($prefix, [$source->name]) : [$prefix, $source->name]);
+            } else {
+                $output['dataIndex'] = $source->name;
+            }
         }
 
         if ($source->width) {
