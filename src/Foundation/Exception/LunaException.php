@@ -4,6 +4,7 @@ namespace Dybasedev\LunaPrototype\Foundation\Exception;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use JetBrains\PhpStorm\Pure;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -92,6 +93,12 @@ class LunaException extends RuntimeException
         $this->httpStatus = $httpStatus;
         return $this;
     }
+
+    public function __construct(string $message = "", mixed $code = 0, ?Throwable $previous = null)
+    {
+        parent::__construct($message, $code, $previous);
+    }
+
 
     public static function create(Throwable|string $throwable, mixed $code = null, bool $usePrevious = true): static
     {
