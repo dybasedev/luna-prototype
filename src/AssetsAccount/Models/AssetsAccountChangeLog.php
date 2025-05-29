@@ -53,7 +53,8 @@ class AssetsAccountChangeLog extends Model
      */
     public function account(): BelongsTo
     {
-        return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountModel, 'account_id', 'id');
+        return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountModel, 'account_id',
+            'id');
     }
 
     /**
@@ -61,7 +62,8 @@ class AssetsAccountChangeLog extends Model
      */
     public function accountType(): BelongsTo
     {
-        return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountTypeModel, 'account_type_id', 'id');
+        return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountTypeModel,
+            'account_type_id', 'id');
     }
 
     /**
@@ -70,5 +72,12 @@ class AssetsAccountChangeLog extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(luna_module_configure(LunaBusinessEventConfigure::class)->model, 'event_id', 'id');
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'payload' => 'array'
+        ];
     }
 }
