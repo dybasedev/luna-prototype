@@ -38,7 +38,7 @@ class AntDesignProAdapter extends Adapter
         }
 
         if ($source->tooltip) {
-            $output['tooltip'] = true;
+            $output['tooltip'] = $source->tooltip;
         }
 
         if (!$source->searchable) {
