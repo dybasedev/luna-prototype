@@ -119,6 +119,10 @@ class AntDesignProAdapter extends Adapter
                 $output['initialValue'] = $source->formFieldProperties['initialValue'];
             }
 
+            if (isset($source->formFieldProperties['enum'])) {
+                $output['valueEnum'] = $source->formFieldProperties['enum'];
+            }
+
             $output['formItemProps'] = [
                 ...($output['formItemProps'] ?? []),
                 ...$source->formFieldProperties

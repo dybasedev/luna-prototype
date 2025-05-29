@@ -9,6 +9,7 @@ use Dybasedev\LunaPrototype\Foundation\Exception\LunaExceptionConfigure;
 use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\ServiceProvider;
+use RuntimeException;
 
 class LunaServiceProvider extends ServiceProvider
 {
@@ -55,6 +56,23 @@ class LunaServiceProvider extends ServiceProvider
     final public function registerModule(LunaModuleConfigure $configure): static
     {
         $this->modules[$configure->name()] = $configure;
+        return $this;
+    }
+
+    final public function extendModule(Closure $register): static
+    {
+        $configure = $this->app->call($register);
+
+        if (!$configure) {
+            throw new RuntimeException('Must return configure instance.');
+        }
+
+        if (!($configure instanceof LunaModuleConfigure)) {
+            throw new RuntimeException('Must return configure.');
+        }
+
+        $this->modules[$configure->name()] = $configure;
+
         return $this;
     }
 
