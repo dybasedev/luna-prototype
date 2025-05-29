@@ -45,25 +45,37 @@ return new class extends Migration {
         });
 
         Schema::create('luna_assets_account_change_logs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('owner_id')->comment('所有者ID');
-            $table->unsignedInteger('owner_type')->comment('所有者类型');
-            $table->foreignId('account_id')->index()->comment('账户ID');
-            $table->unsignedInteger('account_type_id')->comment('账户类型ID');
-            $table->decimal('change_value', 24, 8)->comment('变动金额');
-            $table->decimal('before_value', 24, 8)->comment('变动前余额');
-            $table->unsignedTinyInteger('change_type')->comment('变动类型');
-            $table->unsignedBigInteger('event_id')->comment('事件ID');
-            $table->json('payload')->comment('载荷');
-            $table->timestamps();
-
-            $table->index(['owner_id', 'owner_type'], 'owner_index');
-            $table->index(['account_type_id', 'event_id'], 'account_event_index');
-            $table->index(['created_at'], 'created_at_index');
+            $this->createAccountChangeLog($table);
 
             $table->comment('资产账户变动日志表');
         });
 
+        Schema::create('luna_assets_process_account_change_logs', function (Blueprint $table) {
+            $this->createAccountChangeLog($table);
+            $table->unsignedInteger('process_id');
+
+            $table->comment('资产账户变动过程日志表');
+        });
+
+    }
+
+    protected function createAccountChangeLog(Blueprint $table): void
+    {
+        $table->id();
+        $table->foreignId('owner_id')->comment('所有者ID');
+        $table->unsignedInteger('owner_type')->comment('所有者类型');
+        $table->foreignId('account_id')->index()->comment('账户ID');
+        $table->unsignedInteger('account_type_id')->comment('账户类型ID');
+        $table->decimal('change_value', 24, 8)->comment('变动金额');
+        $table->decimal('before_value', 24, 8)->comment('变动前余额');
+        $table->unsignedTinyInteger('change_type')->comment('变动类型');
+        $table->unsignedBigInteger('event_id')->comment('事件ID');
+        $table->json('payload')->comment('载荷');
+        $table->timestamps();
+
+        $table->index(['owner_id', 'owner_type'], 'owner_index');
+        $table->index(['account_type_id', 'event_id'], 'account_event_index');
+        $table->index(['created_at'], 'created_at_index');
     }
 
     /**
@@ -71,6 +83,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
+        Schema::dropIfExists('luna_assets_process_account_change_logs');
         Schema::dropIfExists('luna_assets_account_change_logs');
         Schema::dropIfExists('luna_assets_accounts');
         Schema::dropIfExists('luna_assets_account_types');

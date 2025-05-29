@@ -2,6 +2,7 @@
 
 namespace Dybasedev\LunaPrototype\AssetsAccount;
 
+use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccount;
 use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccountType;
 use Dybasedev\LunaPrototype\Foundation\Configuration\Repository;
 use Dybasedev\LunaPrototype\Foundation\Exception\LunaException;
@@ -9,6 +10,7 @@ use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Dybasedev\LunaPrototype\Foundation\LunaModule;
 use Dybasedev\LunaPrototype\Foundation\SessionHolder;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -147,5 +149,23 @@ class LunaAssetsAccount extends LunaModule
                 'description' => $accountType->description,
             ];
         })->values()->toArray();
+    }
+
+    public function ownerAccount(SessionHolder $owner, string|int $account): AssetsAccount
+    {
+        $account = is_string($account) ? hash_code($account) : $account;
+        return $this->configure->accountModel::query()
+            ->where('owner_id', $owner->getOperatorId())
+            ->where('owner_type', $owner->getOperatorType())
+            ->where('account_type_id', $account)
+            ->first();
+    }
+
+    /**
+     * @throws BindingResolutionException
+     */
+    public function createAccountOperation(): AccountOperations
+    {
+        return app()->make(AccountOperations::class, ['configure' => $this->configure]);
     }
 }
