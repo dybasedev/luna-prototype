@@ -39,7 +39,13 @@ class Repository implements Arrayable
 
     public function set($key, $value, bool $overwrite = true): static
     {
-        data_set($this->config, $key, $value, $overwrite);
+        if ($key) {
+            data_set($this->config, $key, $value, $overwrite);
+        } else {
+            if ($overwrite) {
+                $this->config = $value;
+            }
+        }
 
         // 标记为脏
         $this->isDirty = true;

@@ -92,14 +92,26 @@ class ConfigurationGroup
                 sprintf('config:%s:%s', $this->group, $name),
                 random_int(60, 120),
                 function () use ($name) {
-                    return $this->getConfigurationRecord($name)->toArray();
+                    $configuration = $this->getConfigurationRecord($name);
+
+                    if (!$configuration) {
+                        throw new LunaException('Configuration not exists');
+                    }
+
+                    return $configuration->toArray();
                 }
             );
         } else {
-            $configuration = $this->getConfigurationRecord($name)->toArray();
+            $configuration = $this->getConfigurationRecord($name);
+
+            if (!$configuration) {
+                throw new LunaException('Configuration not exists');
+            }
+
+            $configuration = $configuration->toArray();
         }
 
-        if ($configuration && isset($configuration['current'])) {
+        if (isset($configuration['current'])) {
             $bind = $this->configure->repositoryBinds[$this->group][$name] ?? $this->configure->defaultRepository;
             return $this->repositories[$name] = new $bind($configuration['current']['value']);
         }
