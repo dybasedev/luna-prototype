@@ -113,7 +113,7 @@ class LunaAssetsAccount extends LunaModule
 
             $types->each(function (AssetsAccountType $accountType) use ($owner) {
                 Model::unguarded(function () use ($accountType, $owner) {
-                    $this->configure->accountTypeModel::query()->create([
+                    $this->configure->accountModel::query()->create([
                         'owner_id' => $owner->getOperatorId(),
                         'owner_type' => $owner->getOperatorType(),
                         'account_type_id' => $accountType->id,

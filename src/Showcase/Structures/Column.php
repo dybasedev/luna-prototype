@@ -22,7 +22,7 @@ class Column extends Field
     /**
      * @var bool 是否省略
      */
-    protected(set) bool $ellipsis = false;
+    protected(set) bool $ellipsis = true;
 
     /**
      * @var int|null 在查询表单中的排序

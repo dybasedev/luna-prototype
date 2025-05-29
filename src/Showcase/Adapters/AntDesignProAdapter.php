@@ -110,10 +110,15 @@ class AntDesignProAdapter extends Adapter
             $output['fieldProps']['placeholder'] = $source->placeholder;
         }
 
+        if ($source->readonly) {
+            $output['readonly'] = true;
+        }
+
         if ($source->formFieldProperties) {
             if (isset($source->formFieldProperties['initialValue'])) {
                 $output['initialValue'] = $source->formFieldProperties['initialValue'];
             }
+
             $output['formItemProps'] = [
                 ...($output['formItemProps'] ?? []),
                 ...$source->formFieldProperties
@@ -124,7 +129,10 @@ class AntDesignProAdapter extends Adapter
             if (isset($source->properties['colProps'])) {
                 $output['colProps'] = $source->properties['colProps'];
             }
-            $output['fieldProps'] = $source->properties;
+            $output['fieldProps'] = [
+                ...($output['fieldProps'] ?? []),
+                ...$source->properties
+            ];
         }
 
         return $output;

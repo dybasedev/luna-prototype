@@ -71,6 +71,18 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
         return $this;
     }
 
+    /**
+     * 添加一个资产账户的绑定对象
+     *
+     * @param AssetsAccountBinding $binding
+     * @return $this
+     */
+    public function bind(AssetsAccountBinding $binding): static
+    {
+        $this->bindings[] = $binding;
+        return $this;
+    }
+
     public function register(Container $container): void
     {
         $container->singleton('luna.assets-account', function ($app) {
