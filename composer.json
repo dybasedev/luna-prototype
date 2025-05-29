@@ -1,22 +1,23 @@
 {
-    "name": "dybasedev/luna-prototype",
-    "autoload": {
-        "psr-4": {
-            "Dybasedev\\LunaPrototype\\": "src/"
-        },
-        "files": [
-            "src/Foundation/helpers.php"
-        ]
+  "name": "dybasedev/luna-prototype",
+  "autoload": {
+    "psr-4": {
+      "Dybasedev\\LunaPrototype\\": "src/"
     },
-    "authors": [
-        {
-            "name": "Chongyi",
-            "email": "xpz3847878@gmail.com"
-        }
-    ],
-    "require": {
-        "php": "^8.4",
-        "laravel/framework": "^12.0",
-        "ckr/arraymerger": "^3.0"
+    "files": [
+      "src/Foundation/helpers.php",
+      "src/AssetsAccount/helpers.php"
+    ]
+  },
+  "authors": [
+    {
+      "name": "Chongyi",
+      "email": "xpz3847878@gmail.com"
     }
+  ],
+  "require": {
+    "php": "^8.4",
+    "laravel/framework": "^12.0",
+    "ckr/arraymerger": "^3.0"
+  }
 }

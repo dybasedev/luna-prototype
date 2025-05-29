@@ -1,5 +1,6 @@
 <?php
 
+use Dybasedev\LunaPrototype\Foundation\BusinessEvent\LunaBusinessEvent;
 use Dybasedev\LunaPrototype\Foundation\Configuration\ConfigurationGroup;
 use Dybasedev\LunaPrototype\Foundation\Configuration\LunaConfiguration;
 use Dybasedev\LunaPrototype\Foundation\Exception\LunaException;
@@ -160,5 +161,17 @@ if (!function_exists('luna_exception_mapper')) {
     function luna_exception_mapper(string $exceptionClass): LunaExceptionMapperBuilder
     {
         return new LunaExceptionMapperBuilder($exceptionClass);
+    }
+}
+
+if (!function_exists('luna_business_event')) {
+    /**
+     * 获取业务事件对象
+     *
+     * @return LunaBusinessEvent
+     */
+    function luna_business_event(): LunaBusinessEvent
+    {
+        return app('luna.business-event');
     }
 }

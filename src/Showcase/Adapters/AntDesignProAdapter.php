@@ -57,6 +57,12 @@ class AntDesignProAdapter extends Adapter
             $output['placeholder'] = $source->placeholder;
         }
 
+        if ($source->formFieldProperties) {
+            if (isset($source->formFieldProperties['enum'])) {
+                $output['valueEnum'] = $source->formFieldProperties['enum'];
+            }
+        }
+
         return $output;
     }
 

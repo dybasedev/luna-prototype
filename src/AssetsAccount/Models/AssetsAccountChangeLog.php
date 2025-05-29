@@ -3,7 +3,7 @@
 namespace Dybasedev\LunaPrototype\AssetsAccount\Models;
 
 use Dybasedev\LunaPrototype\AssetsAccount\LunaAssetsAccountConfigure;
-use Dybasedev\LunaPrototype\Foundation\BusinessEvent\LunaBusinessConfigure;
+use Dybasedev\LunaPrototype\Foundation\BusinessEvent\LunaBusinessEventConfigure;
 use Dybasedev\LunaPrototype\Foundation\BusinessEvent\Models\BusinessEvent;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
@@ -69,6 +69,6 @@ class AssetsAccountChangeLog extends Model
      */
     public function event(): BelongsTo
     {
-        return $this->belongsTo(luna_module_configure(LunaBusinessConfigure::class)->model, 'event_id', 'id');
+        return $this->belongsTo(luna_module_configure(LunaBusinessEventConfigure::class)->model, 'event_id', 'id');
     }
 }

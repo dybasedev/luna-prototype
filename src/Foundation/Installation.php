@@ -42,6 +42,11 @@ abstract class Installation
     }
 
     /**
+     * @var class-string<Installation>[]
+     */
+    protected array $installations = [];
+
+    /**
      * 安装逻辑
      *
      * 注意，安装逻辑里不要包括 DDL 操作，会导致事务失效

@@ -3,7 +3,7 @@
 namespace Dybasedev\LunaPrototype\Foundation;
 
 use Closure;
-use Dybasedev\LunaPrototype\Foundation\BusinessEvent\LunaBusinessConfigure;
+use Dybasedev\LunaPrototype\Foundation\BusinessEvent\LunaBusinessEventConfigure;
 use Dybasedev\LunaPrototype\Foundation\Configuration\LunaConfigurationConfigure;
 use Dybasedev\LunaPrototype\Foundation\Exception\LunaExceptionConfigure;
 use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure;
@@ -42,7 +42,7 @@ class LunaServiceProvider extends ServiceProvider
     {
         $this->registerModule(LunaConfigurationConfigure::create()->build());
         $this->registerModule(LunaExceptionConfigure::create()->build());
-        $this->registerModule(LunaBusinessConfigure::create()->build());
+        $this->registerModule(LunaBusinessEventConfigure::create()->build());
         $this->registerModule(LunaHandlerConfigure::create()->build());
         $this->registerModule(LunaApplicationConfigure::create()->build());
     }

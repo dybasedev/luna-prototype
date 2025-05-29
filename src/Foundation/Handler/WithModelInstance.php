@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 trait WithModelInstance
 {
     protected(set) Model|null $modelInstance = null {
-        set(Model|null $value) => $this->modelInstance = $value;
+        set => $this->modelInstance = $value;
     }
 
     /**

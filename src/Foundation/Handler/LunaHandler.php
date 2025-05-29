@@ -5,6 +5,7 @@ namespace Dybasedev\LunaPrototype\Foundation\Handler;
 use Dybasedev\LunaPrototype\Foundation\Configuration\Repository;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Support\Collection;
 use RuntimeException;
 
 class LunaHandler
@@ -58,7 +59,7 @@ class LunaHandler
         ?string $description = ''
     ): Handler {
         $group = is_string($group) ? hash_code($group) : $group;
-        
+
         if (!isset($this->configure->groups[$group])) {
             throw new RuntimeException('Handler group not exists');
         }
@@ -86,6 +87,7 @@ class LunaHandler
         }
 
         $this->cache->forget(sprintf('handler:entities:%d', $group));
+        $this->cache->forget('handler:entities');
 
         return $entityInstance;
     }
@@ -104,5 +106,33 @@ class LunaHandler
         });
 
         return $entities;
+    }
+
+    /**
+     * @return Collection
+     */
+    public function getAllEntityHandlers(): Collection
+    {
+        return collect($this->cache->rememberForever('handler:entities', function () {
+            return $this->configure->model::query()->get()->all();
+        }));
+    }
+
+    /**
+     * @param string|int $name
+     * @return Handler|null
+     */
+    public function entityHandler(string|int $name): ?Handler
+    {
+        $entities = $this->getAllEntityHandlers();
+
+        $name = is_string($name) ? hash_code($name) : $name;
+
+        return collect($entities)->where('id', $name)->first();
+    }
+
+    public function existsEntityHandler(string|int $name): bool
+    {
+        return !!$this->getAllEntityHandlers()->where('id', is_string($name) ? hash_code($name) : $name)->count();
     }
 }

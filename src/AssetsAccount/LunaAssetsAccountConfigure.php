@@ -5,7 +5,9 @@ namespace Dybasedev\LunaPrototype\AssetsAccount;
 use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccount;
 use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccountChangeLog;
 use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccountType;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
+use Illuminate\Contracts\Container\Container;
 
 class LunaAssetsAccountConfigure extends LunaModuleConfigure
 {
@@ -23,6 +25,11 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
      * @var class-string<AssetsAccountType>
      */
     protected(set) string $accountTypeModel = AssetsAccountType::class;
+
+    /**
+     * @var AssetsAccountBinding[] 绑定资产账户的对象
+     */
+    protected(set) array $bindings = [];
 
     public function name(): string
     {
@@ -62,6 +69,19 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
     {
         $this->accountTypeModel = $class;
         return $this;
+    }
+
+    public function register(Container $container): void
+    {
+        $container->singleton('luna.assets-account', function ($app) {
+            return new LunaAssetsAccount(
+                $app->make(LunaAssetsAccountConfigure::class),
+                $app->make(LunaHandler::class),
+                $app->make('cache.store'),
+            );
+        });
+
+        $container->alias('luna.assets-account', LunaAssetsAccount::class);
     }
 
 
