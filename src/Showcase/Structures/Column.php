@@ -35,6 +35,11 @@ class Column extends Field
     protected(set) array $searchFieldProperties = [];
 
     /**
+     * @var bool 该字段只用于构建搜索表单
+     */
+    protected(set) bool $onlySearch = false;
+
+    /**
      * @var string|null 列组件，用于针对特定情况选用特定组件，主要用于前端渲染场景
      */
     protected(set) ?string $columnComponent = null;
@@ -81,5 +86,9 @@ class Column extends Field
         return $this;
     }
 
-
+    public function onlySearch(bool $onlySearch = true): static
+    {
+        $this->onlySearch = $onlySearch;
+        return $this;
+    }
 }
