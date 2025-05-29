@@ -95,6 +95,10 @@ class LunaException extends RuntimeException
 
     public static function create(Throwable|string $throwable, mixed $code = null, bool $usePrevious = true): static
     {
+        if (is_string($code)) {
+            $code = (int)$code;
+        }
+
         if (is_string($throwable)) {
             return new static($throwable, $code ?? 0);
         }
