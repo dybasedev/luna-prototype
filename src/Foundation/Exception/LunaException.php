@@ -125,7 +125,11 @@ class LunaException extends RuntimeException
                 Log::error($throwable);
             };
 
-            $reporter($this);
+            if ($this->usePrevious) {
+                $reporter($this->getPrevious());
+            } else {
+                $reporter($this);
+            }
             return true;
         }
 
