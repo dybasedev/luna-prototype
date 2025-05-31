@@ -39,9 +39,17 @@ class ConfigurationGroup
             ->first();
     }
 
-    public function exists(string $name)
+    /**
+     * @throws RandomException
+     */
+    public function exists(string $name): bool
     {
-
+        try {
+            $this->repository($name);
+            return true;
+        } catch (LunaException $exception) {
+            return false;
+        }
     }
 
     /**
