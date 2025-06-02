@@ -22,8 +22,11 @@ class LunaExceptionConfigure extends LunaModuleConfigure
         return 'luna.exception';
     }
 
-    public function wrap(string|LunaExceptionMapperBuilder $exceptionClass, string|Closure|null $mapper = null, int $httpStatus = 500): static
-    {
+    public function wrap(
+        string|LunaExceptionMapperBuilder $exceptionClass,
+        string|Closure|null $mapper = null,
+        int $httpStatus = 500
+    ): static {
         if ($exceptionClass instanceof LunaExceptionMapperBuilder) {
             $mapper = $exceptionClass->build();
             $exceptionClass = $exceptionClass->exceptionClass;
@@ -67,7 +70,8 @@ class LunaExceptionConfigure extends LunaModuleConfigure
     public function register(Container $container): void
     {
         $container->afterResolving(Handler::class, function (Handler $handler) {
-            $handler->map(Throwable::class, fn($throwable) => LunaException::create($throwable));
+            $handler->map(Throwable::class,
+                fn($throwable) => $throwable instanceof LunaException ? $throwable : LunaException::create($throwable));
         });
     }
 
