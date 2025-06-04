@@ -134,12 +134,11 @@ class LunaException extends RuntimeException
             if ($this->usePrevious) {
                 $reporter($this->getPrevious());
             } else {
-                $reporter($this);
+                return false;
             }
-            return true;
         }
 
-        return false;
+        return true;
     }
 
     private function extendPreviousException(LunaExceptionConfigure $configure): void
