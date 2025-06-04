@@ -94,6 +94,12 @@ class LunaException extends RuntimeException
         return $this;
     }
 
+    public function dontReport(): static
+    {
+        $this->reportable = false;
+        return $this;
+    }
+
     public function __construct(string $message = "", mixed $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, (int)$code, $previous);
