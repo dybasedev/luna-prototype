@@ -6,6 +6,7 @@ use Closure;
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Foundation\Exceptions\Handler;
 use Throwable;
 
