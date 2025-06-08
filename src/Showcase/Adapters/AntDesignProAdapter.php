@@ -67,6 +67,10 @@ class AntDesignProAdapter extends Adapter
             }
         }
 
+        if ($source->properties) {
+            $output['fieldProps'] = $source->properties;
+        }
+
         return $output;
     }
 
