@@ -38,7 +38,7 @@ class AppInstall extends Command
         $this->call('key:generate', ['--no-interaction' => true]);
 
         $this->comment('Execute migrate');
-        $this->call('migrate', ['--no-interaction' => true]);
+        $this->call('migrate');
 
         // 安装
         try {
