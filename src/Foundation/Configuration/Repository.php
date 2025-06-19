@@ -60,6 +60,22 @@ class Repository implements Arrayable
 
     public function all(): array
     {
+        return $this->config;
+    }
+
+    public static function fromRepository(Repository $repository): static
+    {
+        return new static($repository->all());
+    }
+
+    #[\Deprecated]
+    public function everything(): array
+    {
+        return $this->config;
+    }
+
+    public function toArray(): array
+    {
         if ($this->hidden) {
             $config = $this->config;
             foreach ($this->hidden as $key) {
@@ -70,20 +86,5 @@ class Repository implements Arrayable
         }
 
         return $this->config;
-    }
-
-    public static function fromRepository(Repository $repository): static
-    {
-        return new static($repository->everything());
-    }
-
-    public function everything(): array
-    {
-        return $this->config;
-    }
-
-    public function toArray(): array
-    {
-        return $this->all();
     }
 }

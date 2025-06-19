@@ -50,7 +50,7 @@ class LunaBusinessEvent extends LunaModule
             'group_id' => is_string($group) ? hash_code($group) : $group,
             'handler_id' => is_string($handler) ? hash_code($handler) : $handler,
             'formatter' => $formatter,
-            'config' => $config ? $config->everything() : [],
+            'config' => $config ? $config->all() : [],
         ]);
 
         if (!$instance->save()) {

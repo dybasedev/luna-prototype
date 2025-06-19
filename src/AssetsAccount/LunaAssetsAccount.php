@@ -49,7 +49,7 @@ class LunaAssetsAccount extends LunaModule
                 'display_name' => $displayName ?? $name,
                 'description' => $description ?? '',
                 'handler_id' => is_string($handler) ? hash_code($handler) : $handler,
-                'config' => $config->everything(),
+                'config' => $config->all(),
             ]);
 
 

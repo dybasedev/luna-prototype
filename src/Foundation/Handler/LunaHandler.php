@@ -77,7 +77,7 @@ class LunaHandler
             'group_id' => $group,
             'name' => $name,
             'handler' => $handler,
-            'config' => $config->everything(),
+            'config' => $config->all(),
             'display_name' => $displayName ?? $name,
             'description' => $description ?? ''
         ]);
