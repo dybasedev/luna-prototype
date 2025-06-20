@@ -46,58 +46,6 @@ return new class extends Migration {
             $table->timestamps();
         });
 
-        Schema::create('luna_schedule_tasks', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique()->comment('任务名');
-            $table->string('display_name')->default('')->comment('显示名');
-            $table->string('description')->default('')->comment('描述');
-            $table->string('expression')->comment('表达式');
-            $table->unsignedTinyInteger('expression_type')->default(1)->comment('表达式类型');
-            $table->string('timezone')->comment('时区');
-            $table->string('command')->comment('命令');
-            $table->json('payload')->comment('配置');
-            $table->unsignedTinyInteger('status')->default(1)->comment('状态');
-            $table->timestamps();
-
-            $table->comment('定时任务表');
-        });
-
-        Schema::create('luna_schedule_task_logs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('task_id')->index()->comment('任务ID');
-            $table->timestamp('ran_at')->index()->comment('开始时间');
-            $table->timestamp('end_at')->index()->comment('结束时间');
-            $table->decimal('duration', 24, 14)->comment('持续时间');
-            $table->unsignedTinyInteger('status')->comment('状态');
-            $table->longText('output')->comment('输出');
-            $table->timestamps();
-
-            $table->index(['task_id', 'ran_at', 'end_at'], 'task_time_index');
-
-            $table->comment('定时任务执行日志表');
-        });
-
-        Schema::create('luna_command_execute_logs', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedInteger('operator_type')->comment('操作者类型');
-            $table->unsignedBigInteger('operator_id')->comment('操作者ID');
-            $table->string('command')->comment('命令');
-            $table->json('payload')->comment('配置');
-            $table->string('comment')->comment('备注');
-            $table->timestamp('ran_at')->index()->comment('开始时间');
-            $table->timestamp('end_at')->index()->comment('结束时间');
-            $table->decimal('duration', 24, 14)->comment('持续时间');
-            $table->unsignedTinyInteger('status')->comment('状态');
-            $table->longText('output')->comment('输出');
-            $table->timestamps();
-
-            $table->index(['created_at', 'command'], 'created_at_command_index');
-            $table->index(['ran_at', 'end_at'], 'ran_at_end_at_index');
-            $table->index(['operator_type', 'operator_id'], 'operator_index');
-
-            $table->comment('命令执行日志表');
-        });
-
         Schema::create('luna_business_events', function (Blueprint $table) {
             $table->unsignedBigInteger('id')->primary()->comment(
                 '非自增，根据名称通过 hashcode 得出，避免迁移数据导致的关联错误'
@@ -124,9 +72,6 @@ return new class extends Migration {
         Schema::dropIfExists('luna_configurations');
         Schema::dropIfExists('luna_configuration_values');
         Schema::dropIfExists('luna_handlers');
-        Schema::dropIfExists('luna_schedule_tasks');
-        Schema::dropIfExists('luna_schedule_task_logs');
-        Schema::dropIfExists('luna_command_execute_logs');
         Schema::dropIfExists('luna_business_events');
     }
 };

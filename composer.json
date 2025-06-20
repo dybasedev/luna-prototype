@@ -6,7 +6,8 @@
     },
     "files": [
       "src/Foundation/helpers.php",
-      "src/AssetsAccount/helpers.php"
+      "src/AssetsAccount/helpers.php",
+      "src/Schedule/helpers.php"
     ]
   },
   "authors": [
