@@ -7,6 +7,8 @@ use Dybasedev\LunaPrototype\AssetsAccount\LunaAssetsAccount;
 
 if (!function_exists('luna_assets_account')) {
     /**
+     * 获取资产账户管理对象
+     *
      * @return LunaAssetsAccount
      */
     function luna_assets_account(): LunaAssetsAccount

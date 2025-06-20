@@ -128,12 +128,11 @@ class LunaBusinessEvent extends LunaModule
 
     public function groups(): array
     {
-        $groups = array_merge([
-            hash_code('common') => [
-                'name' => 'common',
-                'display_name' => '公共'
-            ],
-        ], $this->configure->groups);
+        $groups = $this->configure->groups;
+        $groups[hash_code('common')] = [
+            'name' => 'common',
+            'display_name' => '公共'
+        ];
 
         return array_map(fn($id, $group) => [
             'id' => $id,

@@ -28,6 +28,16 @@ abstract class LunaModuleConfigure
     abstract public function name(): string;
 
     /**
+     * 模块依赖的其他模块名称
+     *
+     * @return array
+     */
+    public function dependencies(): array
+    {
+        return [];
+    }
+
+    /**
      * @throws BindingResolutionException
      */
     public static function create(): static

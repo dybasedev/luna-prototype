@@ -16,6 +16,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
+/**
+ * 资产账户管理对象
+ *
+ * 可以通过这个对象对资产账户进行管理
+ */
 class LunaAssetsAccount extends LunaModule
 {
     public function __construct(

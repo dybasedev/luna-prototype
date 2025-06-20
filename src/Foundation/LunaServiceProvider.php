@@ -59,6 +59,12 @@ class LunaServiceProvider extends ServiceProvider
         return $this;
     }
 
+    /**
+     * 扩展已经配置的模块
+     *
+     * @param Closure $register
+     * @return $this
+     */
     final public function extendModule(Closure $register): static
     {
         $configure = $this->app->call($register);
@@ -84,6 +90,13 @@ class LunaServiceProvider extends ServiceProvider
             if ($module instanceof Closure) {
                 $this->app->instance($module::class, $module = $this->app->call($module));
             } else {
+                // 检查模型依赖
+                if ($dependencies = $module->dependencies()) {
+                    if (!array_all($dependencies, fn($dependency) => isset($this->modules[$dependency]))) {
+                        throw new RuntimeException(sprintf('[%s]: Dependency module not found.', $module->name()));
+                    }
+                }
+
                 $this->app->instance($module::class, $module);
             }
 

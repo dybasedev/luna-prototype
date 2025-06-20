@@ -44,6 +44,8 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
     }
 
     /**
+     * 替换默认的账户模型
+     *
      * @param class-string<AssetsAccount> $class
      * @return $this
      */
@@ -54,6 +56,8 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
     }
 
     /**
+     * 替换默认的账户日志模型
+     *
      * @param class-string<AssetsAccountChangeLog> $class
      * @return $this
      */
@@ -64,6 +68,8 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
     }
 
     /**
+     * 替换默认的账户类型模型
+     *
      * @param class-string<AssetsAccountType> $class
      * @return $this
      */
