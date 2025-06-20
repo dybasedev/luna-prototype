@@ -8,6 +8,8 @@ use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\Log;
 use Random\RandomException;
+use Throwable;
+
 
 class AccountOperations
 {
@@ -116,9 +118,9 @@ class AccountOperations
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      */
-    public function submit(bool $allowOverdraft = false)
+    public function submit(bool $allowOverdraft = false): void
     {
         if (!count($this->operations)) {
             return;
