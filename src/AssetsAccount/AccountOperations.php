@@ -49,7 +49,7 @@ class AccountOperations
         protected LunaAssetsAccountConfigure $configure,
         protected ConnectionInterface $connection
     ) {
-        $this->processId = hash_code(base64_encode(random_bytes(random_int(4, 12))));
+        $this->processId = random_int(10000000, 99999999);
     }
 
     public function operation(AccountOperationBuilder $builder): static
