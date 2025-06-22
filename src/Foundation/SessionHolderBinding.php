@@ -23,6 +23,12 @@ class SessionHolderBinding
      */
     protected(set) bool $tableIsModelClass = false;
 
+    protected(set) ?string $tableName = null {
+        get {
+            return $this->tableName ??= $this->tableIsModelClass ? (new $this->table)->getTable() : $this->table;
+        }
+    }
+
     /**
      * @var string
      */

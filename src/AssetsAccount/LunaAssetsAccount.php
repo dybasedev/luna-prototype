@@ -110,7 +110,7 @@ class LunaAssetsAccount extends LunaModule
                             ->select(['id as parent_id'])
                             ->where('owner_type', $ownerType)
                             ->where('account_type_id', $parentAccountTypeId), 'parent', 'parent.owner_id', '=',
-                            sprintf('%s.%s', $binding->table, $binding->keyName));
+                            sprintf('%s.%s', $binding->tableName, $binding->keyName));
                 } else {
                     $columns = ['owner_id', 'owner_type', 'account_type_id', 'created_at', 'updated_at'];
                     $query
