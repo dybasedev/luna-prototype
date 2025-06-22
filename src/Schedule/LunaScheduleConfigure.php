@@ -3,6 +3,7 @@
 namespace Dybasedev\LunaPrototype\Schedule;
 
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
+use Dybasedev\LunaPrototype\Schedule\Models\CommandExecuteLog;
 use Dybasedev\LunaPrototype\Schedule\Models\ScheduleTask;
 use Dybasedev\LunaPrototype\Schedule\Models\ScheduleTaskLog;
 use Illuminate\Console\Scheduling\Schedule;
@@ -20,6 +21,11 @@ class LunaScheduleConfigure extends LunaModuleConfigure
      * @var class-string<ScheduleTaskLog>
      */
     protected(set) string $scheduleTaskLogModel = ScheduleTaskLog::class;
+
+    /**
+     * @var class-string<CommandExecuteLog>
+     */
+    protected(set) string $commandExecuteLogModel = CommandExecuteLog::class;
 
     /**
      * 调度命令白名单，仅存在于这个白名单的命令才可以通过调度模块执行
@@ -58,6 +64,18 @@ class LunaScheduleConfigure extends LunaModuleConfigure
     public function useScheduleTaskLogModel(string $class): static
     {
         $this->scheduleTaskLogModel = $class;
+        return $this;
+    }
+
+    /**
+     * 替换默认的命令执行日志模型
+     *
+     * @param class-string<CommandExecuteLog> $class
+     * @return $this
+     */
+    public function useCommandExecuteLogModel(string $class): static
+    {
+        $this->commandExecuteLogModel = $class;
         return $this;
     }
 

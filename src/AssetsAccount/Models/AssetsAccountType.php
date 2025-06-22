@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read Handler|null $handler
+ * @property-read AssetsAccountType|null $parent
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AssetsAccountType newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AssetsAccountType newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AssetsAccountType query()

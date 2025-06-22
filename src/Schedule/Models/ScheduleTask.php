@@ -23,28 +23,28 @@ use Illuminate\Support\Str;
  * @property string $timezone 时区
  * @property string $command 命令
  * @property array<array-key, mixed> $payload 配置
- * @property int $enabled 状态
+ * @property bool $enabled 是否启用
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read ScheduleTaskLog|null $latestLog
  * @property-read \Illuminate\Database\Eloquent\Collection<int, ScheduleTaskLog> $logs
  * @property-read int|null $logs_count
- * @method static Builder<static>|ScheduleTask active()
- * @method static Builder<static>|ScheduleTask newModelQuery()
- * @method static Builder<static>|ScheduleTask newQuery()
- * @method static Builder<static>|ScheduleTask query()
- * @method static Builder<static>|ScheduleTask whereCommand($value)
- * @method static Builder<static>|ScheduleTask whereCreatedAt($value)
- * @method static Builder<static>|ScheduleTask whereDescription($value)
- * @method static Builder<static>|ScheduleTask whereDisplayName($value)
- * @method static Builder<static>|ScheduleTask whereExpression($value)
- * @method static Builder<static>|ScheduleTask whereExpressionType($value)
- * @method static Builder<static>|ScheduleTask whereId($value)
- * @method static Builder<static>|ScheduleTask whereName($value)
- * @method static Builder<static>|ScheduleTask wherePayload($value)
- * @method static Builder<static>|ScheduleTask whereStatus($value)
- * @method static Builder<static>|ScheduleTask whereTimezone($value)
- * @method static Builder<static>|ScheduleTask whereUpdatedAt($value)
+ * @method static Builder<static>|ScheduleTask enabled()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereCommand($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereDisplayName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereEnabled($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereExpression($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereExpressionType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask wherePayload($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereTimezone($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereUpdatedAt($value)
  * @mixin \Eloquent
  */
 class ScheduleTask extends Model
@@ -152,6 +152,7 @@ class ScheduleTask extends Model
     {
         return [
             'payload' => 'array',
+            'enabled' => 'boolean',
         ];
     }
 }
