@@ -93,7 +93,7 @@ class LunaAssetsAccount extends LunaModule
 
                 // 判断是否存在父账户
                 if ($parentAccountTypeId) {
-                    $columns = ['owner_id', 'owner_type', 'parent_id', 'account_type_id', 'created_at', 'updated_at'];
+                    $columns = ['owner_id', 'owner_type', 'account_type_id', 'parent_id', 'created_at', 'updated_at'];
                     $query
                         ->selectRaw(
                             implode(',', [
