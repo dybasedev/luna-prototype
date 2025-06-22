@@ -37,6 +37,7 @@ class LunaAssetsAccount extends LunaModule
         ?string $displayName = null,
         ?string $description = '',
         ?Repository $config = null,
+        string|int|AssetsAccountType|null $parent = null,
     ) {
         if (!$this->handler->existsEntityHandler($handler)) {
             throw LunaException::create('Account handler not defined.');
@@ -46,10 +47,24 @@ class LunaAssetsAccount extends LunaModule
             $config = new AccountHandlerConfigurationRepository([]);
         }
 
-        $processing = function () use ($handler, $name, $config, $description, $displayName) {
+        $processing = function () use ($handler, $name, $config, $description, $displayName, $parent) {
+            $parentAccountTypeId = 0;
+            if ($parent) {
+                if ($parent instanceof AssetsAccountType) {
+                    $parentAccountTypeId = $parent->id;
+                } else {
+                    $parentAccountTypeId = is_string($parent) ? hash_code($parent) : $parent;
+                    // 检查父级账户类型是否存在
+                    if (!$this->getAllAccountTypes()->where('id', $parentAccountTypeId)->count()) {
+                        throw LunaException::create('Parent account type not exists.');
+                    }
+                }
+            }
+
             /** @var AssetsAccountType $instance */
             $instance = new ($this->configure->accountTypeModel)();
             $instance->forceFill([
+                'parent_id' => $parentAccountTypeId,
                 'name' => $name,
                 'display_name' => $displayName ?? $name,
                 'description' => $description ?? '',
@@ -76,19 +91,43 @@ class LunaAssetsAccount extends LunaModule
 
                 $ownerType = (new $binding->owner)->getOperatorType();
 
-                $this->configure->accountModel::query()->insertUsing(
-                    ['owner_id', 'owner_type', 'account_type_id', 'created_at', 'updated_at'],
-                    $query->selectRaw(
-                        implode(',', [
-                            $binding->keyName,
-                            '?',
-                            '?',
-                            'now() created_at',
-                            'now() updated_at',
-                        ]),
-                        [$ownerType, $instance->id],
-                    )
-                );
+                // 判断是否存在父账户
+                if ($parentAccountTypeId) {
+                    $columns = ['owner_id', 'owner_type', 'parent_id', 'account_type_id', 'created_at', 'updated_at'];
+                    $query
+                        ->selectRaw(
+                            implode(',', [
+                                $binding->keyName,
+                                '?',
+                                '?',
+                                'parent_id',
+                                'now() created_at',
+                                'now() updated_at',
+                            ]),
+                            [$ownerType, $instance->id],
+                        )
+                        ->leftJoinSub($this->configure->accountModel::query()
+                            ->select(['id as parent_id'])
+                            ->where('owner_type', $ownerType)
+                            ->where('account_type_id', $parentAccountTypeId), 'parent', 'parent.owner_id', '=',
+                            sprintf('%s.%s', $binding->table, $binding->keyName));
+                } else {
+                    $columns = ['owner_id', 'owner_type', 'account_type_id', 'created_at', 'updated_at'];
+                    $query
+                        ->selectRaw(
+                            implode(',', [
+                                $binding->keyName,
+                                '?',
+                                '?',
+                                'now() created_at',
+                                'now() updated_at',
+                            ]),
+                            [$ownerType, $instance->id],
+                        );
+                }
+
+
+                $this->configure->accountModel::query()->insertUsing($columns, $query);
             }
 
             return $instance;
@@ -109,7 +148,11 @@ class LunaAssetsAccount extends LunaModule
     public function getAllAccountTypes(): Collection
     {
         return collect($this->cache->rememberForever('assets-account:types', function () {
-            return $this->configure->accountTypeModel::query()->get()->all();
+            return $this->configure->accountTypeModel::query()
+                ->with(['parent', 'children'])
+                ->orderBy('parent_id')
+                ->get()
+                ->all();
         }));
     }
 
@@ -120,10 +163,20 @@ class LunaAssetsAccount extends LunaModule
 
             $types->each(function (AssetsAccountType $accountType) use ($owner) {
                 Model::unguarded(function () use ($accountType, $owner) {
+                    $parentAccount = null;
+                    if ($accountType->parent) {
+                        $parentAccount = $this->configure->accountModel::query()
+                            ->where('owner_id', $owner->getOperatorId())
+                            ->where('owner_type', $owner->getOperatorType())
+                            ->where('account_type_id', $accountType->parent->id)
+                            ->first();
+                    }
+
                     $this->configure->accountModel::query()->create([
                         'owner_id' => $owner->getOperatorId(),
                         'owner_type' => $owner->getOperatorType(),
                         'account_type_id' => $accountType->id,
+                        'parent_id' => $parentAccount?->id ?? 0,
                     ]);
                 });
             });

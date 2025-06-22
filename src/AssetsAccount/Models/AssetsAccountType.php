@@ -9,6 +9,7 @@ use Dybasedev\LunaPrototype\Foundation\NamedId;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  *
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array<array-key, mixed> $config
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, AssetsAccountType> $children
+ * @property-read int|null $children_count
  * @property-read Handler|null $handler
  * @property-read AssetsAccountType|null $parent
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AssetsAccountType newModelQuery()
@@ -50,6 +53,15 @@ class AssetsAccountType extends Model
     {
         return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountTypeModel,
             'parent_id', 'id');
+    }
+
+    /**
+     * @throws BindingResolutionException
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(luna_module_configure(LunaAssetsAccountConfigure::class)->accountTypeModel, 'parent_id',
+            'id');
     }
 
     protected function casts(): array
