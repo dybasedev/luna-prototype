@@ -107,7 +107,7 @@ class LunaAssetsAccount extends LunaModule
                             [$ownerType, $instance->id],
                         )
                         ->leftJoinSub($this->configure->accountModel::query()
-                            ->select(['id as parent_id'])
+                            ->select(['id as parent_id', 'owner_id'])
                             ->where('owner_type', $ownerType)
                             ->where('account_type_id', $parentAccountTypeId), 'parent', 'parent.owner_id', '=',
                             sprintf('%s.%s', $binding->tableName, $binding->keyName));
