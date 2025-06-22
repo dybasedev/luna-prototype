@@ -2,15 +2,19 @@
 
 namespace Dybasedev\LunaPrototype\AssetsAccount\Models;
 
+use Dybasedev\LunaPrototype\AssetsAccount\LunaAssetsAccountConfigure;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Dybasedev\LunaPrototype\Foundation\Handler\WithModelHandler;
 use Dybasedev\LunaPrototype\Foundation\NamedId;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  *
  *
  * @property int $id 非自增，根据名称通过 hashcode 得出，避免迁移数据导致的关联错误
+ * @property int $parent_id 父级账户类型 ID
  * @property string $name
  * @property string $display_name
  * @property string $description
@@ -37,6 +41,15 @@ class AssetsAccountType extends Model
     use NamedId, WithModelHandler;
 
     protected $table = 'luna_assets_account_types';
+
+    /**
+     * @throws BindingResolutionException
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountTypeModel,
+            'parent_id', 'id');
+    }
 
     protected function casts(): array
     {

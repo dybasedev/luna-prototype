@@ -2,6 +2,7 @@
 
 namespace Dybasedev\LunaPrototype\Schedule\Models;
 
+use Dybasedev\LunaPrototype\Foundation\NamedId;
 use Dybasedev\LunaPrototype\Schedule\LunaScheduleConfigure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +23,7 @@ use Illuminate\Support\Str;
  * @property string $timezone 时区
  * @property string $command 命令
  * @property array<array-key, mixed> $payload 配置
- * @property int $status 状态
+ * @property int $enabled 状态
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read ScheduleTaskLog|null $latestLog
@@ -48,9 +49,13 @@ use Illuminate\Support\Str;
  */
 class ScheduleTask extends Model
 {
-    public function scopeActive(Builder $query): void
+    use NamedId;
+
+    protected $table = 'luna_schedule_tasks';
+
+    public function scopeEnabled(Builder $query): void
     {
-        $query->where('status', true);
+        $query->where('enabled', true);
     }
 
     public function compileParameters(bool $console = false): array

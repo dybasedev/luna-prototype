@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->string('timezone')->comment('时区');
             $table->string('command')->comment('命令');
             $table->json('payload')->comment('配置');
-            $table->unsignedTinyInteger('status')->default(1)->comment('状态');
+            $table->boolean('enabled')->default(true)->comment('是否启用');
             $table->timestamps();
 
             $table->comment('定时任务表');

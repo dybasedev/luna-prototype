@@ -36,6 +36,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 */
 class ScheduleTaskLog extends Model
 {
+    protected $table = 'luna_schedule_task_logs';
+
     protected $guarded = [];
 
     /**
