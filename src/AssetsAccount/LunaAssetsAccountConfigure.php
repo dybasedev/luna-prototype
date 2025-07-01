@@ -7,6 +7,7 @@ use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccountChangeLog;
 use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccountType;
 use Dybasedev\LunaPrototype\Foundation\BusinessEvent\LunaBusinessEventConfigure;
 use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure;
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
@@ -110,6 +111,9 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
     public function boot(Container $container): void
     {
         $container->make(LunaBusinessEventConfigure::class)->group('account', '账户事件');
+        $container->make(LunaHandlerConfigure::class)->group('account', '账户', function ($register) {
+            $register->handler(StandardAccountHandler::class);
+        });
     }
 
 

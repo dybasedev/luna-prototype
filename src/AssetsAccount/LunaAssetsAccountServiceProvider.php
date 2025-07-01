@@ -12,9 +12,5 @@ class LunaAssetsAccountServiceProvider extends ServiceProvider
         $this->publishesMigrations([
             __DIR__ . '/migrations' => database_path('migrations'),
         ]);
-
-        $this->app[LunaHandlerConfigure::class]->group('account', '账户', function ($register) {
-            $register->handler(StandardAccountHandler::class);
-        });
     }
 }

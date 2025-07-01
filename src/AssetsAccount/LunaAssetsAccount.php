@@ -269,6 +269,13 @@ class LunaAssetsAccount extends LunaModule
         })->values()->toArray();
     }
 
+    /**
+     * 获取会话持有者的指定账户
+     *
+     * @param SessionHolder $owner
+     * @param string|int $account
+     * @return AssetsAccount
+     */
     public function ownerAccount(SessionHolder $owner, string|int $account): AssetsAccount
     {
         $account = is_string($account) ? hash_code($account) : $account;
@@ -280,6 +287,33 @@ class LunaAssetsAccount extends LunaModule
     }
 
     /**
+     * 获取会话持有者的所有主账户
+     *
+     * @param SessionHolder $owner
+     * @param bool $withChildren
+     * @return Collection
+     */
+    public function ownerMainAccounts(SessionHolder $owner, bool $withChildren = false): Collection
+    {
+        $query = $this->configure->accountModel::query();
+
+        if ($withChildren) {
+            $query->with('children');
+        }
+
+        return collect(
+            $query
+                ->where('owner_id', $owner->getOperatorId())
+                ->where('owner_type', $owner->getOperatorType())
+                ->where('parent_id', 0)
+                ->get()
+                ->all()
+        );
+    }
+
+    /**
+     * 创建资产账户操作对象
+     *
      * @throws BindingResolutionException
      */
     public function createAccountOperation(): AccountOperations
