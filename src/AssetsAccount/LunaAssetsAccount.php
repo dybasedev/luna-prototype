@@ -31,6 +31,57 @@ class LunaAssetsAccount extends LunaModule
 
     }
 
+    protected function createAccountTypeInstance(
+        string $name,
+        string|int $handler,
+        ?string $displayName = null,
+        ?string $description = '',
+        ?Repository $config = null,
+        string|int|AssetsAccountType|null $parent = null,
+    ): AssetsAccountType {
+        $parentAccountTypeId = 0;
+        if ($parent) {
+            if ($parent instanceof AssetsAccountType) {
+                $parentAccountTypeId = $parent->id;
+            } else {
+                $parentAccountTypeId = is_string($parent) ? hash_code($parent) : $parent;
+                // 检查父级账户类型是否存在
+                if (!$this->getAllAccountTypesWithoutCache()->where('id', $parentAccountTypeId)->count()) {
+                    throw LunaException::create('Parent account type not exists.');
+                }
+            }
+        }
+
+        /** @var AssetsAccountType $instance */
+        $instance = new ($this->configure->accountTypeModel)();
+        $instance->forceFill([
+            'parent_id' => $parentAccountTypeId,
+            'name' => $name,
+            'display_name' => $displayName ?? $name,
+            'description' => $description ?? '',
+            'handler_id' => is_string($handler) ? hash_code($handler) : $handler,
+            'config' => $config->all(),
+        ]);
+
+
+        if (!$instance->save()) {
+            throw new RuntimeException('Save entity failed');
+        }
+
+        return $instance;
+    }
+
+    /**
+     * 创建账户类型
+     *
+     * @param string $name
+     * @param string|int $handler
+     * @param string|null $displayName
+     * @param string|null $description
+     * @param Repository|null $config
+     * @param string|int|AssetsAccountType|null $parent
+     * @return AssetsAccountType
+     */
     public function createAccountType(
         string $name,
         string|int $handler,
@@ -38,7 +89,7 @@ class LunaAssetsAccount extends LunaModule
         ?string $description = '',
         ?Repository $config = null,
         string|int|AssetsAccountType|null $parent = null,
-    ) {
+    ): AssetsAccountType {
         if (!$this->handler->existsEntityHandler($handler)) {
             throw LunaException::create('Account handler not defined.');
         }
@@ -48,34 +99,10 @@ class LunaAssetsAccount extends LunaModule
         }
 
         $processing = function () use ($handler, $name, $config, $description, $displayName, $parent) {
-            $parentAccountTypeId = 0;
-            if ($parent) {
-                if ($parent instanceof AssetsAccountType) {
-                    $parentAccountTypeId = $parent->id;
-                } else {
-                    $parentAccountTypeId = is_string($parent) ? hash_code($parent) : $parent;
-                    // 检查父级账户类型是否存在
-                    if (!$this->getAllAccountTypes()->where('id', $parentAccountTypeId)->count()) {
-                        throw LunaException::create('Parent account type not exists.');
-                    }
-                }
-            }
+            $instance = $this->createAccountTypeInstance($name, $handler, $displayName, $description, $config,
+                $parent);
 
-            /** @var AssetsAccountType $instance */
-            $instance = new ($this->configure->accountTypeModel)();
-            $instance->forceFill([
-                'parent_id' => $parentAccountTypeId,
-                'name' => $name,
-                'display_name' => $displayName ?? $name,
-                'description' => $description ?? '',
-                'handler_id' => is_string($handler) ? hash_code($handler) : $handler,
-                'config' => $config->all(),
-            ]);
-
-
-            if (!$instance->save()) {
-                throw new RuntimeException('Save entity failed');
-            }
+            $parentAccountTypeId = $instance->parent_id;
 
             // 针对绑定账户的对象进行创建
             foreach ($this->configure->bindings as $binding) {
@@ -145,21 +172,54 @@ class LunaAssetsAccount extends LunaModule
         }
     }
 
-    public function getAllAccountTypes(): Collection
+    public function getAllAccountTypesWithoutCache(): Collection
     {
-        return collect($this->cache->rememberForever('assets-account:types', function () {
-            return $this->configure->accountTypeModel::query()
+        return collect(
+            $this->configure->accountTypeModel::query()
                 ->with(['parent', 'children'])
                 ->orderBy('parent_id')
                 ->get()
-                ->all();
+                ->all()
+        );
+    }
+
+    /**
+     * 获取所有账户类型
+     *
+     * @return Collection<AssetsAccountType>
+     */
+    public function getAllAccountTypes(bool $withoutCache = false): Collection
+    {
+        if ($withoutCache) {
+            return $this->getAllAccountTypesWithoutCache();
+        }
+
+        return collect($this->cache->rememberForever('assets-account:types', function () {
+            return $this->getAllAccountTypesWithoutCache()->all();
         }));
+    }
+
+    protected function createAccountInstance(
+        int $ownerType,
+        int $ownerId,
+        int $accountTypeId,
+        ?int $parentId = null
+    ): AssetsAccount {
+        /** @var AssetsAccount $instance */
+        $instance = new ($this->configure->accountModel)();
+        $instance->owner_id = $ownerId;
+        $instance->owner_type = $ownerType;
+        $instance->account_type_id = $accountTypeId;
+        $instance->parent_id = $parentId ?? 0;
+        $instance->save();
+
+        return $instance;
     }
 
     public function createOwnerAccount(SessionHolder $owner): void
     {
         $processing = function () use ($owner) {
-            $types = $this->getAllAccountTypes();
+            $types = $this->getAllAccountTypesWithoutCache();
 
             $types->each(function (AssetsAccountType $accountType) use ($owner) {
                 Model::unguarded(function () use ($accountType, $owner) {
@@ -172,12 +232,12 @@ class LunaAssetsAccount extends LunaModule
                             ->first();
                     }
 
-                    $this->configure->accountModel::query()->create([
-                        'owner_id' => $owner->getOperatorId(),
-                        'owner_type' => $owner->getOperatorType(),
-                        'account_type_id' => $accountType->id,
-                        'parent_id' => $parentAccount?->id ?? 0,
-                    ]);
+                    $this->createAccountInstance(
+                        $owner->getOperatorType(),
+                        $owner->getOperatorId(),
+                        $accountType->id,
+                        $parentAccount?->id
+                    );
                 });
             });
         };
