@@ -146,16 +146,25 @@ class LunaException extends RuntimeException
         $previous = $this->getPrevious();
 
         if ($previous) {
-            $mapper = $configure->exceptionMappers[$previous::class] ?? null;
+            if ($previous instanceof LunaException) {
+                $this->withDisplayMessage($previous->displayMessage)
+                    ->withBehaviour($previous->behaviour)
+                    ->withData($previous->data)
+                    ->withHttpStatus($previous->httpStatus);
 
-            if ($mapper) {
-                $result = $mapper($previous);
-                $this->reportable = $result['report'] ?? true;
+                $this->reportable = $previous->reportable;
+            } else {
+                $mapper = $configure->exceptionMappers[$previous::class] ?? null;
 
-                $this->withData($result['data'] ?? [])
-                    ->withDisplayMessage($result['message'] ?? null)
-                    ->withBehaviour($result['behaviour'] ?? null)
-                    ->withHttpStatus($result['httpStatus'] ?? 500);
+                if ($mapper) {
+                    $result = $mapper($previous);
+                    $this->reportable = $result['report'] ?? true;
+
+                    $this->withData($result['data'] ?? [])
+                        ->withDisplayMessage($result['message'] ?? null)
+                        ->withBehaviour($result['behaviour'] ?? null)
+                        ->withHttpStatus($result['httpStatus'] ?? 500);
+                }
             }
         }
 
