@@ -53,7 +53,8 @@ class AssetsAccount extends Model
      */
     public function accountType(): BelongsTo
     {
-        return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountTypeModel, 'account_type_id', 'id');
+        return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountTypeModel,
+            'account_type_id', 'id');
     }
 
     /**
@@ -61,7 +62,8 @@ class AssetsAccount extends Model
      */
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountModel, 'parent_id', 'id');
+        return $this->belongsTo(luna_module_configure(LunaAssetsAccountConfigure::class)->accountModel, 'parent_id',
+            'id');
     }
 
     /**
@@ -69,6 +71,25 @@ class AssetsAccount extends Model
      */
     public function children(): HasMany
     {
-        return $this->hasMany(luna_module_configure(LunaAssetsAccountConfigure::class)->accountModel, 'parent_id', 'id');
+        return $this->hasMany(luna_module_configure(LunaAssetsAccountConfigure::class)->accountModel, 'parent_id',
+            'id');
+    }
+
+    /**
+     * 是否存在子账户
+     *
+     * @return bool
+     */
+    public function existsChildren(): bool
+    {
+        if ($this->relationLoaded('children')) {
+            return $this->children->count() > 0;
+        }
+
+        return static::query()
+            ->where('owner_id', $this->owner_id)
+            ->where('owner_type', $this->owner_type)
+            ->where('parent_id', $this->id)
+            ->exists();
     }
 }

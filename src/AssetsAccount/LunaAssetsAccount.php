@@ -274,12 +274,19 @@ class LunaAssetsAccount extends LunaModule
      *
      * @param SessionHolder $owner
      * @param string|int $account
+     * @param bool $withChildren
      * @return AssetsAccount
      */
-    public function ownerAccount(SessionHolder $owner, string|int $account): AssetsAccount
+    public function ownerAccount(SessionHolder $owner, string|int $account, bool $withChildren = false): AssetsAccount
     {
         $account = is_string($account) ? hash_code($account) : $account;
-        return $this->configure->accountModel::query()
+        $query = $this->configure->accountModel::query();
+
+        if ($withChildren) {
+            $query->with('children');
+        }
+
+        return $query
             ->where('owner_id', $owner->getOperatorId())
             ->where('owner_type', $owner->getOperatorType())
             ->where('account_type_id', $account)
