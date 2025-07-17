@@ -178,14 +178,14 @@ class AccountTransferOperationBuilder extends AccountOperationBuilder
         return [
             [
                 'account_id' => $this->operation['from']['account_id'],
-                'amount' => $this->operation['amount'],
+                'amount' => '-' . $this->operation['amount'], // 转出为负数
                 'balance_type' => $this->operation['from']['balance_type'],
                 'payload' => $this->operation['payload'] ?? [],
                 'event_id' => $this->operation['event_id'],
             ],
             [
                 'account_id' => $this->operation['to']['account_id'],
-                'amount' => $this->operation['amount'],
+                'amount' => $this->operation['amount'], // 转入为正数
                 'balance_type' => $this->operation['to']['balance_type'],
                 'payload' => $this->operation['payload'] ?? [],
                 'event_id' => $this->operation['event_id'],

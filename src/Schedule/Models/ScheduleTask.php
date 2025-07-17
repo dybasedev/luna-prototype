@@ -53,14 +53,31 @@ class ScheduleTask extends Model
 
     protected $table = 'luna_schedule_tasks';
 
+    protected $fillable = [
+        'name',
+        'display_name', 
+        'description',
+        'expression',
+        'expression_type',
+        'timezone',
+        'command',
+        'payload',
+        'enabled',
+    ];
+
     public function scopeEnabled(Builder $query): void
+    {
+        $query->where('enabled', true);
+    }
+
+    public function scopeActive(Builder $query): void
     {
         $query->where('enabled', true);
     }
 
     public function compileParameters(bool $console = false): array
     {
-        if (isset($this->payload['parameters'])) {
+        if (isset($this->payload['parameters']) && is_string($this->payload['parameters'])) {
             $regex = '/(?=\S)[^\'"\s]*(?:\'[^\']*\'[^\'"\s]*|"[^"]*"[^\'"\s]*)*/';
             preg_match_all($regex, $this->payload['parameters'], $matches, PREG_SET_ORDER, 0);
 

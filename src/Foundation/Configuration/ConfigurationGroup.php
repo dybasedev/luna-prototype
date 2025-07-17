@@ -95,37 +95,41 @@ class ConfigurationGroup
             return $this->repositories[$name];
         }
 
-        if ($this->cache) {
-            $configuration = $this->cache->remember(
-                sprintf('config:%s:%s', $this->group, $name),
-                random_int(60, 120),
-                function () use ($name) {
-                    $configuration = $this->getConfigurationRecord($name);
+        try {
+            if ($this->cache) {
+                $configuration = $this->cache->remember(
+                    sprintf('config:%s:%s', $this->group, $name),
+                    random_int(60, 120),
+                    function () use ($name) {
+                        $configuration = $this->getConfigurationRecord($name);
 
-                    if (!$configuration) {
-                        throw new LunaException('Configuration not exists');
+                        if (!$configuration) {
+                            throw new LunaException('Configuration not exists');
+                        }
+
+                        return $configuration->toArray();
                     }
+                );
+            } else {
+                $configuration = $this->getConfigurationRecord($name);
 
-                    return $configuration->toArray();
+                if (!$configuration) {
+                    throw new LunaException('Configuration not exists');
                 }
-            );
-        } else {
-            $configuration = $this->getConfigurationRecord($name);
 
-            if (!$configuration) {
-                throw new LunaException('Configuration not exists');
+                $configuration = $configuration->toArray();
             }
 
-            $configuration = $configuration->toArray();
-        }
+            if (isset($configuration['current'])) {
+                $bind = $this->configure->repositoryBinds[$this->group][$name] ?? $this->configure->defaultRepository;
+                return $this->repositories[$name] = new $bind($configuration['current']['value']);
+            }
 
-        if (isset($configuration['current'])) {
-            $bind = $this->configure->repositoryBinds[$this->group][$name] ?? $this->configure->defaultRepository;
-            return $this->repositories[$name] = new $bind($configuration['current']['value']);
+            // 配置项不存在
+            throw new LunaException('Configuration not exists');
+        } catch (RandomException $e) {
+            throw new LunaException('Configuration cache error: ' . $e->getMessage(), 0, $e);
         }
-
-        // 配置项不存在
-        throw new LunaException('Configuration not exists');
     }
 
     protected function target(string $key): array

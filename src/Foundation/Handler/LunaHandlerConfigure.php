@@ -84,6 +84,32 @@ class LunaHandlerConfigure extends LunaModuleConfigure
         return $this;
     }
 
+    /**
+     * Add a handler group (alias for group method)
+     *
+     * @param string $name Group name
+     * @param string|null $displayName Display name
+     * @return $this
+     */
+    public function addGroup(string $name, ?string $displayName = null): static
+    {
+        return $this->group($name, $displayName);
+    }
+
+    /**
+     * Add a handler to the list
+     *
+     * @param string $handlerClass Handler class name
+     * @return $this
+     */
+    public function addHandler(string $handlerClass): static
+    {
+        if (!in_array($handlerClass, $this->handlers)) {
+            $this->handlers[] = $handlerClass;
+        }
+        return $this;
+    }
+
     public function register(Container $container): void
     {
         $container->singleton('luna.handler', function ($app) {

@@ -37,7 +37,7 @@ class Repository implements Arrayable
         return $this;
     }
 
-    public function set($key, $value, bool $overwrite = true): static
+    public function set(string|null $key, mixed $value, bool $overwrite = true): static
     {
         if ($key) {
             data_set($this->config, $key, $value, $overwrite);
@@ -53,7 +53,7 @@ class Repository implements Arrayable
         return $this;
     }
 
-    public function get($key, $default = null): mixed
+    public function get(string|null $key, mixed $default = null): mixed
     {
         return data_get($this->all(), $key, $default);
     }

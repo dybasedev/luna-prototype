@@ -178,5 +178,65 @@ class Field
         return $this;
     }
 
+    /**
+     * 快速创建文本字段
+     *
+     * @param string|array $name 字段名称
+     * @param string|null $title 标题
+     * @param string|null $placeholder 占位符
+     * @return static
+     */
+    public static function text(string|array $name, ?string $title = null, ?string $placeholder = null): static
+    {
+        return (new static($name))
+            ->type('text')
+            ->title($title)
+            ->placeholder($placeholder);
+    }
 
+    /**
+     * 快速创建数字字段
+     *
+     * @param string|array $name 字段名称
+     * @param string|null $title 标题
+     * @param string|null $placeholder 占位符
+     * @return static
+     */
+    public static function number(string|array $name, ?string $title = null, ?string $placeholder = null): static
+    {
+        return (new static($name))
+            ->type('number')
+            ->title($title)
+            ->placeholder($placeholder);
+    }
+
+    /**
+     * 快速创建密码字段
+     *
+     * @param string|array $name 字段名称
+     * @param string|null $title 标题
+     * @param string|null $placeholder 占位符
+     * @return static
+     */
+    public static function password(string|array $name, ?string $title = null, ?string $placeholder = null): static
+    {
+        return (new static($name))
+            ->type('password')
+            ->title($title)
+            ->placeholder($placeholder);
+    }
+
+    /**
+     * 快速创建选择字段
+     *
+     * @param string|array $name 字段名称
+     * @param string|null $title 标题
+     * @return static
+     */
+    public static function select(string|array $name, ?string $title = null): static
+    {
+        return (new static($name))
+            ->type('select')
+            ->title($title);
+    }
 }

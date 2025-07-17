@@ -45,13 +45,13 @@ return new class extends Migration {
         });
 
         Schema::create('luna_assets_account_change_logs', function (Blueprint $table) {
-            $this->createAccountChangeLog($table);
+            $this->createAccountChangeLog($table, 'change_log');
 
             $table->comment('资产账户变动日志表');
         });
 
         Schema::create('luna_assets_process_account_change_logs', function (Blueprint $table) {
-            $this->createAccountChangeLog($table);
+            $this->createAccountChangeLog($table, 'process_change_log');
             $table->unsignedInteger('process_id');
 
             $table->comment('资产账户变动过程日志表');
@@ -59,7 +59,7 @@ return new class extends Migration {
 
     }
 
-    protected function createAccountChangeLog(Blueprint $table): void
+    protected function createAccountChangeLog(Blueprint $table, string $prefix): void
     {
         $table->id();
         $table->foreignId('owner_id')->comment('所有者ID');
@@ -73,9 +73,9 @@ return new class extends Migration {
         $table->json('payload')->comment('载荷');
         $table->timestamps();
 
-        $table->index(['owner_id', 'owner_type'], 'owner_index');
-        $table->index(['account_type_id', 'event_id'], 'account_event_index');
-        $table->index(['created_at'], 'created_at_index');
+        $table->index(['owner_id', 'owner_type'], $prefix . '_owner_index');
+        $table->index(['account_type_id', 'event_id'], $prefix . '_account_event_index');
+        $table->index(['created_at'], $prefix . '_created_at_index');
     }
 
     /**

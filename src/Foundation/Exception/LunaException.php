@@ -120,70 +120,156 @@ class LunaException extends RuntimeException
             $throwable)->usePrevious($usePrevious);
     }
 
+    /**
+     * 报告异常
+     *
+     * 根据配置决定是否报告异常，并使用配置的报告器进行报告。
+     * 如果设置了使用前一个异常，则会扩展前一个异常的信息。
+     *
+     * @param LunaExceptionConfigure $configure 异常配置对象
+     * @return bool 是否成功报告异常
+     */
     public function report(LunaExceptionConfigure $configure): bool
     {
-        if ($this->usePrevious) {
-            $this->extendPreviousException($configure);
-        }
-
-        if ($this->reportable) {
-            $reporter = $configure->reporter ?? function (Throwable $throwable) {
-                Log::error($throwable);
-            };
-
+        try {
             if ($this->usePrevious) {
-                $reporter($this->getPrevious());
-            } else {
-                return false;
+                $this->extendPreviousException($configure);
             }
-        }
 
-        return true;
+            if ($this->reportable) {
+                $reporter = $configure->reporter ?? function (Throwable $throwable) {
+                    Log::error($throwable->getMessage(), [
+                        'exception' => $throwable,
+                        'trace' => $throwable->getTraceAsString(),
+                        'file' => $throwable->getFile(),
+                        'line' => $throwable->getLine(),
+                    ]);
+                };
+
+                if ($this->usePrevious && $this->getPrevious()) {
+                    $reporter($this->getPrevious());
+                } else {
+                    $reporter($this);
+                }
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            // 确保异常报告本身不会抛出异常
+            Log::error('Failed to report Luna exception', [
+                'original_exception' => $this->getMessage(),
+                'report_error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
+    /**
+     * 扩展前一个异常的信息
+     *
+     * 根据前一个异常的类型，继承其显示信息、行为、数据和HTTP状态码。
+     * 如果前一个异常是 LunaException，则直接继承其属性。
+     * 否则，使用异常映射器进行转换。
+     *
+     * @param LunaExceptionConfigure $configure 异常配置对象
+     * @return void
+     */
     private function extendPreviousException(LunaExceptionConfigure $configure): void
     {
         $previous = $this->getPrevious();
 
-        if ($previous) {
-            if ($previous instanceof LunaException) {
-                $this->withDisplayMessage($previous->displayMessage)
-                    ->withBehaviour($previous->behaviour)
-                    ->withData($previous->data)
-                    ->withHttpStatus($previous->httpStatus);
+        if (!$previous) {
+            return;
+        }
 
+        try {
+            if ($previous instanceof LunaException) {
+                // 如果前一个异常是 LunaException，直接继承其属性
+                if ($previous->displayMessage) {
+                    $this->withDisplayMessage($previous->displayMessage);
+                }
+                if ($previous->behaviour) {
+                    $this->withBehaviour($previous->behaviour);
+                }
+                if ($previous->data) {
+                    $this->withData($previous->data);
+                }
+                $this->withHttpStatus($previous->httpStatus);
                 $this->reportable = $previous->reportable;
             } else {
+                // 使用异常映射器处理其他类型的异常
                 $mapper = $configure->exceptionMappers[$previous::class] ?? null;
 
                 if ($mapper) {
                     $result = $mapper($previous);
                     $this->reportable = $result['report'] ?? true;
 
-                    $this->withData($result['data'] ?? [])
-                        ->withDisplayMessage($result['message'] ?? null)
-                        ->withBehaviour($result['behaviour'] ?? null)
-                        ->withHttpStatus($result['httpStatus'] ?? 500);
+                    if (isset($result['data'])) {
+                        $this->withData($result['data']);
+                    }
+                    if (isset($result['message'])) {
+                        $this->withDisplayMessage($result['message']);
+                    }
+                    if (isset($result['behaviour'])) {
+                        $this->withBehaviour($result['behaviour']);
+                    }
+                    $this->withHttpStatus($result['httpStatus'] ?? 500);
+                } else {
+                    // 没有映射器时的默认处理
+                    $this->withDisplayMessage($previous->getMessage());
+                    $this->withHttpStatus(500);
                 }
             }
+        } catch (Throwable $e) {
+            // 确保异常扩展过程不会抛出异常
+            Log::warning('Failed to extend previous exception', [
+                'previous_exception' => $previous->getMessage(),
+                'extend_error' => $e->getMessage(),
+            ]);
         }
-
     }
 
+    /**
+     * 渲染异常响应
+     *
+     * 根据请求类型和配置决定如何渲染异常响应。
+     * 支持 JSON 响应和传统的 HTML 响应。
+     *
+     * @param Request $request HTTP 请求对象
+     * @return bool|Response 响应对象或 false（让 Laravel 默认处理）
+     */
     public function render(Request $request): bool|Response
     {
-        $configure = app(LunaExceptionConfigure::class);
+        try {
+            $configure = app(LunaExceptionConfigure::class);
 
-        if ($this->usePrevious) {
-            $this->extendPreviousException($configure);
+            if ($this->usePrevious) {
+                $this->extendPreviousException($configure);
+            }
+
+            // 如果配置为总是返回 JSON 响应
+            if ($configure->alwaysJsonRender) {
+                return err($this);
+            }
+
+            // 根据请求类型决定响应格式
+            return $request->expectsJson()
+                ? err($this)
+                : false; // 返回 false 让 Laravel 使用默认的异常处理
+        } catch (Throwable $e) {
+            // 确保异常渲染过程不会抛出异常
+            Log::error('Failed to render Luna exception', [
+                'original_exception' => $this->getMessage(),
+                'render_error' => $e->getMessage(),
+            ]);
+            
+            // 返回一个安全的错误响应
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while processing the request',
+                'data' => null,
+                'behaviour' => null,
+            ], 500);
         }
-
-        if ($configure->alwaysJsonRender) {
-            return err($this);
-        }
-
-        return $request->expectsJson()
-            ? err($this)
-            : false;
     }
 }

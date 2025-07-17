@@ -79,7 +79,8 @@ class LunaHandler
             'handler' => $handler,
             'config' => $config->all(),
             'display_name' => $displayName ?? $name,
-            'description' => $description ?? ''
+            'description' => $description ?? '',
+            'enabled' => true
         ]);
 
         if (!$entityInstance->save()) {

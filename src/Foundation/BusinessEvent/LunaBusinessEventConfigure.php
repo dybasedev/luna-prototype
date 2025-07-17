@@ -47,6 +47,18 @@ class LunaBusinessEventConfigure extends LunaModuleConfigure
         return $this;
     }
 
+    /**
+     * Add a group (alias for group method)
+     *
+     * @param string $name Group name
+     * @param string|null $displayName Display name
+     * @return $this
+     */
+    public function addGroup(string $name, ?string $displayName = null): static
+    {
+        return $this->group($name, $displayName);
+    }
+
     public function register(Container $container): void
     {
         $container->singleton('luna.business-event', function ($app) {
