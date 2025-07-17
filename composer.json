@@ -1,5 +1,8 @@
 {
   "name": "dybasedev/luna-prototype",
+  "description": "基于 Laravel 的模块化快速业务原型开发框架",
+  "type": "library",
+  "license": "Apache-2.0",
   "autoload": {
     "psr-4": {
       "Dybasedev\\LunaPrototype\\": "src/"
