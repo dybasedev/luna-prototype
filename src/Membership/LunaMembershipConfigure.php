@@ -3,6 +3,13 @@
 namespace Dybasedev\LunaPrototype\Membership;
 
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure;
+use Dybasedev\LunaPrototype\Membership\Models\MembershipMilestone;
+use Dybasedev\LunaPrototype\Membership\Models\MembershipMilestoneLog;
+use Dybasedev\LunaPrototype\Membership\Models\MembershipMilestoneType;
+use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Contracts\Container\Container;
 
 /**
  * Luna 会员系统配置类
@@ -33,6 +40,28 @@ class LunaMembershipConfigure extends LunaModuleConfigure
     protected(set) array $bindings = [];
 
     /**
+     * @var class-string<MembershipMilestoneType>
+     */
+    protected(set) string $milestoneTypeModel = MembershipMilestoneType::class;
+
+    /**
+     * @var class-string<MembershipMilestone>
+     */
+    protected(set) string $milestoneModel = MembershipMilestone::class;
+
+    /**
+     * @var class-string<MembershipMilestoneLog>
+     */
+    protected(set) string $milestoneLogModel = MembershipMilestoneLog::class;
+
+    /**
+     * 是否启用里程碑功能
+     *
+     * @var bool
+     */
+    protected(set) bool $enableMilestone = true;
+
+    /**
      * 获取模块名称
      *
      * @return string 会员系统模块的标识名称
@@ -40,6 +69,96 @@ class LunaMembershipConfigure extends LunaModuleConfigure
     public function name(): string
     {
         return 'luna.membership';
+    }
+
+    /**
+     * 获取模块依赖
+     *
+     * @return array
+     */
+    public function dependencies(): array
+    {
+        return ['luna_foundation', 'luna_handler'];
+    }
+
+    /**
+     * 获取服务提供者
+     *
+     * @return string|null
+     */
+    public function serviceProvider(): ?string
+    {
+        return LunaMembershipServiceProvider::class;
+    }
+
+    /**
+     * 注册模块服务
+     *
+     * @param Container $container
+     * @return void
+     */
+    public function register(Container $container): void
+    {
+        $container->singleton('luna.membership', function($app) {
+            return new LunaMembership(
+                $app->make(LunaMembershipConfigure::class),
+                $app->make('cache'),
+                $app->make(LunaHandler::class)
+            );
+        });
+
+        $container->alias('luna.membership', LunaMembership::class);
+    }
+
+    /**
+     * 启动模块
+     *
+     * @param Container $container
+     * @return void
+     * @throws BindingResolutionException
+     */
+    public function boot(Container $container): void
+    {
+        // 如果启用了里程碑功能，自动注册会员里程碑处理器组
+        if ($this->enableMilestone) {
+            $container->make(LunaHandlerConfigure::class)->group('membership-milestones', '会员里程碑');
+        }
+    }
+
+    /**
+     * 替换默认的里程碑类型模型
+     *
+     * @param class-string<MembershipMilestoneType> $class
+     * @return $this
+     */
+    public function useMilestoneTypeModel(string $class): static
+    {
+        $this->milestoneTypeModel = $class;
+        return $this;
+    }
+
+    /**
+     * 替换默认的里程碑模型
+     *
+     * @param class-string<MembershipMilestone> $class
+     * @return $this
+     */
+    public function useMilestoneModel(string $class): static
+    {
+        $this->milestoneModel = $class;
+        return $this;
+    }
+
+    /**
+     * 替换默认的里程碑日志模型
+     *
+     * @param class-string<MembershipMilestoneLog> $class
+     * @return $this
+     */
+    public function useMilestoneLogModel(string $class): static
+    {
+        $this->milestoneLogModel = $class;
+        return $this;
     }
 
     /**
@@ -54,6 +173,38 @@ class LunaMembershipConfigure extends LunaModuleConfigure
     {
         $this->bindings[] = $binding;
         return $this;
+    }
+
+    /**
+     * 启用里程碑功能
+     *
+     * @return $this
+     */
+    public function withMilestone(): static
+    {
+        $this->enableMilestone = true;
+        return $this;
+    }
+
+    /**
+     * 禁用里程碑功能
+     *
+     * @return $this
+     */
+    public function withoutMilestone(): static
+    {
+        $this->enableMilestone = false;
+        return $this;
+    }
+
+    /**
+     * 是否启用了里程碑功能
+     *
+     * @return bool
+     */
+    public function isMilestoneEnabled(): bool
+    {
+        return $this->enableMilestone;
     }
 
 }

@@ -2,7 +2,9 @@
 
 namespace Dybasedev\LunaPrototype\Membership;
 
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Dybasedev\LunaPrototype\Foundation\LunaModule;
+use Dybasedev\LunaPrototype\Membership\Milestone\LunaMilestone;
 use Illuminate\Contracts\Cache\Repository as Cache;
 
 /**
@@ -32,15 +34,66 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 class LunaMembership extends LunaModule
 {
     /**
+     * 里程碑管理实例
+     *
+     * @var LunaMilestone|null
+     */
+    protected ?LunaMilestone $milestone = null;
+
+    /**
      * 会员系统管理对象构造函数
      *
      * @param LunaMembershipConfigure $configure 会员系统配置对象
      * @param Cache $cache 缓存接口实例
+     * @param LunaHandler $handler 处理器管理器
      */
     public function __construct(
         protected(set) LunaMembershipConfigure $configure,
-        protected Cache $cache
+        protected Cache $cache,
+        protected LunaHandler $handler
     )
     {
+    }
+
+    /**
+     * 获取里程碑管理实例
+     *
+     * @return LunaMilestone|null 如果未启用里程碑功能返回 null
+     */
+    public function milestone(): ?LunaMilestone
+    {
+        if (!$this->configure->isMilestoneEnabled()) {
+            return null;
+        }
+
+        if (!$this->milestone) {
+            $this->milestone = new LunaMilestone(
+                $this->configure,
+                $this->cache,
+                $this->handler
+            );
+        }
+
+        return $this->milestone;
+    }
+
+    /**
+     * 获取会员绑定配置列表
+     *
+     * @return array<MembershipBinding>
+     */
+    public function getBindings(): array
+    {
+        return $this->configure->bindings;
+    }
+
+    /**
+     * 检查是否启用了里程碑功能
+     *
+     * @return bool
+     */
+    public function isMilestoneEnabled(): bool
+    {
+        return $this->configure->isMilestoneEnabled();
     }
 }

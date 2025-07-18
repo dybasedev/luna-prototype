@@ -22,16 +22,30 @@ return new class extends Migration {
             $table->comment('成员关系索引表');
         });
 
+        Schema::create('luna_membership_milestone_types', function (Blueprint $table) {
+            $table->unsignedInteger('id')->primary()->comment(
+                '非自增，根据名称通过 hashcode 得出，避免迁移数据导致的关联错误'
+            );;
+            $table->string('name')->unique();
+            $table->string('display_name')->default('');
+            $table->string('description')->default('');
+            $table->foreignId('handler_id');
+            $table->json('config');
+            $table->timestamps();
+
+            $table->comment('成员里程碑类型表');
+        });
+
         Schema::create('luna_membership_milestones', function (Blueprint $table) {
             $table->id();
             $table->foreignId('owner_id')->comment('所有者ID');
             $table->unsignedInteger('owner_type')->comment('所有者类型');
-            $table->unsignedInteger('milestone_type')->comment('里程碑类型');
+            $table->unsignedInteger('milestone_type_id')->comment('里程碑类型 ID');
             $table->unsignedInteger('milestone')->comment('里程碑 ID 或里程碑名称的 hash code');
             $table->json('payload');
             $table->timestamps();
 
-            $table->unique(['owner_id', 'owner_type', 'milestone_type'], 'unique_milestone');
+            $table->unique(['owner_id', 'owner_type', 'milestone_type_id'], 'unique_milestone');
             $table->comment('成员里程碑表，用于记录如成员等级等信息');
         });
 
@@ -39,13 +53,13 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('owner_id')->comment('所有者ID');
             $table->unsignedInteger('owner_type')->comment('所有者类型');
-            $table->unsignedInteger('milestone_type')->comment('里程碑类型');
+            $table->unsignedInteger('milestone_type_id')->comment('里程碑类型');
             $table->unsignedInteger('milestone')->comment('里程碑 ID 或里程碑名称的 hash code');
             $table->unsignedInteger('before_milestone')->nullable()->comment('变更前的里程碑 ID 或里程碑名称的 hash code');
             $table->json('payload');
             $table->timestamps();
 
-            $table->index(['owner_id', 'owner_type', 'milestone_type'], 'index_milestone');
+            $table->index(['owner_id', 'owner_type', 'milestone_type_id'], 'index_milestone');
             $table->comment('成员里程碑变更日志表');
         });
     }
@@ -56,6 +70,7 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::dropIfExists('luna_membership_relationship_indices');
+        Schema::dropIfExists('luna_membership_milestone_types');
         Schema::dropIfExists('luna_membership_milestones');
         Schema::dropIfExists('luna_membership_milestone_logs');
     }

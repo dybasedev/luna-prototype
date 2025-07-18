@@ -54,8 +54,15 @@ class SessionHolderBinding
     {
         $this->table = $table;
 
-        if ((new $table) instanceof Model) {
-            $this->tableIsModelClass = true;
+        // 检查是否是模型类
+        if (class_exists($table)) {
+            try {
+                if ((new $table) instanceof Model) {
+                    $this->tableIsModelClass = true;
+                }
+            } catch (\Throwable $e) {
+                // 不是模型类，保持 tableIsModelClass 为 false
+            }
         }
 
         return $this;

@@ -58,6 +58,17 @@ class Repository implements Arrayable
         return data_get($this->all(), $key, $default);
     }
 
+    /**
+     * 检查配置项是否存在
+     *
+     * @param string $key 配置键，支持点语法
+     * @return bool
+     */
+    public function has(string $key): bool
+    {
+        return data_get($this->all(), $key) !== null;
+    }
+
     public function all(): array
     {
         return $this->config;

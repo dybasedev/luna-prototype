@@ -10,7 +10,8 @@
     "files": [
       "src/Foundation/helpers.php",
       "src/AssetsAccount/helpers.php",
-      "src/Schedule/helpers.php"
+      "src/Schedule/helpers.php",
+      "src/Membership/helpers.php"
     ]
   },
   "autoload-dev": {
