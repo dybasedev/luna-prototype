@@ -33,6 +33,11 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
      * @var AssetsAccountBinding[] 绑定资产账户的对象
      */
     protected(set) array $bindings = [];
+    
+    /**
+     * @var class-string<AccountOperations>|null 自定义的账户操作类
+     */
+    protected(set) ?string $accountOperationClass = null;
 
     public function name(): string
     {
@@ -89,6 +94,18 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
     public function bind(AssetsAccountBinding $binding): static
     {
         $this->bindings[] = $binding;
+        return $this;
+    }
+    
+    /**
+     * 设置自定义的账户操作类
+     *
+     * @param class-string<AccountOperations> $class
+     * @return $this
+     */
+    public function useAccountOperationClass(string $class): static
+    {
+        $this->accountOperationClass = $class;
         return $this;
     }
 

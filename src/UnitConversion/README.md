@@ -352,7 +352,7 @@ $this->extendModule(function() {
 Unit Conversion 组件可以与 AssetsAccount 组件无缝集成，提供多币种账户支持：
 
 ```php
-use Dybasedev\LunaPrototype\UnitConversion\Integration\AssetsAccountIntegration;
+use Dybasedev\LunaPrototype\UnitConversion\Integration\AssetsAccount\AssetsAccountIntegration;
 
 // 检查组件是否可用
 if (AssetsAccountIntegration::isAvailable()) {

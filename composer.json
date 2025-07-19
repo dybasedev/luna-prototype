@@ -12,7 +12,9 @@
       "src/AssetsAccount/helpers.php",
       "src/Schedule/helpers.php",
       "src/Membership/helpers.php",
-      "src/UnitConversion/helpers.php"
+      "src/UnitConversion/helpers.php",
+      "src/UnitConversion/Integration/helpers.php",
+      "src/UnitConversion/Integration/AssetsAccount/helpers.php"
     ]
   },
   "autoload-dev": {

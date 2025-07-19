@@ -531,13 +531,28 @@ class LunaAssetsAccount extends LunaModule
      *
      * 创建一个账户操作对象，用于执行账户相关的操作，如余额更新、转账等。
      * 该对象提供了链式调用的接口，方便进行复杂的账户操作。
+     * 支持通过配置或参数指定自定义的操作类。
      *
+     * @param string|null $operationClass 自定义的操作类，必须继承自 AccountOperations
      * @return AccountOperations 账户操作对象实例
      * @throws BindingResolutionException 当服务容器无法解析时抛出
+     * @throws LunaException 当指定的操作类无效时抛出
      */
-    public function createAccountOperation(): AccountOperations
+    public function createAccountOperation(?string $operationClass = null): AccountOperations
     {
-        return app()->make(AccountOperations::class, ['configure' => $this->configure]);
+        // 如果没有指定操作类，使用配置中的默认类或标准类
+        if (!$operationClass) {
+            $operationClass = $this->configure->accountOperationClass ?? AccountOperations::class;
+        }
+        
+        // 验证操作类
+        if (!is_a($operationClass, AccountOperations::class, true)) {
+            throw LunaException::create("Invalid operation class: {$operationClass}")
+                ->withDisplayMessage('指定的操作类必须继承自 AccountOperations')
+                ->withHttpStatus(400);
+        }
+        
+        return app()->make($operationClass, ['configure' => $this->configure]);
     }
 
     /**

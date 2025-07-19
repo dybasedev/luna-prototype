@@ -1,6 +1,6 @@
 <?php
 
-namespace Dybasedev\LunaPrototype\UnitConversion\Integration;
+namespace Dybasedev\LunaPrototype\UnitConversion\Integration\AssetsAccount;
 
 use Dybasedev\LunaPrototype\AssetsAccount\AccountTypeCreationRequest;
 use Dybasedev\LunaPrototype\AssetsAccount\LunaAssetsAccount;

@@ -402,7 +402,7 @@ echo $result->getToAmount();  // 转换后金额
 echo $result->getFee();       // 手续费
 
 // 与资产账户集成
-use Dybasedev\LunaPrototype\UnitConversion\Integration\AssetsAccountIntegration;
+use Dybasedev\LunaPrototype\UnitConversion\Integration\AssetsAccount\AssetsAccountIntegration;
 
 $integration = new AssetsAccountIntegration($unitConversion);
 
