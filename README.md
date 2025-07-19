@@ -23,6 +23,7 @@ Luna Prototype 特别适合快速原型开发、概念验证、初创项目和�
 - **调度任务系统**: 灵活的定时任务和后台作业管理基础框架
 - **会员体系框架**: 可扩展的会员等级和权益管理基础组件
 - **UI组件抽象层**: 前端无关的表单字段和数据展示组件抽象
+- **单位转换系统**: 支持多种单位类型转换，包括货币、长度、重量等，支持动态汇率
 - **配置管理系统**: 支持版本控制的灵活配置存储和管理机制
 - **处理器扩展模式**: 基于处理器的业务逻辑扩展点，支持插件化开发
 - **业务事件系统**: 业务操作事件定义和用户友好的描述格式化机制
@@ -228,6 +229,15 @@ UI组件抽象模块，提供：
 - 数据表列组件
 - 多前端框架适配
 
+### UnitConversion 模块
+
+单位转换模块，提供：
+- 单位类别和定义管理
+- 灵活的转换处理器（固定汇率、动态汇率、条件汇率）
+- 转换上下文和手续费计算
+- 与资产账户系统的集成
+- 批量转换和缓存优化
+
 ## 架构设计
 
 ### 原子化模块设计
@@ -343,6 +353,72 @@ $operation = luna_account_transfer()
     ->to($user2, 'balance') 
     ->event('transfer_money')  // 关联业务事件
     ->amount(100);
+```
+
+### 单位转换系统
+
+UnitConversion 模块提供了灵活的单位转换功能，特别适合多币种、国际化等场景：
+
+```php
+use Dybasedev\LunaPrototype\UnitConversion\LunaUnitConversion;
+use Dybasedev\LunaPrototype\UnitConversion\Attributes\UnitAttributes;
+
+// 获取单位转换实例
+$unitConversion = app(LunaUnitConversion::class);
+
+// 创建货币单位（使用参数类）
+$unitConversion->createUnit('currency', 'USD', 
+    UnitAttributes::create()
+        ->symbol('$')
+        ->displayName('美元')
+        ->precision(2)
+        ->asBase()  // 设为基准单位
+);
+
+$unitConversion->createUnit('currency', 'CNY',
+    UnitAttributes::create()
+        ->symbol('¥')
+        ->displayName('人民币')
+        ->baseValue(7.0)  // 相对于基准单位的汇率
+);
+
+// 简单转换
+$result = $unitConversion->convert('USD', 'CNY', 100);
+echo $result->getToAmount(); // 700.0
+
+// 带上下文的转换（如手续费计算）
+use Dybasedev\LunaPrototype\UnitConversion\Conversion\ConversionContext;
+
+$context = ConversionContext::make([
+    'calculate_fee' => true,
+    'parameters' => [
+        'user_level' => 'vip',
+        'amount_tier' => 'large'
+    ]
+]);
+
+$result = $unitConversion->convert('USD', 'CNY', 1000, $context);
+echo $result->getToAmount();  // 转换后金额
+echo $result->getFee();       // 手续费
+
+// 与资产账户集成
+use Dybasedev\LunaPrototype\UnitConversion\Integration\AssetsAccountIntegration;
+
+$integration = new AssetsAccountIntegration($unitConversion);
+
+// 为账户类型添加货币支持
+$integration->addCurrencySupport($accountType, 'USD');
+
+// 转换账户余额
+$cnyBalance = $integration->convertBalance($account, 'CNY');
+echo $cnyBalance; // 转换后的余额
+
+// 批量转换
+$conversions = [
+    'usd_to_cny' => ['from' => 'USD', 'to' => 'CNY', 'amount' => 100],
+    'usd_to_eur' => ['from' => 'USD', 'to' => 'EUR', 'amount' => 100],
+];
+$results = $unitConversion->batchConvert($conversions);
 ```
 
 ## 测试

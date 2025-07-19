@@ -56,4 +56,18 @@ abstract class BaseHandler
 
         return $this;
     }
+    
+    /**
+     * 获取配置信息
+     * 
+     * @return Repository
+     */
+    public function getConfig(): Repository
+    {
+        if ($this->config === null) {
+            $this->config = new (static::configurationRepository())([]);
+        }
+        
+        return $this->config;
+    }
 }
