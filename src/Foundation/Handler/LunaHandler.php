@@ -136,4 +136,44 @@ class LunaHandler
     {
         return !!$this->getAllEntityHandlers()->where('id', is_string($name) ? hash_code($name) : $name)->count();
     }
+
+    /**
+     * 创建处理器实例
+     * 
+     * @param string|int $name 处理器名称或ID
+     * @return BaseHandler
+     * @throws RuntimeException
+     */
+    public function createHandlerInstance(string|int $name): BaseHandler
+    {
+        // 获取实体处理器
+        $entity = $this->entityHandler($name);
+        
+        if (!$entity) {
+            throw new RuntimeException(sprintf('Handler entity "%s" not found', $name));
+        }
+        
+        // 验证处理器类是否存在并且已注册
+        if (!class_exists($entity->handler) || !in_array($entity->handler, $this->configure->handlers)) {
+            throw new RuntimeException(sprintf('Handler class "%s" not found or not registered', $entity->handler));
+        }
+        
+        // 创建处理器实例
+        /** @var BaseHandler $handler */
+        $handler = app()->make($entity->handler);
+        
+        // 设置配置
+        if ($entity->config) {
+            $configClass = $handler::configurationRepository();
+            $config = new $configClass($entity->config);
+            $handler->withConfig($config);
+        }
+        
+        // 设置处理器ID（如果处理器支持）
+        if (property_exists($handler, 'handlerId')) {
+            $handler->handlerId = $entity->id;
+        }
+        
+        return $handler;
+    }
 }

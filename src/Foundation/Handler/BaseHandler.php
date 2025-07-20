@@ -39,6 +39,18 @@ abstract class BaseHandler
     protected(set) ?Repository $config = null;
 
     /**
+     * @var int|null 处理器ID
+     */
+    private ?int $_handlerId = null;
+    
+    public ?int $handlerId {
+        get => $this->_handlerId;
+        set {
+            $this->_handlerId = $value;
+        }
+    }
+
+    /**
      * @param array|Repository $config
      * @return $this
      */

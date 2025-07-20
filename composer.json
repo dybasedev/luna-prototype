@@ -14,7 +14,8 @@
       "src/Membership/helpers.php",
       "src/UnitConversion/helpers.php",
       "src/UnitConversion/Integration/helpers.php",
-      "src/UnitConversion/Integration/AssetsAccount/helpers.php"
+      "src/UnitConversion/Integration/AssetsAccount/helpers.php",
+      "src/Trade/helpers.php"
     ]
   },
   "autoload-dev": {
