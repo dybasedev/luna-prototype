@@ -8,6 +8,17 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
+/**
+ * 处理器管理类
+ * 
+ * 负责管理和维护所有注册的处理器，包括：
+ * - 处理器组的管理
+ * - 处理器实体的创建和查询
+ * - 处理器实例的创建和配置
+ * - 缓存管理
+ * 
+ * @package Dybasedev\LunaPrototype\Foundation\Handler
+ */
 class LunaHandler
 {
     public function __construct(
@@ -17,6 +28,14 @@ class LunaHandler
 
     }
 
+    /**
+     * 获取所有处理器组
+     * 
+     * 返回系统中注册的所有处理器组信息。
+     * 每个组包含 ID、名称和显示名称。
+     * 
+     * @return array 处理器组数组
+     */
     public function groups(): array
     {
         return array_map(fn($id, $group) => [
@@ -26,6 +45,16 @@ class LunaHandler
         ], array_keys($this->configure->groups), $this->configure->groups);
     }
 
+    /**
+     * 获取处理器列表
+     * 
+     * 返回指定组或所有组的处理器信息。
+     * 如果不指定组，则返回所有注册的处理器。
+     * 
+     * @param string|int|null $group 处理器组名称或ID，null表示所有组
+     * @return array 处理器信息数组
+     * @throws RuntimeException 当指定的组不存在时
+     */
     public function handlers(string|int|null $group = null): array
     {
         if ($group) {
@@ -50,6 +79,21 @@ class LunaHandler
         })($handlers)));
     }
 
+    /**
+     * 创建处理器实体
+     * 
+     * 在数据库中创建一个新的处理器实体记录。
+     * 处理器实体是处理器类的持久化实例，包含特定的配置和状态。
+     * 
+     * @param string|int $group 所属组名称或ID
+     * @param string $name 实体名称（应该是唯一的）
+     * @param string $handler 处理器类名（必须已注册）
+     * @param Repository|null $config 配置信息
+     * @param string|null $displayName 显示名称，默认使用 name
+     * @param string|null $description 描述信息
+     * @return Handler 创建的处理器实体模型
+     * @throws RuntimeException 当组不存在、处理器未注册或保存失败时
+     */
     public function createEntityHandler(
         string|int $group,
         string $name,
@@ -94,8 +138,13 @@ class LunaHandler
     }
 
     /**
-     * @param string|int $group
-     * @return Handler[]
+     * 获取指定组的所有处理器实体
+     * 
+     * 从数据库或缓存中获取指定组的所有处理器实体。
+     * 结果会被永久缓存，直到有新的实体被创建或更新。
+     * 
+     * @param string|int $group 处理器组名称或ID
+     * @return Handler[] 处理器实体数组
      */
     public function entityHandlers(string|int $group): array
     {
@@ -110,7 +159,12 @@ class LunaHandler
     }
 
     /**
-     * @return Collection
+     * 获取所有处理器实体
+     * 
+     * 从数据库或缓存中获取系统中所有的处理器实体。
+     * 结果会被永久缓存，直到有新的实体被创建或更新。
+     * 
+     * @return Collection 处理器实体集合
      */
     public function getAllEntityHandlers(): Collection
     {
@@ -120,8 +174,13 @@ class LunaHandler
     }
 
     /**
-     * @param string|int $name
-     * @return Handler|null
+     * 获取单个处理器实体
+     * 
+     * 根据名称或ID查找单个处理器实体。
+     * 如果传入的是字符串名称，会自动转换为 hash_code。
+     * 
+     * @param string|int $name 处理器实体名称或ID
+     * @return Handler|null 处理器实体，不存在时返回 null
      */
     public function entityHandler(string|int $name): ?Handler
     {
@@ -132,6 +191,14 @@ class LunaHandler
         return collect($entities)->where('id', $name)->first();
     }
 
+    /**
+     * 检查处理器实体是否存在
+     * 
+     * 判断指定名称或ID的处理器实体是否存在。
+     * 
+     * @param string|int $name 处理器实体名称或ID
+     * @return bool 存在返回 true，否则返回 false
+     */
     public function existsEntityHandler(string|int $name): bool
     {
         return !!$this->getAllEntityHandlers()->where('id', is_string($name) ? hash_code($name) : $name)->count();

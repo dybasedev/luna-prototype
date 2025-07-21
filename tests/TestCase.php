@@ -16,6 +16,8 @@ abstract class TestCase extends BaseTestCase
         $this->loadMigrationsFrom(__DIR__ . '/../src/Schedule/migrations');
         $this->loadMigrationsFrom(__DIR__ . '/../src/Membership/migrations');
         $this->loadMigrationsFrom(__DIR__ . '/../src/UnitConversion/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../src/HoldingObject/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../src/Trade/migrations');
         
         $this->artisan('migrate', ['--database' => 'testing'])->run();
         

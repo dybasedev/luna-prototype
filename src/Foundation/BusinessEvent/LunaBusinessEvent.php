@@ -12,9 +12,25 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
+/**
+ * 业务事件管理类
+ * 
+ * 负责管理和维护系统中的业务事件，提供以下功能：
+ * - 创建和管理业务事件
+ * - 根据事件和载荷生成格式化消息
+ * - 管理事件分组
+ * - 缓存事件信息以提高性能
+ * 
+ * @package Dybasedev\LunaPrototype\Foundation\BusinessEvent
+ */
 class LunaBusinessEvent extends LunaModule
 {
     /**
+     * 事件实例缓存
+     * 
+     * 在内存中缓存已加载的事件实例，避免重复查询。
+     * 键为事件ID，值为 BusinessEvent 实例。
+     * 
      * @var BusinessEvent[]
      */
     protected(set) array $events = [];
@@ -27,13 +43,19 @@ class LunaBusinessEvent extends LunaModule
     }
 
     /**
-     * @param string $name
-     * @param string|int $group
-     * @param string|int $handler
-     * @param string $formatter
-     * @param string|null $displayName
-     * @param Repository|null $config
-     * @return BusinessEvent
+     * 创建业务事件
+     * 
+     * 在数据库中创建一个新的业务事件记录。
+     * 业务事件是处理器的实例化配置，用于处理特定类型的业务操作。
+     * 
+     * @param string $name 事件名称（唯一标识）
+     * @param string|int $group 所属组名称或ID
+     * @param string|int $handler 处理器名称或ID
+     * @param string $formatter 格式化器类名
+     * @param string|null $displayName 显示名称，默认使用 name
+     * @param Repository|null $config 配置信息
+     * @return BusinessEvent 创建的业务事件实例
+     * @throws RuntimeException 当保存失败时
      */
     public function createBusinessEvent(
         string $name,
@@ -63,7 +85,12 @@ class LunaBusinessEvent extends LunaModule
     }
 
     /**
-     * @return Collection<BusinessEvent>
+     * 获取所有业务事件
+     * 
+     * 从数据库或缓存中获取系统中所有的业务事件。
+     * 结果会被永久缓存，直到有新的事件被创建。
+     * 
+     * @return Collection<BusinessEvent> 业务事件集合
      */
     public function getAllEvents(): Collection
     {
@@ -73,6 +100,14 @@ class LunaBusinessEvent extends LunaModule
     }
 
     /**
+     * 获取事件消息
+     * 
+     * 根据事件ID和载荷数据生成格式化的文本消息。
+     * 使用事件关联的处理器和格式化器来生成消息。
+     * 
+     * @param string|int $event 事件名称或ID
+     * @param array $payload 事件载荷数据
+     * @return string 格式化后的消息文本，事件不存在时返回空字符串
      * @throws BindingResolutionException
      */
     public function eventMessage(string|int $event, array $payload = []): string
@@ -100,6 +135,16 @@ class LunaBusinessEvent extends LunaModule
         return $handler->formatPayloadToText($payload);
     }
 
+    /**
+     * 检查业务事件是否存在
+     * 
+     * 判断指定的业务事件是否存在。
+     * 'common' 事件总是存在的，它是系统默认的通用事件。
+     * 
+     * @param string|int $event 事件名称或ID
+     * @param string|int|null $group 可选的组名称或ID，用于过滤查询
+     * @return bool 存在返回 true，否则返回 false
+     */
     public function existsBusinessEvent(string|int $event, string|int|null $group = null): bool
     {
         if ($event === 'common' || $event === hash_code('common')) {
@@ -126,6 +171,14 @@ class LunaBusinessEvent extends LunaModule
         );
     }
 
+    /**
+     * 获取所有业务事件组
+     * 
+     * 返回系统中注册的所有业务事件组，包括系统默认的 'common' 组。
+     * 事件组用于对事件进行分类和管理。
+     * 
+     * @return array 事件组数组，每个元素包含 id、name 和 display_name
+     */
     public function groups(): array
     {
         $groups = $this->configure->groups;
@@ -143,9 +196,12 @@ class LunaBusinessEvent extends LunaModule
 
     /**
      * 获取事件概要列表
+     * 
+     * 返回指定组或所有组的事件概要信息。
+     * 概要信息包括事件的 ID、名称和显示名称。
      *
-     * @param string|int|null $group
-     * @return array
+     * @param string|int|null $group 可选的组名称或ID，null 表示所有组
+     * @return array 事件概要信息数组
      */
     public function events(string|int|null $group = null): array
     {
