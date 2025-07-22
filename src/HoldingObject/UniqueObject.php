@@ -14,27 +14,37 @@ use Illuminate\Contracts\Container\BindingResolutionException;
  */
 abstract class UniqueObject
 {
-    protected(set) ?int $defaultId = 1;
+    protected(set) ?int $defaultId = 1 {
+        get => $this->defaultId;
+    }
 
     /**
      * @var bool 是否允许重复持有，若为 true 时，对同一个所有者持有唯一对象会增加数量，否则会报错
      */
-    protected(set) bool $enableHoldMultiple = false;
+    protected(set) bool $enableHoldMultiple = false {
+        get => $this->enableHoldMultiple;
+    }
 
     /**
      * @var float|null 最大持有数量限制，null 表示不限制
      */
-    protected(set) ?float $maxQuantity = null;
+    protected(set) ?float $maxQuantity = null {
+        get => $this->maxQuantity;
+    }
 
     /**
      * @var float|null 单次增加的最大数量限制，null 表示不限制
      */
-    protected(set) ?float $maxIncreaseQuantity = null;
+    protected(set) ?float $maxIncreaseQuantity = null {
+        get => $this->maxIncreaseQuantity;
+    }
 
     /**
      * @var float|null 单次减少的最大数量限制，null 表示不限制
      */
-    protected(set) ?float $maxDecreaseQuantity = null;
+    protected(set) ?float $maxDecreaseQuantity = null {
+        get => $this->maxDecreaseQuantity;
+    }
 
     /**
      * @var string|null 对象名称
@@ -152,8 +162,11 @@ abstract class UniqueObject
      * @param array $context 上下文
      * @return string
      */
-    public function getQuantityExceededMessage(float $currentQuantity, float $requestedQuantity, array $context = []): string
-    {
+    public function getQuantityExceededMessage(
+        float $currentQuantity,
+        float $requestedQuantity,
+        array $context = []
+    ): string {
         if ($this->maxQuantity !== null) {
             return sprintf('数量超过限制，最多可持有 %s，当前已持有 %s', $this->maxQuantity, $currentQuantity);
         }
@@ -198,8 +211,11 @@ abstract class UniqueObject
      * @param array $context 上下文
      * @return string
      */
-    public function getInsufficientQuantityMessage(float $currentQuantity, float $requestedQuantity, array $context = []): string
-    {
+    public function getInsufficientQuantityMessage(
+        float $currentQuantity,
+        float $requestedQuantity,
+        array $context = []
+    ): string {
         return sprintf('数量不足，当前数量为 %s，无法减少 %s', $currentQuantity, $requestedQuantity);
     }
 
@@ -213,26 +229,26 @@ abstract class UniqueObject
     public function checkQuantityLimit(float $currentQuantity, float $changeQuantity): bool
     {
         $newQuantity = $currentQuantity + $changeQuantity;
-        
+
         // 检查最大数量限制
         if ($this->maxQuantity !== null && $newQuantity > $this->maxQuantity) {
             return false;
         }
-        
+
         // 检查是否会变成负数
         if ($newQuantity < 0) {
             return false;
         }
-        
+
         // 检查单次操作限制
         if ($changeQuantity > 0 && $this->maxIncreaseQuantity !== null && $changeQuantity > $this->maxIncreaseQuantity) {
             return false;
         }
-        
+
         if ($changeQuantity < 0 && $this->maxDecreaseQuantity !== null && abs($changeQuantity) > $this->maxDecreaseQuantity) {
             return false;
         }
-        
+
         return true;
     }
 }

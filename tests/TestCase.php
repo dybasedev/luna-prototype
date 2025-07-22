@@ -9,6 +9,12 @@ abstract class TestCase extends BaseTestCase
 {
     protected function setUp(): void
     {
+        // 手动加载 .env.testing
+        if (file_exists(__DIR__ . '/../.env.testing')) {
+            $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/..', '.env.testing');
+            $dotenv->load();
+        }
+        
         parent::setUp();
         
         $this->loadMigrationsFrom(__DIR__ . '/../src/Foundation/migrations');
@@ -57,7 +63,7 @@ abstract class TestCase extends BaseTestCase
             ]) : [],
         ]);
         
-        // 设置缓存驱动
-        $app['config']->set('cache.default', 'array');
+        // 设置缓存驱动 - 从环境变量读取
+        $app['config']->set('cache.default', env('CACHE_STORE', 'array'));
     }
 }

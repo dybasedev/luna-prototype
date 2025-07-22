@@ -190,9 +190,16 @@ class CommonDataProviders
             function (SessionHolder $owner, array $params) use ($dataResolver, $ttl, $name) {
                 $cacheKey = "milestone_data:{$name}:{$owner->getOperatorType()}:{$owner->getOperatorId()}";
                 
-                return Cache::remember($cacheKey, $ttl, function () use ($owner, $params, $dataResolver) {
+                $value = Cache::remember($cacheKey, $ttl, function () use ($owner, $params, $dataResolver) {
                     return $dataResolver($owner, $params);
                 });
+                
+                // 确保数值类型的正确性（Redis 会将数字转为字符串）
+                if (is_numeric($value)) {
+                    return strpos($value, '.') !== false ? (float) $value : (int) $value;
+                }
+                
+                return $value;
             }
         );
     }

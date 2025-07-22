@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\Http;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    // 清理 Handler 相关的缓存
+    app('cache.store')->forget('handler:entities:' . hash_code('unit-conversions'));
+    app('cache.store')->forget('handler:entities');
+    
     // 创建配置
     $this->configure = LunaUnitConversionConfigure::create()->build();
     
@@ -45,6 +49,12 @@ beforeEach(function () {
         'base_value' => 0.85,
         'precision' => 2,
     ]);
+});
+
+afterEach(function () {
+    // 测试后清理缓存
+    app('cache.store')->forget('handler:entities:' . hash_code('unit-conversions'));
+    app('cache.store')->forget('handler:entities');
 });
 
 test('固定比例处理器基本转换', function () {

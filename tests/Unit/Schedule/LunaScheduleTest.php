@@ -11,9 +11,19 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    // 清理 Schedule 相关的缓存
+    app('cache.store')->forget('schedule-task:all-active');
+    app('cache.store')->forget('schedule-task:enabled');
+    
     $this->configure = LunaScheduleConfigure::create()->build();
     $this->artisan = app(Artisan::class);
     $this->schedule = new LunaSchedule($this->configure, $this->artisan, app('cache.store'));
+});
+
+afterEach(function () {
+    // 测试后也清理缓存
+    app('cache.store')->forget('schedule-task:all-active');
+    app('cache.store')->forget('schedule-task:enabled');
 });
 
 it('can create schedule instance', function () {

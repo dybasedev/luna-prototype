@@ -38,6 +38,9 @@ class TestSessionHolderForConcurrency implements SessionHolder
 }
 
 beforeEach(function () {
+    // 清理可能存在的缓存
+    app('cache.store')->flush();
+    
     // 配置组件
     $this->configure = LunaHoldingObjectConfigure::create()
         ->registerUniqueObject('lottery-chance', LotteryChanceObject::class)
@@ -51,6 +54,11 @@ beforeEach(function () {
     
     // 创建测试用户
     $this->owner = new TestSessionHolderForConcurrency(1, 1);
+});
+
+afterEach(function () {
+    // 清理缓存
+    app('cache.store')->flush();
 });
 
 it('handles concurrent creation with database upsert', function () {
@@ -127,8 +135,19 @@ it('prevents multiple holdings when not allowed', function () {
 });
 
 it('handles cache lock when available', function () {
-    // 如果当前缓存驱动支持锁
-    if (method_exists(Cache::store(), 'lock')) {
+    // 检查当前缓存驱动是否支持锁
+    $supportsLock = false;
+    try {
+        $lock = Cache::store()->lock('test-support-check');
+        if ($lock) {
+            $supportsLock = true;
+            $lock->release();
+        }
+    } catch (\Exception $e) {
+        // 不支持锁
+    }
+    
+    if ($supportsLock) {
         $configure = LunaHoldingObjectConfigure::create()
             ->registerUniqueObject('lottery-chance', LotteryChanceObject::class)
             ->build();
@@ -144,7 +163,7 @@ it('handles cache lock when available', function () {
             $this->owner,
             'lottery-chance',
             2025,
-            ['source' => 'test_lock'],
+            ['source' => 'system_grant'],  // 使用有效的来源
             1.0
         );
         
