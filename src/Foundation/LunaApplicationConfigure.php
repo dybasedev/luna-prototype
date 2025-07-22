@@ -44,6 +44,16 @@ class LunaApplicationConfigure extends LunaModuleConfigure
     protected(set) array $backupableObjects = [];
 
     /**
+     * 备份对象提供者列表
+     * 
+     * 存储备份对象提供者实例，用于动态发现可备份对象。
+     * 提供者可以是目录扫描、手动注册等多种形式。
+     * 
+     * @var BackupableProvider[]
+     */
+    protected(set) array $backupableProviders = [];
+
+    /**
      * 获取应用程序模块名称
      *
      * @return string 返回应用程序模块的标识名称
@@ -66,6 +76,66 @@ class LunaApplicationConfigure extends LunaModuleConfigure
     {
         $this->installations[] = $installation;
         return $this;
+    }
+
+    /**
+     * 注册可备份对象
+     * 
+     * 添加一个实现了 Backupable 接口的类到备份列表。
+     * 
+     * @param string $backupable 可备份对象类名
+     * @return static
+     */
+    public function registerBackupable(string $backupable): static
+    {
+        if (!in_array($backupable, $this->backupableObjects)) {
+            $this->backupableObjects[] = $backupable;
+        }
+        return $this;
+    }
+
+    /**
+     * 批量注册可备份对象
+     * 
+     * @param array<class-string<Backupable>> $backupables 可备份对象类名数组
+     * @return static
+     */
+    public function registerBackupables(array $backupables): static
+    {
+        foreach ($backupables as $backupable) {
+            $this->registerBackupable($backupable);
+        }
+        return $this;
+    }
+
+    /**
+     * 添加备份对象提供者
+     * 
+     * @param BackupableProvider $provider 备份对象提供者实例
+     * @return static
+     */
+    public function addBackupableProvider(BackupableProvider $provider): static
+    {
+        $this->backupableProviders[] = $provider;
+        return $this;
+    }
+
+    /**
+     * 通过目录添加备份对象
+     * 
+     * 扫描指定目录下的所有可备份对象并注册。
+     * 
+     * @param string $directory 目录路径
+     * @param string|null $namespace 命名空间前缀
+     * @return static
+     */
+    public function addBackupableDirectory(string $directory, ?string $namespace = null): static
+    {
+        $provider = BackupableDirectoryProvider::path($directory);
+        if ($namespace !== null) {
+            $provider->withNamespace($namespace);
+        }
+        return $this->addBackupableProvider($provider);
     }
 
     /**

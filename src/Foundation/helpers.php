@@ -356,3 +356,30 @@ if (!function_exists('luna_business_event')) {
         return app('luna.business-event');
     }
 }
+
+if (!function_exists('luna_app')) {
+    /**
+     * 获取 Luna 应用程序实例
+     *
+     * 提供对 Luna 应用程序主实例的快速访问。
+     * 通过这个辅助函数可以方便地使用应用程序的各种功能。
+     *
+     * 使用示例：
+     * ```php
+     * // 获取应用程序实例
+     * $app = luna_app();
+     * 
+     * // 导出备份数据
+     * $backup = $app->exportBackup();
+     * 
+     * // 导入备份数据
+     * $result = $app->importBackup($backupData);
+     * ```
+     *
+     * @return \Dybasedev\LunaPrototype\Foundation\LunaApplication 应用程序实例
+     */
+    function luna_app(): \Dybasedev\LunaPrototype\Foundation\LunaApplication
+    {
+        return app('luna');
+    }
+}

@@ -196,7 +196,48 @@ $configure = LunaExceptionConfigure::create()
     ->build();
 ```
 
-### 5. 核心功能
+### 5. Backupable（可备份对象）
+
+提供数据备份和恢复功能，支持配置数据迁移、业务数据同步等场景。
+
+#### 核心类
+
+- **Backupable**: 可备份对象接口，定义备份和恢复的标准契约
+- **BackupableModel**: Model 的备份功能 Trait，提供默认实现
+- **BackupableProvider**: 备份对象提供者接口
+- **BackupableDirectoryProvider**: 目录扫描提供者，自动发现可备份对象
+- **BackupableManualProvider**: 手动注册提供者
+
+#### 使用示例
+
+```php
+// 实现可备份模型
+class Configuration extends Model implements Backupable
+{
+    use NamedId, BackupableModel;
+    
+    protected $table = 'luna_configurations';
+    protected $fillable = ['name', 'value'];
+    protected $casts = ['value' => 'array'];
+}
+
+// 配置备份对象
+$configure = LunaApplicationConfigure::create()
+    ->registerBackupable(Configuration::class)
+    ->registerBackupable(Handler::class)
+    ->addBackupableDirectory(app_path('Models'))
+    ->build();
+
+// 导出备份
+$backup = luna_app()->exportBackup();
+file_put_contents('backup.dat', $backup);
+
+// 导入备份
+$backup = file_get_contents('backup.dat');
+$result = luna_app()->importBackup($backup);
+```
+
+### 6. 核心功能
 
 #### SessionHolder 接口
 
@@ -243,9 +284,10 @@ php artisan migrate --path=vendor/dybasedev/luna-prototype/src/Foundation/migrat
 
 Foundation 提供了以下 Artisan 命令：
 
-- `luna:app:current` - 显示当前应用信息
-- `luna:app:environment` - 显示环境信息
-- `luna:app:install` - 安装应用程序
+- `app:current` - 显示当前环境文件信息
+- `app:env` - 切换环境配置文件
+- `app:install` - 安装应用程序
+- `app:backup` - 管理数据备份（导出/导入/查看）
 
 ## 配置
 
@@ -296,6 +338,7 @@ Foundation 提供了以下辅助函数：
 - `luna_handler()` - 获取 LunaHandler 实例
 - `luna_exception_mapper(string $exceptionClass)` - 创建异常映射器
 - `luna_business_event()` - 获取 LunaBusinessEvent 实例
+- `luna_app()` - 获取 LunaApplication 实例
 
 ## 最佳实践
 
