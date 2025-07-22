@@ -16,68 +16,36 @@ use Dybasedev\LunaPrototype\Trade\Models\TradeTransaction;
 abstract class TransactionStatus
 {
     /**
-     * @var string 状态标识
+     * 状态标识
      */
-    protected string $key;
+    protected(set) string $key {
+        get => $this->key;
+    }
     
     /**
-     * @var string 状态名称
+     * 状态名称
      */
-    protected string $name;
+    protected(set) string $name {
+        get => $this->name;
+    }
     
     /**
-     * @var string 状态描述
+     * 状态描述
      */
-    protected string $description;
+    protected(set) string $description {
+        get => $this->description;
+    }
     
     /**
-     * @var int 状态码（通过 short_hash_code 生成）
+     * 状态码（通过 short_hash_code 生成）
      */
-    protected int $code;
+    protected(set) int $code {
+        get => $this->code ?? $this->code = short_hash_code($this->key);
+    }
     
     public function __construct()
     {
-        $this->code = short_hash_code($this->key);
-    }
-    
-    /**
-     * 获取状态标识
-     * 
-     * @return string
-     */
-    public function getKey(): string
-    {
-        return $this->key;
-    }
-    
-    /**
-     * 获取状态名称
-     * 
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->name;
-    }
-    
-    /**
-     * 获取状态描述
-     * 
-     * @return string
-     */
-    public function getDescription(): string
-    {
-        return $this->description;
-    }
-    
-    /**
-     * 获取状态码
-     * 
-     * @return int
-     */
-    public function getCode(): int
-    {
-        return $this->code;
+        // Code generation now handled by property hook
     }
     
     /**
