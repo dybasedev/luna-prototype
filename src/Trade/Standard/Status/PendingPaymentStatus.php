@@ -14,9 +14,9 @@ use Dybasedev\LunaPrototype\Trade\Models\TradeTransaction;
  */
 class PendingPaymentStatus extends TransactionStatus
 {
-    protected string $key = 'pending_payment';
-    protected string $name = '待支付';
-    protected string $description = '交易已创建，等待买家支付';
+    protected(set) string $key = 'pending_payment';
+    protected(set) string $name = '待支付';
+    protected(set) string $description = '交易已创建，等待买家支付';
     
     /**
      * 获取可以转换到的状态列表
@@ -73,7 +73,7 @@ class PendingPaymentStatus extends TransactionStatus
         array $context = []
     ): void {
         // 如果是支付成功，清除过期时间
-        if ($toStatus->getKey() === 'paid') {
+        if ($toStatus->key === 'paid') {
             $payload = $transaction->payload ?: [];
             unset($payload['payment_expires_at']);
             $transaction->payload = $payload;

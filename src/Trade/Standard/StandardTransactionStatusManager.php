@@ -59,7 +59,7 @@ class StandardTransactionStatusManager
     {
         foreach ($this->statusClasses as $key => $class) {
             $status = $this->getStatus($key);
-            $this->codeToKeyMap[$status->getCode()] = $key;
+            $this->codeToKeyMap[$status->code] = $key;
         }
     }
     
@@ -167,7 +167,7 @@ class StandardTransactionStatusManager
             $this->getStatus($toStatus) : 
             $this->getStatusByCode($toStatus);
         
-        return in_array($to->getKey(), $from->getAllowedTransitions());
+        return in_array($to->key, $from->getAllowedTransitions());
     }
     
     /**

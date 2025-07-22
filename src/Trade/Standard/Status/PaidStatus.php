@@ -14,9 +14,9 @@ use Dybasedev\LunaPrototype\Trade\Models\TradeTransaction;
  */
 class PaidStatus extends TransactionStatus
 {
-    protected string $key = 'paid';
-    protected string $name = '已支付';
-    protected string $description = '买家已完成支付';
+    protected(set) string $key = 'paid';
+    protected(set) string $name = '已支付';
+    protected(set) string $description = '买家已完成支付';
     
     /**
      * 获取可以转换到的状态列表

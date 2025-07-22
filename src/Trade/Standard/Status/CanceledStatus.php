@@ -14,9 +14,9 @@ use Dybasedev\LunaPrototype\Trade\Models\TradeTransaction;
  */
 class CanceledStatus extends TransactionStatus
 {
-    protected string $key = 'canceled';
-    protected string $name = '已取消';
-    protected string $description = '交易已取消';
+    protected(set) string $key = 'canceled';
+    protected(set) string $name = '已取消';
+    protected(set) string $description = '交易已取消';
     
     /**
      * 获取可以转换到的状态列表

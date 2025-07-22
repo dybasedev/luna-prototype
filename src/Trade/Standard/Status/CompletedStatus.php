@@ -14,10 +14,10 @@ use Dybasedev\LunaPrototype\Trade\Models\TradeTransaction;
  */
 class CompletedStatus extends TransactionStatus
 {
-    protected string $key = 'completed';
-    protected string $name = '已完成';
-    protected string $description = '交易已完成';
-    
+    protected(set) string $key = 'completed';
+    protected(set) string $name = '已完成';
+    protected(set) string $description = '交易已完成';
+
     /**
      * 获取可以转换到的状态列表
      * 

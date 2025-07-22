@@ -151,7 +151,7 @@ class StandardTradeFlowHandler extends TradeFlowHandler
         $transaction->owner_id = $preview->getOwner()->getOperatorId();
         $transaction->owner_type = $preview->getOwner()->getOperatorType();
         $transaction->handler_id = $this->handlerId;
-        $transaction->status = $this->statusManager->getInitialStatus()->getCode();
+        $transaction->status = $this->statusManager->getInitialStatus()->code;
         $transaction->amount = $preview->getAmount();
         $transaction->origin_amount = $preview->getOriginAmount();
         $transaction->multi_tradables = $preview->getItems()->count() > 1;
@@ -213,8 +213,8 @@ class StandardTradeFlowHandler extends TradeFlowHandler
             return StatusChangeResult::failure(
                 'Invalid status transition',
                 [
-                    'from_status' => $fromStatusObj->getKey(),
-                    'to_status' => $toStatusObj->getKey(),
+                    'from_status' => $fromStatusObj->key,
+                    'to_status' => $toStatusObj->key,
                 ]
             );
         }
@@ -228,7 +228,7 @@ class StandardTradeFlowHandler extends TradeFlowHandler
             
             // 处理特定状态转换的业务逻辑
             $resultData = [];
-            switch ($toStatusObj->getKey()) {
+            switch ($toStatusObj->key) {
                 case 'paid':
                     // 支付完成后的处理
                     $this->handlePaymentCompleted($transaction, $context);
@@ -241,7 +241,7 @@ class StandardTradeFlowHandler extends TradeFlowHandler
             }
             
             // 特殊处理：如果是从待支付到已支付但有支付参数，说明可能需要继续支付流程
-            if ($fromStatusObj->getKey() === 'pending_payment' && $toStatusObj->getKey() === 'paid' && isset($context['payment_params'])) {
+            if ($fromStatusObj->key === 'pending_payment' && $toStatusObj->key === 'paid' && isset($context['payment_params'])) {
                 return StatusChangeResult::needsAction('continue_payment', [
                     'payment_params' => $context['payment_params'],
                     'message' => '请继续完成支付',
@@ -359,10 +359,10 @@ class StandardTradeFlowHandler extends TradeFlowHandler
         $currentStatus = $this->statusManager->getStatusByCode($transaction->getStatus());
         
         // 标准流程中，支付后可以完成
-        if ($currentStatus->getKey() !== 'paid') {
+        if ($currentStatus->key !== 'paid') {
             throw LunaException::create('Transaction cannot be completed')
                 ->withDisplayMessage('交易状态不允许完成')
-                ->withData(['current_status' => $currentStatus->getKey()])
+                ->withData(['current_status' => $currentStatus->key])
                 ->withHttpStatus(400);
         }
         
@@ -382,10 +382,10 @@ class StandardTradeFlowHandler extends TradeFlowHandler
         
         // 只有特定状态可以取消
         $allowedKeys = ['pending_payment', 'paid'];
-        if (!in_array($currentStatus->getKey(), $allowedKeys, true)) {
+        if (!in_array($currentStatus->key, $allowedKeys, true)) {
             throw LunaException::create('Transaction cannot be canceled')
                 ->withDisplayMessage('当前状态不允许取消交易')
-                ->withData(['current_status' => $currentStatus->getKey()])
+                ->withData(['current_status' => $currentStatus->key])
                 ->withHttpStatus(400);
         }
         
@@ -400,7 +400,7 @@ class StandardTradeFlowHandler extends TradeFlowHandler
     {
         $statuses = [];
         foreach ($this->statusManager->getAllStatuses() as $key => $status) {
-            $statuses[$status->getCode()] = $status->getName();
+            $statuses[$status->code] = $status->name;
         }
         return $statuses;
     }
@@ -412,7 +412,7 @@ class StandardTradeFlowHandler extends TradeFlowHandler
      */
     public function getInitialStatus(): int
     {
-        return $this->statusManager->getInitialStatus()->getCode();
+        return $this->statusManager->getInitialStatus()->code;
     }
     
     /**
@@ -422,7 +422,7 @@ class StandardTradeFlowHandler extends TradeFlowHandler
      */
     public function getCompletedStatus(): int
     {
-        return $this->statusManager->getCompletedStatus()->getCode();
+        return $this->statusManager->getCompletedStatus()->code;
     }
     
     /**
@@ -432,7 +432,7 @@ class StandardTradeFlowHandler extends TradeFlowHandler
      */
     public function getCanceledStatus(): int
     {
-        return $this->statusManager->getCanceledStatus()->getCode();
+        return $this->statusManager->getCanceledStatus()->code;
     }
     
     /**

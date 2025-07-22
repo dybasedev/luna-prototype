@@ -14,9 +14,9 @@ use Dybasedev\LunaPrototype\Trade\Models\TradeTransaction;
  */
 class ExpiredStatus extends TransactionStatus
 {
-    protected string $key = 'expired';
-    protected string $name = '已过期';
-    protected string $description = '交易已过期，未在规定时间内完成支付';
+    protected(set) string $key = 'expired';
+    protected(set) string $name = '已过期';
+    protected(set) string $description = '交易已过期，未在规定时间内完成支付';
     
     /**
      * 获取可以转换到的状态列表

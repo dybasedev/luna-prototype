@@ -149,8 +149,8 @@ $transaction = $handler->createTransactionFromPreview($preview, $confirmation);
 // 支付成功后更新状态
 $handler->handleStatusChange(
     $transaction,
-    StandardTransactionStatus::PENDING_PAYMENT->getCode(),
-    StandardTransactionStatus::PAID->getCode(),
+    StandardTransactionStatus::PendingPayment->getCode(),
+    StandardTransactionStatus::Paid->getCode(),
     [
         'payment_method' => 'alipay',
         'payment_no' => 'ALI202401010001',
@@ -164,8 +164,8 @@ $handler->handleStatusChange(
 // 商家发货
 $handler->handleStatusChange(
     $transaction,
-    StandardTransactionStatus::PAID->getCode(),
-    StandardTransactionStatus::SHIPPED->getCode(),
+    StandardTransactionStatus::Paid->getCode(),
+    StandardTransactionStatus::Shipped->getCode(),
     [
         'tracking_no' => 'SF1234567890',
         'shipping_company' => '顺丰速运',
@@ -179,8 +179,8 @@ $handler->handleStatusChange(
 // 买家确认收货
 $handler->handleStatusChange(
     $transaction,
-    StandardTransactionStatus::SHIPPED->getCode(),
-    StandardTransactionStatus::RECEIVED->getCode(),
+    StandardTransactionStatus::Shipped->getCode(),
+    StandardTransactionStatus::Received->getCode(),
     []
 );
 ```
