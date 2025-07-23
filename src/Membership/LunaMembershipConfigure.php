@@ -72,16 +72,6 @@ class LunaMembershipConfigure extends LunaModuleConfigure
     }
 
     /**
-     * 获取模块依赖
-     *
-     * @return array
-     */
-    public function dependencies(): array
-    {
-        return ['luna_foundation', 'luna_handler'];
-    }
-
-    /**
      * 获取服务提供者
      *
      * @return string|null
