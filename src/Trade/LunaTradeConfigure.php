@@ -57,7 +57,7 @@ class LunaTradeConfigure extends LunaModuleConfigure
     /**
      * 全局默认交易编号生成器（延迟初始化）
      */
-    protected ?TransactionNumberGenerator $transactionNumberGenerator {
+    protected(set) ?TransactionNumberGenerator $transactionNumberGenerator {
         get {
             if ($this->_transactionNumberGenerator === null && $this->defaultTransactionNumberGeneratorClass !== null) {
                 $this->_transactionNumberGenerator = new $this->defaultTransactionNumberGeneratorClass($this->defaultTransactionNumberPrefix);
