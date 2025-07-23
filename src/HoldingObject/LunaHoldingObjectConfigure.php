@@ -133,24 +133,24 @@ class LunaHoldingObjectConfigure extends LunaModuleConfigure
     }
 
     /**
-     * 设置唯一对象持有模型
+     * 使用自定义的唯一对象持有模型
      *
      * @param string $model
      * @return static
      */
-    public function setUniqueObjectHoldingModel(string $model): static
+    public function useUniqueObjectHoldingModel(string $model): static
     {
         $this->uniqueObjectHoldingModel = $model;
         return $this;
     }
 
     /**
-     * 设置唯一对象持有变动日志模型
+     * 使用自定义的唯一对象持有变动日志模型
      *
      * @param string $model
      * @return static
      */
-    public function setUniqueObjectHoldingChangeLogModel(string $model): static
+    public function useUniqueObjectHoldingChangeLogModel(string $model): static
     {
         $this->uniqueObjectHoldingChangeLogModel = $model;
         return $this;
