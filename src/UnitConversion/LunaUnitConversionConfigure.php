@@ -2,10 +2,16 @@
 
 namespace Dybasedev\LunaPrototype\UnitConversion;
 
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure;
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
+use Dybasedev\LunaPrototype\UnitConversion\Handlers\ConditionalRateHandler;
+use Dybasedev\LunaPrototype\UnitConversion\Handlers\DynamicRateHandler;
+use Dybasedev\LunaPrototype\UnitConversion\Handlers\FixedRateHandler;
 use Dybasedev\LunaPrototype\UnitConversion\Models\UnitCategory;
 use Dybasedev\LunaPrototype\UnitConversion\Models\UnitConversionRule;
 use Dybasedev\LunaPrototype\UnitConversion\Models\UnitDefinition;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 
 /**
@@ -17,27 +23,27 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
      * 单位类别模型类名
      */
     public string $unitCategoryModel = UnitCategory::class;
-    
+
     /**
      * 单位定义模型类名
      */
     public string $unitDefinitionModel = UnitDefinition::class;
-    
+
     /**
      * 转换规则模型类名
      */
     public string $conversionRuleModel = UnitConversionRule::class;
-    
+
     /**
      * 是否启用转换事件
      */
     public bool $enableEvents = true;
-    
+
     /**
      * 默认缓存时间（秒）
      */
     public int $defaultCacheDuration = 3600;
-    
+
     /**
      * 预定义的单位类别
      */
@@ -53,7 +59,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
         'energy' => ['display_name' => '能量', 'description' => '能量度量单位'],
         'custom' => ['display_name' => '自定义', 'description' => '自定义业务单位'],
     ];
-    
+
     /**
      * 获取组件名称
      */
@@ -61,7 +67,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
     {
         return 'luna.unit-conversion';
     }
-    
+
     /**
      * 获取服务提供者类名
      */
@@ -69,7 +75,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
     {
         return LunaUnitConversionServiceProvider::class;
     }
-    
+
     /**
      * 替换单位类别模型
      */
@@ -78,7 +84,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
         $this->unitCategoryModel = $model;
         return $this;
     }
-    
+
     /**
      * 替换单位定义模型
      */
@@ -87,7 +93,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
         $this->unitDefinitionModel = $model;
         return $this;
     }
-    
+
     /**
      * 替换转换规则模型
      */
@@ -96,7 +102,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
         $this->conversionRuleModel = $model;
         return $this;
     }
-    
+
     /**
      * 设置是否启用事件
      */
@@ -105,7 +111,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
         $this->enableEvents = $enable;
         return $this;
     }
-    
+
     /**
      * 设置默认缓存时间
      */
@@ -114,7 +120,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
         $this->defaultCacheDuration = $seconds;
         return $this;
     }
-    
+
     /**
      * 添加预定义类别
      */
@@ -123,7 +129,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
         $this->predefinedCategories[$name] = $attributes;
         return $this;
     }
-    
+
     /**
      * 获取预定义类别
      */
@@ -131,7 +137,7 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
     {
         return $this->predefinedCategories;
     }
-    
+
     /**
      * 注册到容器
      */
@@ -141,18 +147,24 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
         $container->singleton(LunaUnitConversion::class, function ($app) {
             return new LunaUnitConversion(
                 $this,
-                $app['cache.store'],
-                $app[\Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler::class]
+                $app->make('cache.store'),
+                $app->make(LunaHandler::class)
             );
         });
-        
-        // 注册处理器组
-        $container->resolving(
-            \Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure::class,
-            function ($handlerConfigure) {
-                $handlerConfigure->group('unit-conversions', '单位转换处理器');
-            }
-        );
     }
-    
+
+    /**
+     * @throws BindingResolutionException
+     */
+    public function boot(Container $container): void
+    {
+        // 注册处理器组
+        $container->make(LunaHandlerConfigure::class)->group('unit-conversion', '单位转换处理器', function ($register) {
+            $register->handler(ConditionalRateHandler::class);
+            $register->handler(DynamicRateHandler::class);
+            $register->handler(FixedRateHandler::class);
+        });
+    }
+
+
 }
