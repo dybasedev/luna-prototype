@@ -22,6 +22,15 @@ class CategoryAttributes implements Arrayable
     }
     
     /**
+     * 设置显示名称
+     */
+    public function displayName(string $displayName): static
+    {
+        $this->attributes['display_name'] = $displayName;
+        return $this;
+    }
+    
+    /**
      * 设置描述
      */
     public function description(string $description): static
