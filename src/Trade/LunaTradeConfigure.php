@@ -9,15 +9,16 @@ use Dybasedev\LunaPrototype\Foundation\BusinessEvent\LunaBusinessEventConfigure;
 use Dybasedev\LunaPrototype\Trade\Models\TradeTransaction;
 use Dybasedev\LunaPrototype\Trade\Models\TradeTransactionTradable;
 use Dybasedev\LunaPrototype\Trade\Models\TradeTradable;
+use Dybasedev\LunaPrototype\Trade\Standard\StandardTradeFlowHandler;
 use Dybasedev\LunaPrototype\Trade\Standard\StandardTransactionNumberGenerator;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
  * 交易组件配置类
- * 
+ *
  * 提供交易组件的配置和注册功能，支持模型替换、处理器注册等扩展。
- * 
+ *
  * @package Dybasedev\LunaPrototype\Trade
  * @author Luna Prototype Team
  * @since 1.0.0
@@ -28,32 +29,32 @@ class LunaTradeConfigure extends LunaModuleConfigure
      * @var class-string<TradeTransaction>
      */
     protected(set) string $transactionModel = TradeTransaction::class;
-    
+
     /**
      * @var class-string<TradeTransactionTradable>
      */
     protected(set) string $transactionTradableModel = TradeTransactionTradable::class;
-    
+
     /**
      * @var class-string<TradeTradable>
      */
     protected(set) string $tradableModel = TradeTradable::class;
-    
+
     /**
      * @var string 默认交易号前缀
      */
     protected(set) string $defaultTransactionNumberPrefix = 'T';
-    
+
     /**
      * @var class-string<TransactionNumberGenerator>|null 默认交易编号生成器类
      */
     protected(set) ?string $defaultTransactionNumberGeneratorClass = StandardTransactionNumberGenerator::class;
-    
+
     /**
      * @var TransactionNumberGenerator|null 缓存的交易编号生成器实例
      */
     private ?TransactionNumberGenerator $_transactionNumberGenerator = null;
-    
+
     /**
      * 全局默认交易编号生成器（延迟初始化）
      */
@@ -68,34 +69,34 @@ class LunaTradeConfigure extends LunaModuleConfigure
             $this->_transactionNumberGenerator = $value;
         }
     }
-    
+
     /**
      * 获取全局默认交易编号生成器
-     * 
+     *
      * @return TransactionNumberGenerator|null
      */
     public function getTransactionNumberGenerator(): ?TransactionNumberGenerator
     {
         return $this->transactionNumberGenerator;
     }
-    
+
     /**
      * @var bool 是否启用交易过期检查
      */
     protected(set) bool $enableExpiredCheck = true;
-    
+
     /**
      * @var int 交易过期检查间隔（分钟）
      */
     protected(set) int $expiredCheckInterval = 30;
-    
-    
+
+
 
     public function name(): string
     {
         return 'luna.trade';
     }
-    
+
     public function serviceProvider(): ?string
     {
         return LunaTradeServiceProvider::class;
@@ -112,7 +113,7 @@ class LunaTradeConfigure extends LunaModuleConfigure
         $this->transactionModel = $class;
         return $this;
     }
-    
+
     /**
      * 替换默认的交易可交易对象关联模型
      *
@@ -124,7 +125,7 @@ class LunaTradeConfigure extends LunaModuleConfigure
         $this->transactionTradableModel = $class;
         return $this;
     }
-    
+
     /**
      * 替换默认的可交易对象模型
      *
@@ -136,7 +137,7 @@ class LunaTradeConfigure extends LunaModuleConfigure
         $this->tradableModel = $class;
         return $this;
     }
-    
+
     /**
      * 设置默认交易号前缀
      *
@@ -148,7 +149,7 @@ class LunaTradeConfigure extends LunaModuleConfigure
         $this->defaultTransactionNumberPrefix = $prefix;
         return $this;
     }
-    
+
     /**
      * 设置默认交易编号生成器类
      *
@@ -161,7 +162,7 @@ class LunaTradeConfigure extends LunaModuleConfigure
         $this->_transactionNumberGenerator = null; // 清除缓存的实例
         return $this;
     }
-    
+
     /**
      * 启用或禁用交易过期检查
      *
@@ -177,8 +178,8 @@ class LunaTradeConfigure extends LunaModuleConfigure
         }
         return $this;
     }
-    
-    
+
+
 
     public function register(Container $container): void
     {
@@ -192,7 +193,7 @@ class LunaTradeConfigure extends LunaModuleConfigure
 
         $container->alias('luna.trade', LunaTrade::class);
     }
-    
+
     /**
      * @throws BindingResolutionException
      */
@@ -200,8 +201,10 @@ class LunaTradeConfigure extends LunaModuleConfigure
     {
         // 注册业务事件组
         $container->make(LunaBusinessEventConfigure::class)->group('trade', '交易事件');
-        
+
         // 注册处理器组（仅注册组，具体的处理器由使用方自行注册）
-        $container->make(LunaHandlerConfigure::class)->group('trade', '交易');
+        $container->make(LunaHandlerConfigure::class)->group('trade', '交易', function ($register) {
+            $register->handler(StandardTradeFlowHandler::class);
+        });
     }
 }
