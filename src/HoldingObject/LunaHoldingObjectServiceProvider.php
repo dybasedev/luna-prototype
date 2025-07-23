@@ -14,7 +14,7 @@ class LunaHoldingObjectServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/migrations' => database_path('migrations'),
-            ], 'luna-holding-object-migrations');
+            ]);
         }
     }
 }

@@ -28,12 +28,10 @@ class LunaMembershipServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/migrations');
-        
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/migrations/' => database_path('migrations'),
-            ], 'luna-membership-migrations');
+            ]);
         }
     }
 }
