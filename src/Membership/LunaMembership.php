@@ -5,6 +5,7 @@ namespace Dybasedev\LunaPrototype\Membership;
 use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Dybasedev\LunaPrototype\Foundation\LunaModule;
 use Dybasedev\LunaPrototype\Membership\Milestone\LunaMilestone;
+use Dybasedev\LunaPrototype\Membership\Relationship\RelationshipManager;
 use Illuminate\Contracts\Cache\Repository as Cache;
 
 /**
@@ -39,6 +40,13 @@ class LunaMembership extends LunaModule
      * @var LunaMilestone|null
      */
     protected ?LunaMilestone $milestone = null;
+
+    /**
+     * 关系管理实例
+     *
+     * @var RelationshipManager|null
+     */
+    protected ?RelationshipManager $relationship = null;
 
     /**
      * 会员系统管理对象构造函数
@@ -95,5 +103,37 @@ class LunaMembership extends LunaModule
     public function isMilestoneEnabled(): bool
     {
         return $this->configure->isMilestoneEnabled();
+    }
+
+    /**
+     * 获取关系管理实例
+     *
+     * @return RelationshipManager|null 如果未启用关系功能返回 null
+     */
+    public function relationship(): ?RelationshipManager
+    {
+        if (!$this->configure->isRelationshipEnabled()) {
+            return null;
+        }
+
+        if (!$this->relationship) {
+            $this->relationship = new RelationshipManager(
+                $this->configure,
+                $this->cache,
+                $this->handler
+            );
+        }
+
+        return $this->relationship;
+    }
+
+    /**
+     * 检查是否启用了关系功能
+     *
+     * @return bool
+     */
+    public function isRelationshipEnabled(): bool
+    {
+        return $this->configure->isRelationshipEnabled();
     }
 }

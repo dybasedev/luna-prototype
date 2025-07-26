@@ -8,6 +8,7 @@ use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure;
 use Dybasedev\LunaPrototype\Membership\Models\MembershipMilestone;
 use Dybasedev\LunaPrototype\Membership\Models\MembershipMilestoneLog;
 use Dybasedev\LunaPrototype\Membership\Models\MembershipMilestoneType;
+use Dybasedev\LunaPrototype\Membership\Models\MembershipRelationshipIndex;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 
@@ -55,11 +56,23 @@ class LunaMembershipConfigure extends LunaModuleConfigure
     protected(set) string $milestoneLogModel = MembershipMilestoneLog::class;
 
     /**
+     * @var class-string<MembershipRelationshipIndex>
+     */
+    protected(set) string $relationshipIndexModel = MembershipRelationshipIndex::class;
+
+    /**
      * 是否启用里程碑功能
      *
      * @var bool
      */
     protected(set) bool $enableMilestone = true;
+
+    /**
+     * 是否启用关系管理功能
+     *
+     * @var bool
+     */
+    protected(set) bool $enableRelationship = true;
 
     /**
      * 获取模块名称
@@ -112,6 +125,11 @@ class LunaMembershipConfigure extends LunaModuleConfigure
         // 如果启用了里程碑功能，自动注册会员里程碑处理器组
         if ($this->enableMilestone) {
             $container->make(LunaHandlerConfigure::class)->group('membership-milestones', '会员里程碑');
+        }
+
+        // 如果启用了关系管理功能，自动注册会员关系类型处理器组
+        if ($this->enableRelationship) {
+            $container->make(LunaHandlerConfigure::class)->group('membership-relationships', '会员关系类型');
         }
     }
 
@@ -195,6 +213,50 @@ class LunaMembershipConfigure extends LunaModuleConfigure
     public function isMilestoneEnabled(): bool
     {
         return $this->enableMilestone;
+    }
+
+    /**
+     * 替换默认的关系索引模型
+     *
+     * @param class-string<MembershipRelationshipIndex> $class
+     * @return $this
+     */
+    public function useRelationshipIndexModel(string $class): static
+    {
+        $this->relationshipIndexModel = $class;
+        return $this;
+    }
+
+    /**
+     * 启用关系管理功能
+     *
+     * @return $this
+     */
+    public function withRelationship(): static
+    {
+        $this->enableRelationship = true;
+        return $this;
+    }
+
+    /**
+     * 禁用关系管理功能
+     *
+     * @return $this
+     */
+    public function withoutRelationship(): static
+    {
+        $this->enableRelationship = false;
+        return $this;
+    }
+
+    /**
+     * 是否启用了关系管理功能
+     *
+     * @return bool
+     */
+    public function isRelationshipEnabled(): bool
+    {
+        return $this->enableRelationship;
     }
 
 }
