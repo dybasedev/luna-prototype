@@ -40,43 +40,27 @@ class UserDataTable extends CrudDataTable
     public function columns(Request $request): array
     {
         return [
-            UI::column('id', 'ID')
-                ->setSorter(true)
-                ->setWidth(80),
+            UI::column('ID', 'id')->sortable(true)->width(80),
                 
-            UI::column('name', '姓名')
-                ->setSearch(true)
-                ->setSorter(true)
-                ->setCopyable(true),
+            UI::column('姓名', 'name')->searchable(true)->sortable(true)->copyable(true),
                 
-            UI::column('email', '邮箱')
-                ->setSearch(true)
-                ->setCopyable(true),
+            UI::column('邮箱', 'email')->searchable(true)->copyable(true),
                 
-            UI::column('role', '角色')
-                ->setFilters([
+            UI::column('角色', 'role')->filters([
                     ['text' => '管理员', 'value' => 'admin'],
                     ['text' => '普通用户', 'value' => 'user'],
                     ['text' => '访客', 'value' => 'guest'],
                 ]),
                 
-            UI::column('status', '状态')
-                ->setValueType('badge')
-                ->setValueEnum([
+            UI::column('状态', 'status')->type('badge')->valueEnum([
                     'active' => ['text' => '正常', 'status' => 'success'],
                     'inactive' => ['text' => '禁用', 'status' => 'error'],
                     'pending' => ['text' => '待激活', 'status' => 'warning'],
                 ]),
                 
-            UI::column('created_at', '创建时间')
-                ->setValueType('dateTime')
-                ->setSorter(true)
-                ->setWidth(180),
+            UI::column('创建时间', 'created_at')->type('dateTime')->sortable(true)->width(180),
                 
-            UI::column('actions', '操作')
-                ->setValueType('option')
-                ->setFixed('right')
-                ->setWidth(200),
+            UI::column('操作', 'actions')->type('option')->fixed('right')->width(200),
         ];
     }
 
@@ -120,10 +104,12 @@ class UserDataTable extends CrudDataTable
         ));
         
         // 排序
-        $query->when(
-            ...\Dybasedev\LunaPrototype\Showcase\Helpers\QueryHelper::applySorter($request),
-            fn() => $query->latest('id') // 默认排序
-        );
+        [$condition, $callback] = \Dybasedev\LunaPrototype\Showcase\Helpers\QueryHelper::applySorter($request);
+        if ($condition) {
+            $callback($query);
+        } else {
+            $query->latest('id'); // 默认排序
+        }
         
         return $query;
     }
@@ -329,21 +315,16 @@ class UserDataTable extends CrudDataTable
     protected function getFilters(Request $request): array
     {
         return [
-            UI::field('dateRange', '创建时间')
-                ->setType('dateRange'),
+            UI::field('创建时间', 'dateRange')->type('dateRange'),
                 
-            UI::field('role', '角色')
-                ->setType('select')
-                ->setOptions([
+            UI::field('角色', 'role')->type('select')->options([
                     ['label' => '全部', 'value' => ''],
                     ['label' => '管理员', 'value' => 'admin'],
                     ['label' => '普通用户', 'value' => 'user'],
                     ['label' => '访客', 'value' => 'guest'],
                 ]),
                 
-            UI::field('status', '状态')
-                ->setType('radioButton')
-                ->setOptions([
+            UI::field('状态', 'status')->type('radioButton')->options([
                     ['label' => '全部', 'value' => ''],
                     ['label' => '正常', 'value' => 'active'],
                     ['label' => '禁用', 'value' => 'inactive'],

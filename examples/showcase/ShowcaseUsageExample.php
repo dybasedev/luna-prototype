@@ -4,8 +4,8 @@ namespace Examples\Showcase;
 
 use Dybasedev\LunaPrototype\Showcase\LunaShowcase;
 use Dybasedev\LunaPrototype\Showcase\LunaShowcaseConfigure;
-use Dybasedev\LunaPrototype\Showcase\DataTable\Examples\UserDataTable;
-use Dybasedev\LunaPrototype\Showcase\DataTable\Examples\LogDataTable;
+use Examples\Showcase\UserDataTable;
+use Examples\Showcase\LogDataTable;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -147,10 +147,9 @@ class ShowcaseUsageExample
      */
     public function controllerUsage()
     {
-        // 方式1：使用内置路由处理
+        // 路由需要手动注册，不再提供默认路由
         Route::group(['prefix' => 'api/admin'], function () {
-            // 注册所有 DataTable 路由
-            Route::group([], app(LunaShowcase::class)->routes('data-tables', ['auth:admin']));
+            // 参考 Showcase/README.md 文档了解如何手动注册路由
         });
 
         // 方式2：自定义控制器
@@ -161,47 +160,32 @@ class ShowcaseUsageExample
 
             public function index($dataTable)
             {
-                return $this->showcase->handleDataTableRequest(
-                    $dataTable, 
-                    'list', 
-                    request()
-                );
+                $dt = $this->showcase->dataTable()->get($dataTable);
+                return $dt->list(request());
             }
 
             public function show($dataTable, $id)
             {
-                return $this->showcase->handleDataTableRequest(
-                    $dataTable, 
-                    'find', 
-                    request()
-                );
+                $dt = $this->showcase->dataTable()->get($dataTable);
+                return $dt->find($id, request());
             }
 
             public function store($dataTable)
             {
-                return $this->showcase->handleDataTableRequest(
-                    $dataTable, 
-                    'create', 
-                    request()
-                );
+                $dt = $this->showcase->dataTable()->get($dataTable);
+                return $dt->create(request());
             }
 
             public function update($dataTable, $id)
             {
-                return $this->showcase->handleDataTableRequest(
-                    $dataTable, 
-                    'update', 
-                    request()
-                );
+                $dt = $this->showcase->dataTable()->get($dataTable);
+                return $dt->update($id, request());
             }
 
             public function destroy($dataTable, $id)
             {
-                return $this->showcase->handleDataTableRequest(
-                    $dataTable, 
-                    'delete', 
-                    request()
-                );
+                $dt = $this->showcase->dataTable()->get($dataTable);
+                return $dt->delete($id, request());
             }
         };
     }
@@ -245,14 +229,14 @@ class ShowcaseUsageExample
      */
     public function annotatedDataTable()
     {
-        // 使用 PHP 8 属性
-        #[\Dybasedev\LunaPrototype\Showcase\Attributes\DataTableMeta(
+        // 使用 PHP 8 属性的 DataTable 类示例
+        // 注意：属性应该放在类定义上，而不是方法上
+        return new #[\Dybasedev\LunaPrototype\Showcase\Attributes\DataTableMeta(
             title: '商品管理',
             description: '管理商城商品信息',
             group: 'shop',
             sortOrder: 10
-        )]
-        return new class extends \Dybasedev\LunaPrototype\Showcase\DataTable\CrudDataTable {
+        )] class extends \Dybasedev\LunaPrototype\Showcase\DataTable\CrudDataTable {
             protected function model(): string
             {
                 return \App\Models\Product::class;
