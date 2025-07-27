@@ -84,7 +84,7 @@ beforeEach(function () {
     );
 });
 
-it('can create account type', function () {
+it('可以创建账户类型', function () {
     $accountType = $this->assetsAccount->createAccountType(
         'balance',
         'test_handler',
@@ -101,7 +101,7 @@ it('can create account type', function () {
     expect($accountType->parent_id)->toBe(0);
 });
 
-it('can create account type with parent', function () {
+it('可以创建带有父级的账户类型', function () {
     // 先创建父账户类型
     $parentType = $this->assetsAccount->createAccountType(
         'main_balance',
@@ -123,7 +123,7 @@ it('can create account type with parent', function () {
     expect($childType->name)->toBe('sub_balance');
 });
 
-it('can create account type with string parent', function () {
+it('可以使用字符串父级创建账户类型', function () {
     // 先创建父账户类型
     $this->assetsAccount->createAccountType(
         'parent_balance',
@@ -144,7 +144,7 @@ it('can create account type with string parent', function () {
     expect($childType->parent_id)->toBe(hash_code('parent_balance'));
 });
 
-it('throws exception when handler not exists', function () {
+it('当处理器不存在时抛出异常', function () {
     expect(function () {
         $this->assetsAccount->createAccountType(
             'invalid_balance',
@@ -153,7 +153,7 @@ it('throws exception when handler not exists', function () {
     })->toThrow(\Dybasedev\LunaPrototype\Foundation\Exception\LunaException::class);
 });
 
-it('throws exception when parent not exists', function () {
+it('当父级不存在时抛出异常', function () {
     expect(function () {
         $this->assetsAccount->createAccountType(
             'orphan_balance',
@@ -166,7 +166,7 @@ it('throws exception when parent not exists', function () {
     })->toThrow(\Dybasedev\LunaPrototype\Foundation\Exception\LunaException::class);
 });
 
-it('can get all account types', function () {
+it('可以获取所有账户类型', function () {
     // 创建几个账户类型
     $this->assetsAccount->createAccountType('balance', 'test_handler', 'Balance');
     $this->assetsAccount->createAccountType('points', 'test_handler', 'Points');
@@ -181,7 +181,7 @@ it('can get all account types', function () {
     expect($names)->toContain('balance', 'points', 'credit');
 });
 
-it('can get all account types without cache', function () {
+it('可以在不使用缓存的情况下获取所有账户类型', function () {
     // 创建账户类型
     $this->assetsAccount->createAccountType('balance', 'test_handler', 'Balance');
     
@@ -192,7 +192,7 @@ it('can get all account types without cache', function () {
     expect($accountTypes->first()->name)->toBe('balance');
 });
 
-it('caches account types', function () {
+it('缓存账户类型', function () {
     $cache = app('cache.store');
     
     // 创建账户类型
@@ -210,7 +210,7 @@ it('caches account types', function () {
     expect($accountTypes1->count())->toBe($accountTypes2->count());
 });
 
-it('can get account types summary', function () {
+it('可以获取账户类型摘要', function () {
     $this->assetsAccount->createAccountType('balance', 'test_handler', 'Balance Account', 'Main balance');
     $this->assetsAccount->createAccountType('points', 'test_handler', 'Points Account', 'Loyalty points');
     
@@ -230,7 +230,7 @@ it('can get account types summary', function () {
     expect($balanceAccount['description'])->toBe('Main balance');
 });
 
-it('can create owner account', function () {
+it('可以创建所有者账户', function () {
     // 创建账户类型
     $this->assetsAccount->createAccountType('balance', 'test_handler', 'Balance');
     $this->assetsAccount->createAccountType('points', 'test_handler', 'Points');
@@ -251,7 +251,7 @@ it('can create owner account', function () {
     );
 });
 
-it('can get owner account', function () {
+it('可以获取所有者账户', function () {
     // 创建账户类型和账户
     $this->assetsAccount->createAccountType('balance', 'test_handler', 'Balance');
     $owner = new TestSessionHolderForAccount(1, 1);
@@ -265,7 +265,7 @@ it('can get owner account', function () {
     expect($account->account_type_id)->toBe(hash_code('balance'));
 });
 
-it('can get owner account with children', function () {
+it('可以获取带有子账户的所有者账户', function () {
     // 创建父子账户类型
     $parentType = $this->assetsAccount->createAccountType('main_balance', 'test_handler', 'Main Balance');
     $this->assetsAccount->createAccountType('sub_balance', 'test_handler', 'Sub Balance', '', null, $parentType);
@@ -279,7 +279,7 @@ it('can get owner account with children', function () {
     expect($account->relationLoaded('children'))->toBeTrue();
 });
 
-it('can get owner main accounts', function () {
+it('可以获取所有者主账户', function () {
     // 创建主账户和子账户
     $mainType = $this->assetsAccount->createAccountType('main_balance', 'test_handler', 'Main Balance');
     $this->assetsAccount->createAccountType('sub_balance', 'test_handler', 'Sub Balance', '', null, $mainType);
@@ -297,13 +297,13 @@ it('can get owner main accounts', function () {
     expect($accountTypeIds)->toContain(hash_code('main_balance'), hash_code('points'));
 });
 
-it('can create account operation', function () {
+it('可以创建账户操作', function () {
     $operation = $this->assetsAccount->createAccountOperation();
     
     expect($operation)->toBeInstanceOf(\Dybasedev\LunaPrototype\AssetsAccount\AccountOperations::class);
 });
 
-it('can create account type from request object', function () {
+it('可以从请求对象创建账户类型', function () {
     $request = new \Dybasedev\LunaPrototype\AssetsAccount\AccountTypeCreationRequest(
         name: 'request_balance',
         handler: 'test_handler',

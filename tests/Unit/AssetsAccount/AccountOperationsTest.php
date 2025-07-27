@@ -97,11 +97,11 @@ beforeEach(function () {
     $this->operations = $this->assetsAccount->createAccountOperation();
 });
 
-it('can create account operations instance', function () {
+it('可以创建账户操作实例', function () {
     expect($this->operations)->toBeInstanceOf(AccountOperations::class);
 });
 
-it('can add update operation', function () {
+it('可以添加更新操作', function () {
     $updateOperation = luna_account_update()
         ->account($this->owner1, 'balance')
         ->available()
@@ -116,7 +116,7 @@ it('can add update operation', function () {
     expect($this->operations->operations[0]['amount'])->toBe('100.5');
 });
 
-it('can add transfer operation', function () {
+it('可以添加转账操作', function () {
     $transferOperation = luna_account_transfer()
         ->from($this->owner1, 'balance')
         ->fromAvailable()
@@ -134,7 +134,7 @@ it('can add transfer operation', function () {
     expect($this->operations->operations[1]['amount'])->toBe('50.25');
 });
 
-it('can add multiple operations', function () {
+it('可以添加多个操作', function () {
     $updateOperation = luna_account_update()
         ->account($this->owner1, 'balance')
         ->available()
@@ -156,7 +156,7 @@ it('can add multiple operations', function () {
     expect($this->operations->operations)->toHaveCount(3); // 1个更新操作 + 2个转账子操作
 });
 
-it('can submit operations', function () {
+it('可以提交操作', function () {
     // 先增加余额
     $updateOperation = luna_account_update()
         ->account($this->owner1, 'balance')
@@ -172,7 +172,7 @@ it('can submit operations', function () {
     expect($account->available_balance)->toBe('100.00000000');
 });
 
-it('can submit transfer operations', function () {
+it('可以提交转账操作', function () {
     // 先给第一个用户增加余额
     $increaseOperation = luna_account_update()
         ->account($this->owner1, 'balance')
@@ -205,7 +205,7 @@ it('can submit transfer operations', function () {
     expect($account2->available_balance)->toBe('30.00000000');
 });
 
-it('can handle insufficient balance', function () {
+it('可以处理余额不足的情况', function () {
     // 尝试转账但余额不足
     $transferOperation = luna_account_transfer()
         ->from($this->owner1, 'balance')
@@ -222,7 +222,7 @@ it('can handle insufficient balance', function () {
     })->toThrow(\Dybasedev\LunaPrototype\Foundation\Exception\LunaException::class);
 });
 
-it('can allow overdraft', function () {
+it('可以允许透支', function () {
     // 允许超支的转账
     $transferOperation = luna_account_transfer()
         ->from($this->owner1, 'balance')
@@ -243,7 +243,7 @@ it('can allow overdraft', function () {
     expect($account2->available_balance)->toBe('100.00000000');
 });
 
-it('can handle frozen balance operations', function () {
+it('可以处理冻结余额操作', function () {
     // 增加可用余额
     $increaseOperation = luna_account_update()
         ->account($this->owner1, 'balance')
@@ -273,7 +273,7 @@ it('can handle frozen balance operations', function () {
     expect($account->frozen_balance)->toBe('30.00000000');
 });
 
-it('can handle locked balance operations', function () {
+it('可以处理锁定余额操作', function () {
     // 增加可用余额
     $increaseOperation = luna_account_update()
         ->account($this->owner1, 'balance')
@@ -303,7 +303,7 @@ it('can handle locked balance operations', function () {
     expect($account->locked_balance)->toBe('20.00000000');
 });
 
-it('creates change log records', function () {
+it('创建变更日志记录', function () {
     $updateOperation = luna_account_update()
         ->account($this->owner1, 'balance')
         ->available()

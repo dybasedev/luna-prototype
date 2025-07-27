@@ -72,14 +72,14 @@ class RefactoredTestUser implements SessionHolder
     }
 }
 
-test('访问里程碑功能 - 默认启用', function () {
+it('访问里程碑功能 - 默认启用', function () {
     $membership = luna_membership();
     
     expect($membership->isMilestoneEnabled())->toBeTrue();
     expect($membership->milestone())->not->toBeNull();
 });
 
-test('禁用里程碑功能', function () {
+it('禁用里程碑功能', function () {
     // 创建禁用里程碑的配置
     $config = LunaMembershipConfigure::create()
         ->withoutMilestone()
@@ -96,7 +96,7 @@ test('禁用里程碑功能', function () {
     expect($membership->milestone())->toBeNull();
 });
 
-test('通过 milestone() 方法创建里程碑类型', function () {
+it('通过 milestone() 方法创建里程碑类型', function () {
     // 创建处理器记录
     Handler::query()->forceCreate([
         'id' => 5000,
@@ -123,7 +123,7 @@ test('通过 milestone() 方法创建里程碑类型', function () {
     expect($type->name)->toBe('refactored_test');
 });
 
-test('通过 milestone() 方法触发里程碑评估', function () {
+it('通过 milestone() 方法触发里程碑评估', function () {
     // 创建处理器记录
     Handler::query()->forceCreate([
         'id' => 5001,
@@ -149,7 +149,7 @@ test('通过 milestone() 方法触发里程碑评估', function () {
     expect($level->identifier)->toBe('level2');
 });
 
-test('通过 milestone() 方法获取当前里程碑', function () {
+it('通过 milestone() 方法获取当前里程碑', function () {
     // 创建处理器记录
     Handler::query()->forceCreate([
         'id' => 5002,
@@ -178,7 +178,7 @@ test('通过 milestone() 方法获取当前里程碑', function () {
     expect($current->identifier)->toBe('level2');
 });
 
-test('通过 milestone() 方法获取里程碑统计', function () {
+it('通过 milestone() 方法获取里程碑统计', function () {
     // 创建处理器记录
     Handler::query()->forceCreate([
         'id' => 5003,

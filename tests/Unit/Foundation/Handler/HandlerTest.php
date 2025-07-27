@@ -35,7 +35,7 @@ beforeEach(function () {
     $this->handler = new LunaHandler($this->configure, app('cache.store'));
 });
 
-it('can create an entity handler', function () {
+it('可以创建实体处理器', function () {
     $config = new \Dybasedev\LunaPrototype\Foundation\Configuration\Repository(['default_config' => 'value']);
     
     $created = $this->handler->createEntityHandler(
@@ -57,7 +57,7 @@ it('can create an entity handler', function () {
     expect($created->enabled)->toBeTrue();
 });
 
-it('can check if entity handler exists', function () {
+it('可以检查实体处理器是否存在', function () {
     $this->handler->createEntityHandler('test_group', 'existing.handler', TestHandler::class);
     
     expect($this->handler->existsEntityHandler('existing.handler'))->toBeTrue();
@@ -65,7 +65,7 @@ it('can check if entity handler exists', function () {
     expect($this->handler->existsEntityHandler('non.existing'))->toBeFalse();
 });
 
-it('can get entity handler', function () {
+it('可以获取实体处理器', function () {
     $this->handler->createEntityHandler('test_group', 'get.handler', TestHandler::class);
     
     $handler = $this->handler->entityHandler('get.handler');
@@ -74,13 +74,13 @@ it('can get entity handler', function () {
     expect($handler->name)->toBe('get.handler');
 });
 
-it('returns null for non-existing entity handler', function () {
+it('对于不存在的实体处理器返回 null', function () {
     $handler = $this->handler->entityHandler('non.existing');
     
     expect($handler)->toBeNull();
 });
 
-it('can get entity handlers by group', function () {
+it('可以按组获取实体处理器', function () {
     $this->handler->createEntityHandler('test_group', 'handler1', TestHandler::class);
     $this->handler->createEntityHandler('test_group', 'handler2', TestHandler::class);
     $this->handler->createEntityHandler('test_group', 'handler3', TestHandler::class);
@@ -92,7 +92,7 @@ it('can get entity handlers by group', function () {
     expect(array_map(fn($h) => $h->name, $handlers))->toContain('handler1', 'handler2', 'handler3');
 });
 
-it('can get all entity handlers', function () {
+it('可以获取所有实体处理器', function () {
     $this->handler->createEntityHandler('test_group', 'handler1', TestHandler::class, null, 'Handler 1');
     $this->handler->createEntityHandler('test_group', 'handler2', TestHandler::class, null, 'Handler 2');
     $this->handler->createEntityHandler('test_group', 'handler3', TestHandler::class, null, 'Handler 3');
@@ -104,7 +104,7 @@ it('can get all entity handlers', function () {
     expect($handlers->pluck('name')->toArray())->toContain('handler1', 'handler2', 'handler3');
 });
 
-it('caches entity handlers', function () {
+it('缓存实体处理器', function () {
     $cache = app('cache.store');
     $cache->forget('handler:entities');
     
@@ -123,7 +123,7 @@ it('caches entity handlers', function () {
     expect($handlers1->count())->toBe($handlers2->count());
 });
 
-it('handler can process data', function () {
+it('处理器可以处理数据', function () {
     $handler = new TestHandler();
     
     $result = $handler->handle(['message' => 'Hello World']);

@@ -61,7 +61,7 @@ afterEach(function () {
     app('cache.store')->flush();
 });
 
-it('handles concurrent creation with database upsert', function () {
+it('使用数据库 upsert 处理并发创建', function () {
     $lotteryId = 2024;
     
     // 模拟并发创建（在实际环境中会是真正的并发）
@@ -88,7 +88,7 @@ it('handles concurrent creation with database upsert', function () {
     }
 });
 
-it('prevents multiple holdings when not allowed', function () {
+it('在不允许时防止多次持有', function () {
     // 注册一个不允许多次持有的对象
     $this->configure->registerUniqueObject('single-use-coupon', new class extends \Dybasedev\LunaPrototype\HoldingObject\UniqueObject {
         protected(set) ?string $name = 'single-use-coupon';
@@ -134,7 +134,7 @@ it('prevents multiple holdings when not allowed', function () {
     ))->toThrow(\Dybasedev\LunaPrototype\Foundation\Exception\LunaException::class);
 });
 
-it('handles cache lock when available', function () {
+it('在可用时处理缓存锁', function () {
     // 检查当前缓存驱动是否支持锁
     $supportsLock = false;
     try {
@@ -174,7 +174,7 @@ it('handles cache lock when available', function () {
     }
 });
 
-it('gracefully handles cache driver without lock support', function () {
+it('优雅地处理不支持锁的缓存驱动', function () {
     // 使用 array 缓存驱动（可能不支持锁）
     $configure = LunaHoldingObjectConfigure::create()
         ->registerUniqueObject('lottery-chance', LotteryChanceObject::class)

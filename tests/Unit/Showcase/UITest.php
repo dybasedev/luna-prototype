@@ -1,113 +1,97 @@
 <?php
 
-namespace Dybasedev\LunaPrototype\Tests\Unit\Showcase;
-
 use Dybasedev\LunaPrototype\Showcase\Structures\Column;
 use Dybasedev\LunaPrototype\Showcase\Structures\Field;
 use Dybasedev\LunaPrototype\Showcase\Structures\FieldGroup;
 use Dybasedev\LunaPrototype\Showcase\UI;
-use Dybasedev\LunaPrototype\Tests\TestCase;
 
-class UITest extends TestCase
-{
-    public function test_ui_can_create_field()
-    {
-        $field = UI::field('username');
-        
-        $this->assertInstanceOf(Field::class, $field);
-        $this->assertEquals('username', $field->key);
-        $this->assertEquals('username', $field->name);
-    }
+test('UI可以创建字段', function () {
+    $field = UI::field('username');
+    
+    expect($field)->toBeInstanceOf(Field::class);
+    expect($field->key)->toBe('username');
+    expect($field->name)->toBe('username');
+});
 
-    public function test_ui_can_create_field_with_custom_key()
-    {
-        $field = UI::field('username', 'user_name_key');
-        
-        $this->assertInstanceOf(Field::class, $field);
-        $this->assertEquals('user_name_key', $field->key);
-        $this->assertEquals('username', $field->name);
-    }
+test('UI可以创建带自定义键的字段', function () {
+    $field = UI::field('username', 'user_name_key');
+    
+    expect($field)->toBeInstanceOf(Field::class);
+    expect($field->key)->toBe('user_name_key');
+    expect($field->name)->toBe('username');
+});
 
-    public function test_ui_can_create_field_with_array_name()
-    {
-        $field = UI::field(['user', 'name']);
-        
-        $this->assertInstanceOf(Field::class, $field);
-        $this->assertEquals('user-name', $field->key);
-        $this->assertEquals(['user', 'name'], $field->name);
-    }
+test('UI可以创建带数组名称的字段', function () {
+    $field = UI::field(['user', 'name']);
+    
+    expect($field)->toBeInstanceOf(Field::class);
+    expect($field->key)->toBe('user-name');
+    expect($field->name)->toBe(['user', 'name']);
+});
 
-    public function test_ui_can_create_field_group()
-    {
-        $fieldGroup = UI::fieldGroup('用户信息');
-        
-        $this->assertInstanceOf(FieldGroup::class, $fieldGroup);
-        $this->assertEquals('用户信息', $fieldGroup->key);
-        $this->assertEquals('用户信息', $fieldGroup->name);
-    }
+test('UI可以创建字段组', function () {
+    $fieldGroup = UI::fieldGroup('用户信息');
+    
+    expect($fieldGroup)->toBeInstanceOf(FieldGroup::class);
+    expect($fieldGroup->key)->toBe('用户信息');
+    expect($fieldGroup->name)->toBe('用户信息');
+});
 
-    public function test_ui_can_create_field_group_with_custom_key()
-    {
-        $fieldGroup = UI::fieldGroup('用户信息', 'user_info');
-        
-        $this->assertInstanceOf(FieldGroup::class, $fieldGroup);
-        $this->assertEquals('user_info', $fieldGroup->key);
-        $this->assertEquals('用户信息', $fieldGroup->name);
-    }
+test('UI可以创建带自定义键的字段组', function () {
+    $fieldGroup = UI::fieldGroup('用户信息', 'user_info');
+    
+    expect($fieldGroup)->toBeInstanceOf(FieldGroup::class);
+    expect($fieldGroup->key)->toBe('user_info');
+    expect($fieldGroup->name)->toBe('用户信息');
+});
 
-    public function test_ui_can_create_column()
-    {
-        $column = UI::column('姓名');
-        
-        $this->assertInstanceOf(Column::class, $column);
-        $this->assertEquals('姓名', $column->key);
-        $this->assertEquals('姓名', $column->name);
-    }
+test('UI可以创建列', function () {
+    $column = UI::column('姓名');
+    
+    expect($column)->toBeInstanceOf(Column::class);
+    expect($column->key)->toBe('姓名');
+    expect($column->name)->toBe('姓名');
+});
 
-    public function test_ui_can_create_column_with_custom_key()
-    {
-        $column = UI::column('姓名', 'name');
-        
-        $this->assertInstanceOf(Column::class, $column);
-        $this->assertEquals('name', $column->key);
-        $this->assertEquals('姓名', $column->name);
-    }
+test('UI可以创建带自定义键的列', function () {
+    $column = UI::column('姓名', 'name');
+    
+    expect($column)->toBeInstanceOf(Column::class);
+    expect($column->key)->toBe('name');
+    expect($column->name)->toBe('姓名');
+});
 
-    public function test_ui_can_create_column_with_array_name()
-    {
-        $column = UI::column(['user', 'profile', 'name']);
-        
-        $this->assertInstanceOf(Column::class, $column);
-        $this->assertEquals('user-profile-name', $column->key);
-        $this->assertEquals(['user', 'profile', 'name'], $column->name);
-    }
+test('UI可以创建带数组名称的列', function () {
+    $column = UI::column(['user', 'profile', 'name']);
+    
+    expect($column)->toBeInstanceOf(Column::class);
+    expect($column->key)->toBe('user-profile-name');
+    expect($column->name)->toBe(['user', 'profile', 'name']);
+});
 
-    public function test_ui_static_methods_return_correct_types()
-    {
-        // 测试所有静态方法都返回正确的类型
-        $this->assertInstanceOf(Field::class, UI::field('test'));
-        $this->assertInstanceOf(FieldGroup::class, UI::fieldGroup('test'));
-        $this->assertInstanceOf(Column::class, UI::column('test'));
-    }
+test('UI静态方法返回正确的类型', function () {
+    // 测试所有静态方法都返回正确的类型
+    expect(UI::field('test'))->toBeInstanceOf(Field::class);
+    expect(UI::fieldGroup('test'))->toBeInstanceOf(FieldGroup::class);
+    expect(UI::column('test'))->toBeInstanceOf(Column::class);
+});
 
-    public function test_created_objects_can_be_chained()
-    {
-        $field = UI::field('email')
-            ->title('邮箱')
-            ->type('email')
-            ->placeholder('请输入邮箱');
-        
-        $this->assertEquals('邮箱', $field->title);
-        $this->assertEquals('email', $field->type);
-        $this->assertEquals('请输入邮箱', $field->placeholder);
+test('创建的对象可以链式调用', function () {
+    $field = UI::field('email')
+        ->title('邮箱')
+        ->type('email')
+        ->placeholder('请输入邮箱');
+    
+    expect($field->title)->toBe('邮箱');
+    expect($field->type)->toBe('email');
+    expect($field->placeholder)->toBe('请输入邮箱');
 
-        $column = UI::column('status')
-            ->title('状态')
-            ->sortable()
-            ->searchable(false);
-        
-        $this->assertEquals('状态', $column->title);
-        $this->assertTrue($column->sortable);
-        $this->assertFalse($column->searchable);
-    }
-}
+    $column = UI::column('status')
+        ->title('状态')
+        ->sortable()
+        ->searchable(false);
+    
+    expect($column->title)->toBe('状态');
+    expect($column->sortable)->toBeTrue();
+    expect($column->searchable)->toBeFalse();
+});

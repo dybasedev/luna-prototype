@@ -21,7 +21,7 @@ beforeEach(function () {
     $this->businessEvent = new LunaBusinessEvent($this->configure, $handler, app('cache.store'));
 });
 
-it('can create a business event', function () {
+it('可以创建业务事件', function () {
     $event = $this->businessEvent->createBusinessEvent(
         'user.registered',
         'user',
@@ -39,7 +39,7 @@ it('can create a business event', function () {
     expect($event->handler_id)->toBe(hash_code('default_handler'));
 });
 
-it('can create event with config', function () {
+it('可以使用配置创建事件', function () {
     $config = new \Dybasedev\LunaPrototype\Foundation\Configuration\Repository(['setting' => 'value']);
     
     $event = $this->businessEvent->createBusinessEvent(
@@ -54,7 +54,7 @@ it('can create event with config', function () {
     expect($event->config)->toBe(['setting' => 'value']);
 });
 
-it('can retrieve all business events', function () {
+it('可以检索所有业务事件', function () {
     // 创建几个事件
     $this->businessEvent->createBusinessEvent('event1', 'user', 'handler1', 'Event 1 occurred', 'Event 1');
     $this->businessEvent->createBusinessEvent('event2', 'user', 'handler2', 'Event 2 occurred', 'Event 2');
@@ -67,7 +67,7 @@ it('can retrieve all business events', function () {
     expect($events->pluck('name')->toArray())->toBe(['event1', 'event2', 'event3']);
 });
 
-it('can check if business event exists', function () {
+it('可以检查业务事件是否存在', function () {
     $this->businessEvent->createBusinessEvent('existing.event', 'user', 'handler', 'Event exists', 'Existing Event');
     
     expect($this->businessEvent->existsBusinessEvent('existing.event'))->toBeTrue();
@@ -75,7 +75,7 @@ it('can check if business event exists', function () {
     expect($this->businessEvent->existsBusinessEvent('non.existing'))->toBeFalse();
 });
 
-it('can get events by group', function () {
+it('可以按组获取事件', function () {
     $this->businessEvent->createBusinessEvent('user.login', 'user', 'handler', 'User logged in', 'User Login');
     $this->businessEvent->createBusinessEvent('user.logout', 'user', 'handler', 'User logged out', 'User Logout');
     $this->businessEvent->createBusinessEvent('order.created', 'order', 'handler', 'Order created', 'Order Created');
@@ -89,7 +89,7 @@ it('can get events by group', function () {
     expect(array_column($orderEvents, 'name'))->toContain('order.created');
 });
 
-it('can get all groups', function () {
+it('可以获取所有组', function () {
     $groups = $this->businessEvent->groups();
     
     expect($groups)->toBeArray();
@@ -99,7 +99,7 @@ it('can get all groups', function () {
     expect($groupNames)->toContain('user', 'order', 'common');
 });
 
-it('caches business events', function () {
+it('缓存业务事件', function () {
     $cache = app('cache.store');
     
     // 清除缓存

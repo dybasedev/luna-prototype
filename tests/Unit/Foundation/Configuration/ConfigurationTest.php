@@ -12,13 +12,13 @@ beforeEach(function () {
     $this->configuration = new LunaConfiguration($this->configure, app('cache.store'));
 });
 
-it('can create a configuration group', function () {
+it('可以创建配置组', function () {
     $group = $this->configuration->group('test-group');
     
     expect($group)->toBeInstanceOf(\Dybasedev\LunaPrototype\Foundation\Configuration\ConfigurationGroup::class);
 });
 
-it('can create and get configuration', function () {
+it('可以创建并获取配置', function () {
     $group = $this->configuration->group('test-group');
     
     $repository = $group->create('test-config', 'Test Configuration', [
@@ -33,7 +33,7 @@ it('can create and get configuration', function () {
     expect($repository->get('nested.inner'))->toBe('value');
 });
 
-it('can check if configuration exists', function () {
+it('可以检查配置是否存在', function () {
     $group = $this->configuration->group('test-group');
     
     $group->create('existing-config', 'Existing Configuration', ['test' => 'value']);
@@ -42,7 +42,7 @@ it('can check if configuration exists', function () {
     expect($group->exists('non-existent'))->toBeFalse();
 });
 
-it('can get configuration through group', function () {
+it('可以通过组获取配置', function () {
     $group = $this->configuration->group('test-group');
     
     $group->create('group-config', 'Group Configuration', ['setting' => 'value']);
@@ -51,7 +51,7 @@ it('can get configuration through group', function () {
     expect($group->get('group-config.non-existent', 'default'))->toBe('default');
 });
 
-it('can set configuration values through group', function () {
+it('可以通过组设置配置值', function () {
     $group = $this->configuration->group('test-group');
     
     $group->create('editable-config', 'Editable Configuration', ['original' => 'value']);
@@ -61,7 +61,7 @@ it('can set configuration values through group', function () {
     expect($group->get('editable-config.new-key'))->toBe('new-value');
 });
 
-it('can save configuration changes', function () {
+it('可以保存配置更改', function () {
     $group = $this->configuration->group('test-group');
     
     $group->create('save-config', 'Save Configuration', ['test' => 'original']);
@@ -76,7 +76,7 @@ it('can save configuration changes', function () {
     expect($newGroup->get('save-config.test'))->toBe('modified');
 });
 
-it('persists configuration to database', function () {
+it('将配置持久化到数据库', function () {
     $group = $this->configuration->group('test-group');
     
     $group->create('persistent-config', 'Persistent Configuration', ['key' => 'value']);
@@ -101,7 +101,7 @@ it('persists configuration to database', function () {
     expect(json_decode($configValue->value, true))->toBe(['key' => 'value']);
 });
 
-it('handles configuration not exists gracefully', function () {
+it('优雅地处理配置不存在的情况', function () {
     $group = $this->configuration->group('test-group');
     
     try {

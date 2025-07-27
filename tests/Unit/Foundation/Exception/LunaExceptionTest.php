@@ -5,21 +5,21 @@ use Dybasedev\LunaPrototype\Foundation\Exception\LunaExceptionMapperBuilder;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-it('can create luna exception with message', function () {
+it('可以使用消息创建 Luna 异常', function () {
     $exception = LunaException::create('Test error message');
     
     expect($exception)->toBeInstanceOf(LunaException::class);
     expect($exception->getMessage())->toBe('Test error message');
 });
 
-it('can create luna exception with code', function () {
+it('可以使用错误码创建 Luna 异常', function () {
     $exception = LunaException::create('Test error', 500);
     
     expect($exception->getCode())->toBe(500);
     expect($exception->getMessage())->toBe('Test error');
 });
 
-it('can create luna exception with data', function () {
+it('可以使用数据创建 Luna 异常', function () {
     $data = ['field' => 'username', 'value' => 'test'];
     $exception = LunaException::create('Validation error')
         ->withData($data);
@@ -27,21 +27,21 @@ it('can create luna exception with data', function () {
     expect($exception->data)->toBe($data);
 });
 
-it('can set display message', function () {
+it('可以设置显示消息', function () {
     $exception = LunaException::create('Internal error')
         ->withDisplayMessage('Something went wrong');
     
     expect($exception->displayMessage)->toBe('Something went wrong');
 });
 
-it('can set http status', function () {
+it('可以设置 HTTP 状态码', function () {
     $exception = LunaException::create('Unauthorized')
         ->withHttpStatus(Response::HTTP_UNAUTHORIZED);
     
     expect($exception->httpStatus)->toBe(Response::HTTP_UNAUTHORIZED);
 });
 
-it('can set behaviour', function () {
+it('可以设置行为', function () {
     $behaviour = ['action' => 'redirect', 'url' => '/login'];
     $exception = LunaException::create('Authentication required')
         ->withBehaviour($behaviour);
@@ -49,7 +49,7 @@ it('can set behaviour', function () {
     expect($exception->behaviour)->toBe($behaviour);
 });
 
-it('can be created from throwable', function () {
+it('可以从 Throwable 创建', function () {
     $original = new \Exception('Original exception', 123);
     $exception = LunaException::create($original);
     
@@ -58,7 +58,7 @@ it('can be created from throwable', function () {
     expect($exception->getPrevious())->toBe($original);
 });
 
-it('can use exception mapper builder', function () {
+it('可以使用异常映射构建器', function () {
     $builder = new LunaExceptionMapperBuilder(\Exception::class);
     
     $builder
@@ -79,7 +79,7 @@ it('can use exception mapper builder', function () {
     expect($result['data'])->toBe(['field' => 'username']);
 });
 
-it('can build mapper with closures', function () {
+it('可以使用闭包构建映射器', function () {
     $builder = new LunaExceptionMapperBuilder(\Exception::class);
     
     $builder
