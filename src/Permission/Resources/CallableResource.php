@@ -89,18 +89,20 @@ class CallableResource extends ResourceDefinition
     }
 
     /**
-     * 动态获取属性
+     * 资源描述（使用属性钩子）
      *
-     * @param string $name
-     * @return mixed
+     * @var string|null
      */
-    public function __get(string $name)
-    {
-        return match($name) {
-            'description' => $this->getDescription(),
-            'actions' => $this->getActions(),
-            'name' => $this->name,
-            default => throw new \InvalidArgumentException("Property {$name} does not exist")
-        };
+    public string|null $description {
+        get => $this->getDescription();
+    }
+
+    /**
+     * 支持的操作（使用属性钩子）
+     *
+     * @var array
+     */
+    public array $actions {
+        get => $this->getActions();
     }
 }
