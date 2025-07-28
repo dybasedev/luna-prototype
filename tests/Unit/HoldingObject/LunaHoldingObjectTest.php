@@ -1,9 +1,9 @@
 <?php
 
 use Dybasedev\LunaPrototype\Foundation\SessionHolder;
-use Dybasedev\LunaPrototype\HoldingObject\Examples\DailyCheckInObject;
-use Dybasedev\LunaPrototype\HoldingObject\Examples\LotteryChanceObject;
-use Dybasedev\LunaPrototype\HoldingObject\Examples\ProductPurchaseLimitObject;
+use Examples\HoldingObject\DailyCheckInObject;
+use Examples\HoldingObject\LotteryChanceObject;
+use Examples\HoldingObject\ProductPurchaseLimitObject;
 use Dybasedev\LunaPrototype\HoldingObject\HoldingStatus;
 use Dybasedev\LunaPrototype\HoldingObject\LunaHoldingObject;
 use Dybasedev\LunaPrototype\HoldingObject\LunaHoldingObjectConfigure;

@@ -6,6 +6,8 @@ use Dybasedev\LunaPrototype\AssetsAccount\LunaAssetsAccountConfigure;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Dybasedev\LunaPrototype\Foundation\Handler\WithModelHandler;
 use Dybasedev\LunaPrototype\Foundation\NamedId;
+use Dybasedev\LunaPrototype\Foundation\Backupable;
+use Dybasedev\LunaPrototype\Foundation\BackupableModel;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,9 +42,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AssetsAccountType whereUpdatedAt($value)
  * @mixin \Eloquent
  */
-class AssetsAccountType extends Model
+class AssetsAccountType extends Model implements Backupable
 {
-    use NamedId, WithModelHandler;
+    use NamedId, WithModelHandler, BackupableModel;
 
     protected $table = 'luna_assets_account_types';
 
@@ -68,6 +70,18 @@ class AssetsAccountType extends Model
     {
         return [
             'config' => 'array',
+        ];
+    }
+
+    /**
+     * 获取备份数据的依赖关系
+     * 
+     * @return array<class-string<Backupable>>
+     */
+    public static function getBackupableDependencies(): array
+    {
+        return [
+            Handler::class, // 账户类型依赖处理器
         ];
     }
 }

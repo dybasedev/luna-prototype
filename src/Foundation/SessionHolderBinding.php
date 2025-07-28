@@ -73,4 +73,18 @@ class SessionHolderBinding
         $this->keyName = $name;
         return $this;
     }
+
+    /**
+     * 获取目标类（绑定的模型类）
+     *
+     * @return string|null
+     */
+    public function getTargetClass(): ?string
+    {
+        if (!$this->table || !$this->tableIsModelClass) {
+            return null;
+        }
+        
+        return $this->table;
+    }
 }

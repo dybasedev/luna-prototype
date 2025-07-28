@@ -3,6 +3,8 @@
 namespace Dybasedev\LunaPrototype\Schedule\Models;
 
 use Dybasedev\LunaPrototype\Foundation\NamedId;
+use Dybasedev\LunaPrototype\Foundation\Backupable;
+use Dybasedev\LunaPrototype\Foundation\BackupableModel;
 use Dybasedev\LunaPrototype\Schedule\LunaScheduleConfigure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,9 +49,9 @@ use Illuminate\Support\Str;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ScheduleTask whereUpdatedAt($value)
  * @mixin \Eloquent
  */
-class ScheduleTask extends Model
+class ScheduleTask extends Model implements Backupable
 {
-    use NamedId;
+    use NamedId, BackupableModel;
 
     protected $table = 'luna_schedule_tasks';
 

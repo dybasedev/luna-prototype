@@ -56,7 +56,6 @@ return new class extends Migration
         
         // 单位转换规则表（用于特殊转换规则）
         Schema::create('luna_unit_conversion_rules', function (Blueprint $table) {
-            $table->id();
             $table->unsignedBigInteger('from_unit_id')->comment('源单位ID');
             $table->unsignedBigInteger('to_unit_id')->comment('目标单位ID');
             $table->unsignedBigInteger('handler_id')->comment('处理器ID');
@@ -65,7 +64,9 @@ return new class extends Migration
             $table->boolean('is_active')->default(true)->comment('是否启用');
             $table->timestamps();
             
-            $table->unique(['from_unit_id', 'to_unit_id', 'handler_id'], 'unique_conversion_rule');
+            // 复合主键
+            $table->primary(['from_unit_id', 'to_unit_id', 'handler_id']);
+            
             $table->index(['from_unit_id', 'to_unit_id']);
             $table->index('handler_id');
             $table->index('priority');

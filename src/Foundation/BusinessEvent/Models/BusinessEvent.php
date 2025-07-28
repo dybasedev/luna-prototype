@@ -5,6 +5,8 @@ namespace Dybasedev\LunaPrototype\Foundation\BusinessEvent\Models;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Dybasedev\LunaPrototype\Foundation\Handler\WithModelHandler;
 use Dybasedev\LunaPrototype\Foundation\NamedId;
+use Dybasedev\LunaPrototype\Foundation\Backupable;
+use Dybasedev\LunaPrototype\Foundation\BackupableModel;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -34,9 +36,9 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BusinessEvent whereUpdatedAt($value)
  * @mixin \Eloquent
  */
-class BusinessEvent extends Model
+class BusinessEvent extends Model implements Backupable
 {
-    use NamedId, WithModelHandler;
+    use NamedId, WithModelHandler, BackupableModel;
 
     protected $table = 'luna_business_events';
 
@@ -44,6 +46,18 @@ class BusinessEvent extends Model
     {
         return [
             'config' => 'array',
+        ];
+    }
+
+    /**
+     * 获取备份数据的依赖关系
+     * 
+     * @return array<class-string<Backupable>>
+     */
+    public static function getBackupableDependencies(): array
+    {
+        return [
+            Handler::class, // 业务事件可能依赖处理器
         ];
     }
 }

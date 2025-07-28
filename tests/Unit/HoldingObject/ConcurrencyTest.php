@@ -1,7 +1,7 @@
 <?php
 
 use Dybasedev\LunaPrototype\Foundation\SessionHolder;
-use Dybasedev\LunaPrototype\HoldingObject\Examples\LotteryChanceObject;
+use Examples\HoldingObject\LotteryChanceObject;
 use Dybasedev\LunaPrototype\HoldingObject\LunaHoldingObject;
 use Dybasedev\LunaPrototype\HoldingObject\LunaHoldingObjectConfigure;
 use Illuminate\Foundation\Testing\RefreshDatabase;

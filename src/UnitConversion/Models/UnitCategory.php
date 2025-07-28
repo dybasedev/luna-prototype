@@ -3,6 +3,8 @@
 namespace Dybasedev\LunaPrototype\UnitConversion\Models;
 
 use Dybasedev\LunaPrototype\Foundation\NamedId;
+use Dybasedev\LunaPrototype\Foundation\Backupable;
+use Dybasedev\LunaPrototype\Foundation\BackupableModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,9 +23,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * 
  * @property-read Collection<UnitDefinition> $units
  */
-class UnitCategory extends Model
+class UnitCategory extends Model implements Backupable
 {
-    use NamedId;
+    use NamedId, BackupableModel;
     
     protected $table = 'luna_unit_categories';
     

@@ -3,6 +3,8 @@
 namespace Dybasedev\LunaPrototype\Foundation\Handler\Models;
 
 use Dybasedev\LunaPrototype\Foundation\NamedId;
+use Dybasedev\LunaPrototype\Foundation\Backupable;
+use Dybasedev\LunaPrototype\Foundation\BackupableModel;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -33,11 +35,21 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Handler whereUpdatedAt($value)
  * @mixin \Eloquent
  */
-class Handler extends Model
+class Handler extends Model implements Backupable
 {
-    use NamedId;
+    use NamedId, BackupableModel;
 
     protected $table = 'luna_handlers';
+
+    protected $fillable = [
+        'name',
+        'group_id',
+        'display_name',
+        'description',
+        'handler',
+        'config',
+        'enabled',
+    ];
 
     protected function casts():array
     {

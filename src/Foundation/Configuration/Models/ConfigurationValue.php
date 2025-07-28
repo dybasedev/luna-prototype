@@ -31,6 +31,12 @@ class ConfigurationValue extends Model
 
     public $incrementing = false;
 
+    protected $fillable = [
+        'version_id',
+        'index_id',
+        'value',
+    ];
+
     public function indexModel(): string
     {
         return Configuration::class;

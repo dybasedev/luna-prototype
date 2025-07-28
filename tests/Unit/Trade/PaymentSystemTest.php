@@ -5,7 +5,7 @@ use Dybasedev\LunaPrototype\Trade\Payment\StandardPaymentProvider;
 use Dybasedev\LunaPrototype\Trade\Payment\PaymentConfiguration;
 use Dybasedev\LunaPrototype\Trade\Payment\PaymentStatus;
 use Dybasedev\LunaPrototype\Trade\Payment\PaymentResult;
-use Dybasedev\LunaPrototype\Trade\Payment\Examples\MockThirdPartyPayment;
+use Examples\Trade\MockThirdPartyPayment;
 use Dybasedev\LunaPrototype\Trade\Payment\PaymentMethodConfigurationRepository;
 
 it('可以创建支付提供者并注册支付方式', function () {

@@ -150,8 +150,8 @@ trait VersionControl
     public function switchTo(string $versionId, bool $checkVersionExists = false): bool
     {
         if ($checkVersionExists) {
-            $version = $this->versionDataItems()->where('version_id', $versionId)->exists();
-            if ($version === null) {
+            $exists = $this->versions()->where($this->relationVersionValueLocalKey(), $versionId)->exists();
+            if (!$exists) {
                 throw new InvalidArgumentException('Version not exists');
             }
         }

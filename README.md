@@ -24,6 +24,9 @@ Luna Prototype 特别适合快速原型开发、概念验证、初创项目和�
 - **会员体系框架**: 可扩展的会员等级和权益管理基础组件
 - **UI组件抽象层**: 前端无关的表单字段和数据展示组件抽象
 - **单位转换系统**: 支持多种单位类型转换，包括货币、长度、重量等，支持动态汇率
+- **交易系统**: 完整的交易流程管理，包括订单、支付、退款等功能
+- **对象持有系统**: 灵活的对象持有关系管理，支持签到、购买限制、抽奖等场景
+- **权限系统**: 基于策略的权限管理，支持角色、用户组和灵活的权限分配
 - **配置管理系统**: 支持版本控制的灵活配置存储和管理机制
 - **处理器扩展模式**: 基于处理器的业务逻辑扩展点，支持插件化开发
 - **业务事件系统**: 业务操作事件定义和用户友好的描述格式化机制
@@ -49,6 +52,10 @@ class AppServiceProvider extends LunaServiceProvider
         $this->registerModule(LunaAssetsAccountConfigure::create()->build());
         $this->registerModule(LunaScheduleConfigure::create()->build());
         $this->registerModule(LunaMembershipConfigure::create()->build());
+        $this->registerModule(LunaUnitConversionConfigure::create()->build());
+        $this->registerModule(LunaTradeConfigure::create()->build());
+        $this->registerModule(LunaHoldingObjectConfigure::create()->build());
+        $this->registerModule(LunaPermissionConfigure::create()->build());
     }
 }
 ```
@@ -238,6 +245,35 @@ UI组件抽象模块，提供：
 - 与资产账户系统的集成
 - 批量转换和缓存优化
 
+### Trade 模块
+
+交易系统模块，提供：
+- 完整的交易流程管理
+- 可扩展的交易对象（Tradable）接口
+- 灵活的支付方式管理
+- 交易金额修改器（折扣、税费、运费等）
+- 退款和撤销支持
+- 交易编号生成器
+
+### HoldingObject 模块
+
+对象持有系统模块，提供：
+- 唯一对象定义和管理
+- 灵活的持有状态（正常、禁用、释放等）
+- 持有条件验证（数量限制、时间限制等）
+- 常见场景支持（每日签到、购买限制、抽奖机会等）
+- 并发控制和缓存优化
+
+### Permission 模块
+
+权限管理模块，提供：
+- 基于策略（Policy）的权限定义
+- 角色（Role）管理
+- 用户组（UserGroup）管理
+- 灵活的权限分配和继承
+- 权限缓存和性能优化
+- 与 Laravel Gate 的集成
+
 ## 架构设计
 
 ### 原子化模块设计
@@ -419,6 +455,144 @@ $conversions = [
     'usd_to_eur' => ['from' => 'USD', 'to' => 'EUR', 'amount' => 100],
 ];
 $results = $unitConversion->batchConvert($conversions);
+```
+
+### 交易系统
+
+Trade 模块提供了完整的交易流程管理，适用于电商、充值、服务购买等场景：
+
+```php
+use Dybasedev\LunaPrototype\Trade\LunaTrade;
+use Dybasedev\LunaPrototype\Trade\Payment\PaymentConfiguration;
+
+// 配置支付方式
+$paymentConfig = PaymentConfiguration::create()
+    ->registerMethod('alipay', AlipayPayment::class, [
+        'app_id' => 'your_app_id',
+        'private_key' => 'your_private_key',
+    ])
+    ->registerMethod('wechat', WechatPayment::class, [
+        'mch_id' => 'your_mch_id',
+        'api_key' => 'your_api_key',
+    ])
+    ->setDefaultMethod('alipay')
+    ->build();
+
+// 创建交易
+$trade = app(LunaTrade::class);
+$transaction = $trade->createTransaction($buyer, $product, 100.00);
+
+// 应用金额修改器（折扣、税费等）
+$transaction->applyModifier(new DiscountModifier(0.1));  // 10% 折扣
+$transaction->applyModifier(new TaxModifier(0.06));      // 6% 税费
+
+// 发起支付
+$paymentResult = $trade->pay($transaction, 'alipay', [
+    'return_url' => 'https://example.com/return',
+    'notify_url' => 'https://example.com/notify',
+]);
+
+// 处理支付结果
+if ($paymentResult->isSuccess()) {
+    // 支付成功
+    $trade->completeTransaction($transaction);
+} elseif ($paymentResult->isPending()) {
+    // 等待支付回调
+    echo $paymentResult->getRedirectUrl();
+}
+```
+
+### 对象持有系统
+
+HoldingObject 模块提供了灵活的对象持有关系管理，适用于各种业务场景：
+
+```php
+use Dybasedev\LunaPrototype\HoldingObject\LunaHoldingObject;
+use Dybasedev\LunaPrototype\HoldingObject\LunaHoldingObjectConfigure;
+
+// 配置持有对象
+$configure = LunaHoldingObjectConfigure::create()
+    ->registerUniqueObject('daily-checkin', DailyCheckInObject::class)
+    ->registerUniqueObject('product-limit', ProductPurchaseLimitObject::class)
+    ->registerUniqueObject('lottery-chance', LotteryChanceObject::class)
+    ->build();
+
+$holdingObject = new LunaHoldingObject($configure);
+
+// 每日签到
+$checkIn = $holdingObject->createUniqueHolding(
+    $user,
+    'daily-checkin',
+    1,  // 持有数量
+    ['check_in_date' => date('Y-m-d')]
+);
+
+if ($checkIn->isSuccessful()) {
+    echo "签到成功！";
+} else {
+    echo "今日已签到";
+}
+
+// 购买限制检查
+$canPurchase = $holdingObject->checkHoldingLimit(
+    $user,
+    'product-limit',
+    $product->id,
+    $quantity
+);
+
+if (!$canPurchase) {
+    echo "超出购买限制";
+}
+
+// 抽奖机会管理
+$holdingObject->updateHolding(
+    $user,
+    'lottery-chance',
+    'activity_001',
+    5  // 增加5次抽奖机会
+);
+```
+
+### 权限系统
+
+Permission 模块提供了基于策略的灵活权限管理：
+
+```php
+use Dybasedev\LunaPrototype\Permission\LunaPermission;
+
+$permission = app(LunaPermission::class);
+
+// 创建策略
+$policy = $permission->createPolicy('article.manage', [
+    [
+        'effect' => 'allow',
+        'actions' => ['create', 'update'],
+        'resources' => ['article:*'],
+    ],
+    [
+        'effect' => 'deny',
+        'actions' => ['delete'],
+        'resources' => ['article:protected:*'],
+    ]
+]);
+
+// 创建角色并分配策略
+$role = $permission->createRole('editor', '编辑员');
+$permission->assignPolicy($policy, $role);
+
+// 分配角色给用户
+$permission->assignPolicy($role->name, $user);
+
+// 权限检查
+if ($user->hasPermission('article.manage', 'create', 'article:123')) {
+    // 允许创建文章
+}
+
+// 用户组管理
+$group = $permission->createUserGroup('vip-users', 'VIP用户组');
+$group->addMember($user);
+$permission->assignPolicy($policy, $group);
 ```
 
 ## 测试

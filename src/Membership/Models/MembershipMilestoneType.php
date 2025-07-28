@@ -3,6 +3,8 @@
 namespace Dybasedev\LunaPrototype\Membership\Models;
 
 use Dybasedev\LunaPrototype\Foundation\NamedId;
+use Dybasedev\LunaPrototype\Foundation\Backupable;
+use Dybasedev\LunaPrototype\Foundation\BackupableModel;
 use Dybasedev\LunaPrototype\Membership\LunaMembershipConfigure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
@@ -21,9 +23,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<MembershipMilestone> $milestones
  */
-class MembershipMilestoneType extends Model
+class MembershipMilestoneType extends Model implements Backupable
 {
-    use NamedId;
+    use NamedId, BackupableModel;
     
     /**
      * 表名
@@ -98,5 +100,17 @@ class MembershipMilestoneType extends Model
             ['name' => $name],
             array_merge(['name' => $name], $attributes)
         );
+    }
+
+    /**
+     * 获取备份数据的依赖关系
+     * 
+     * @return array<class-string<Backupable>>
+     */
+    public static function getBackupableDependencies(): array
+    {
+        return [
+            \Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler::class, // 里程碑类型依赖处理器
+        ];
     }
 }

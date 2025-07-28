@@ -3,6 +3,8 @@
 namespace Dybasedev\LunaPrototype\UnitConversion\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Dybasedev\LunaPrototype\Foundation\Backupable;
+use Dybasedev\LunaPrototype\Foundation\BackupableModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -27,8 +29,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<UnitConversionRule> $conversionRulesFrom
  * @property-read \Illuminate\Database\Eloquent\Collection<UnitConversionRule> $conversionRulesTo
  */
-class UnitDefinition extends Model
+class UnitDefinition extends Model implements Backupable
 {
+    use BackupableModel;
+    
     protected $table = 'luna_unit_definitions';
     
     public $incrementing = false;
@@ -179,5 +183,28 @@ class UnitDefinition extends Model
                 $model->id = static::generateId($model->category_id, $model->code);
             }
         });
+    }
+
+    /**
+     * 获取备份对象的关联键配置
+     * 使用 category_id 和 code 的组合作为唯一标识
+     * 
+     * @return string|array|null
+     */
+    public static function getBackupableRelationKey(): string|array|null
+    {
+        return ['category_id', 'code'];
+    }
+
+    /**
+     * 获取备份数据的依赖关系
+     * 
+     * @return array<class-string<Backupable>>
+     */
+    public static function getBackupableDependencies(): array
+    {
+        return [
+            UnitCategory::class, // 单位定义依赖单位类别
+        ];
     }
 }

@@ -1,7 +1,7 @@
 <?php
 
 use Dybasedev\LunaPrototype\Trade\Standard\StandardTransactionNumberGenerator;
-use Dybasedev\LunaPrototype\Trade\Examples\CustomTransactionNumberGenerator;
+use Examples\Trade\CustomTransactionNumberGenerator;
 use Dybasedev\LunaPrototype\Trade\Models\TradeTransaction;
 
 test('标准编号生成器可以生成和解析交易编号', function () {
@@ -104,10 +104,10 @@ test('编号生成器可以返回格式说明', function () {
 
 test('交易组件可以使用自定义编号生成器', function () {
     $configure = \Dybasedev\LunaPrototype\Trade\LunaTradeConfigure::create()
-        ->setDefaultTransactionNumberGeneratorClass(CustomTransactionNumberGenerator::class)
+        ->setDefaultTransactionNumberGeneratorClass(\Examples\Trade\CustomTransactionNumberGenerator::class)
         ->build();
     
-    expect($configure->getTransactionNumberGenerator())->toBeInstanceOf(CustomTransactionNumberGenerator::class);
+    expect($configure->getTransactionNumberGenerator())->toBeInstanceOf(\Examples\Trade\CustomTransactionNumberGenerator::class);
 });
 
 test('设置默认交易号前缀', function () {
