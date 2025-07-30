@@ -383,3 +383,39 @@ if (!function_exists('luna_app')) {
         return app('luna');
     }
 }
+
+if (!function_exists('luna_registered_modules')) {
+    /**
+     * 获取已注册的 Luna 模块列表
+     *
+     * 返回所有已注册的 Luna 模块配置对象的数组。
+     * 键为模块名称，值为对应的配置对象实例。
+     *
+     * 使用示例：
+     * ```php
+     * // 获取所有已注册的模块
+     * $modules = luna_registered_modules();
+     * 
+     * // 检查特定模块是否已注册
+     * if (isset($modules['luna.assets-account'])) {
+     *     // 模块已注册
+     * }
+     * 
+     * // 遍历所有模块
+     * foreach ($modules as $name => $configure) {
+     *     echo $name . ': ' . get_class($configure) . PHP_EOL;
+     * }
+     * ```
+     *
+     * @return array<string, LunaModuleConfigure> 已注册的模块配置对象数组
+     */
+    function luna_registered_modules(): array
+    {
+        try {
+            return app('luna.registered-modules');
+        } catch (BindingResolutionException $e) {
+            // 如果服务容器中没有注册模块列表，返回空数组
+            return [];
+        }
+    }
+}

@@ -64,7 +64,7 @@ class AppPublishModels extends Command
         // 过滤要处理的模块
         $modulesToProcess = empty($modules) 
             ? $registeredModules 
-            : array_filter($registeredModules, fn($module) => in_array($module->name(), $modules));
+            : array_filter($registeredModules, fn($module, $name) => in_array($name, $modules), ARRAY_FILTER_USE_BOTH);
 
         if (empty($modulesToProcess)) {
             $this->error('没有找到指定的模块');
@@ -73,8 +73,8 @@ class AppPublishModels extends Command
 
         $publishedCount = 0;
 
-        foreach ($modulesToProcess as $module) {
-            $this->info("\n处理模块: {$module->name()}");
+        foreach ($modulesToProcess as $moduleName => $module) {
+            $this->info("\n处理模块: {$moduleName}");
             $models = $this->findModelsInModule($module);
 
             if (empty($models)) {
@@ -101,17 +101,7 @@ class AppPublishModels extends Command
      */
     private function getRegisteredModules(): array
     {
-        $provider = $this->laravel->getProvider(LunaServiceProvider::class);
-        
-        if (!$provider) {
-            return [];
-        }
-
-        $reflection = new ReflectionClass($provider);
-        $property = $reflection->getProperty('modules');
-        $property->setAccessible(true);
-
-        return $property->getValue($provider) ?? [];
+        return luna_registered_modules();
     }
 
     /**

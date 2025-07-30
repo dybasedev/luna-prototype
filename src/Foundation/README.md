@@ -482,6 +482,7 @@ Foundation 提供了以下辅助函数：
 - `luna_exception_mapper(string $exceptionClass)` - 创建异常映射器
 - `luna_business_event()` - 获取 LunaBusinessEvent 实例
 - `luna_app()` - 获取 LunaApplication 实例
+- `luna_registered_modules()` - 获取所有已注册的模块配置对象数组
 
 ## 最佳实践
 

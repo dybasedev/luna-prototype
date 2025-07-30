@@ -107,6 +107,8 @@ class LunaServiceProvider extends ServiceProvider
                 $this->instances[] = $this->app->register($provider);
             }
         }
+
+        $this->app->singleton('luna.registered-modules', fn() => $this->modules);
     }
 
     final protected function registerLunaPrototypeCommands(): void
