@@ -20,4 +20,11 @@ trait LunaSessionHolder
     {
         return hash_code($this->getOperatorTypeName());
     }
+
+    public function getSessionHolderContext(): ?array
+    {
+        // 默认不提供任何上下文信息，业务端可根据需要对其覆盖
+
+        return [];
+    }
 }
