@@ -105,7 +105,7 @@ class LunaMembershipConfigure extends LunaModuleConfigure
         $container->singleton('luna.membership', function($app) {
             return new LunaMembership(
                 $app->make(LunaMembershipConfigure::class),
-                $app->make('cache'),
+                $app->make('cache.store'),
                 $app->make(LunaHandler::class)
             );
         });
