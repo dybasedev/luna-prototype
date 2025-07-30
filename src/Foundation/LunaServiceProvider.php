@@ -117,6 +117,8 @@ class LunaServiceProvider extends ServiceProvider
                 Consoles\AppCurrent::class,
                 Consoles\AppEnvironment::class,
                 Consoles\AppInstall::class,
+                Consoles\AppBackup::class,
+                Consoles\AppPublishModels::class,
             ]);
         }
     }

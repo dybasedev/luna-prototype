@@ -196,7 +196,105 @@ $configure = LunaExceptionConfigure::create()
     ->build();
 ```
 
-### 5. Backupable（可备份对象）
+### 5. Installation（安装器）
+
+提供应用程序的安装和初始化功能，支持依赖管理、分步安装、数据初始化等场景。
+
+#### 核心类
+
+- **Installation**: 安装器基类，定义安装的标准接口
+- **LunaApplicationConfigure**: 应用程序配置类，管理安装器注册
+
+#### 功能特性
+
+1. **依赖管理**: 通过 `$installations` 属性定义前置依赖的安装器
+2. **输出支持**: 集成控制台输出，提供安装进度反馈
+3. **事务保护**: 所有安装操作在事务中执行，确保数据一致性
+4. **顺序执行**: 根据依赖关系自动确定安装顺序
+
+#### 使用示例
+
+```php
+// 创建基础安装器
+class SystemInstallation extends Installation
+{
+    public function install(): void
+    {
+        $this->writeln('=> 初始化系统配置...');
+        
+        // 创建默认配置
+        Configuration::create([
+            'name' => 'system.version',
+            'value' => ['version' => '1.0.0']
+        ]);
+        
+        // 创建默认用户组
+        UserGroup::create([
+            'name' => 'administrators',
+            'display_name' => '管理员组'
+        ]);
+        
+        $this->writeln('   系统配置初始化完成');
+    }
+}
+
+// 创建带依赖的安装器
+class BusinessInstallation extends Installation
+{
+    // 声明依赖的前置安装器
+    protected array $installations = [
+        SystemInstallation::class,
+        PermissionInstallation::class,
+    ];
+    
+    public function install(): void
+    {
+        $this->writeln('=> 初始化业务数据...');
+        
+        // 创建业务相关的初始数据
+        // 此时系统配置和权限已经安装完成
+        
+        $this->writeln('   业务数据初始化完成', 'v');
+    }
+}
+
+// 注册安装器
+$configure = LunaApplicationConfigure::create()
+    ->installation(SystemInstallation::class)
+    ->installation(PermissionInstallation::class)
+    ->installation(BusinessInstallation::class)
+    ->build();
+
+// 执行安装（通过 app:install 命令）
+// php artisan app:install
+```
+
+#### 注意事项
+
+1. **避免 DDL 操作**: 安装器中不要包含数据库结构变更操作（CREATE TABLE 等），这些应该在迁移文件中处理
+2. **幂等性**: 安装逻辑应该设计为可重复执行，避免重复安装导致的问题
+3. **错误处理**: 安装失败时会自动回滚事务，确保数据一致性
+4. **依赖循环**: 避免安装器之间的循环依赖
+
+#### 安装状态管理
+
+系统通过 `.luna-installed` 文件跟踪安装状态，该文件包含：
+- 安装时间
+- 应用版本
+- 环境信息
+
+该文件会自动添加到 `.gitignore` 中，避免在版本控制中提交。
+
+#### 重新安装流程
+
+1. **检测已安装状态**
+2. **交互式确认**（或使用 --force 跳过）
+3. **备份现有数据**（可选）
+4. **清理现有数据**（migrate:fresh）
+5. **执行新安装**
+6. **更新安装标识**
+
+### 6. Backupable（可备份对象）
 
 提供数据备份和恢复功能，支持配置数据迁移、业务数据同步等场景。
 
@@ -286,8 +384,53 @@ Foundation 提供了以下 Artisan 命令：
 
 - `app:current` - 显示当前环境文件信息
 - `app:env` - 切换环境配置文件
-- `app:install` - 安装应用程序
+- `app:install` - 安装应用程序（支持重新安装和自动备份）
 - `app:backup` - 管理数据备份（导出/导入/查看）
+- `app:publish-models` - 发布 Luna 模块的模型到应用程序
+
+### app:install 命令详细说明
+
+安装命令现在支持以下功能：
+
+1. **安装标识文件**：`.luna-installed` 文件记录安装信息
+2. **自动 .gitignore 更新**：自动将安装标识文件加入 .gitignore
+3. **重新安装支持**：
+   - 自动检测已安装状态
+   - 交互式确认重新安装
+   - 自动备份现有数据
+
+命令选项：
+```bash
+# 基础安装
+php artisan app:install
+
+# 强制重新安装（跳过确认）
+php artisan app:install --force
+
+# 重新安装时跳过备份
+php artisan app:install --force --skip-backup
+
+# 指定备份文件名
+php artisan app:install --force --backup-file=my-backup.dat
+```
+
+### app:publish-models 命令详细说明
+
+发布模型命令用于将 Luna 模块中的模型发布到应用程序：
+
+```bash
+# 发布所有模块的模型
+php artisan app:publish-models
+
+# 发布指定模块的模型
+php artisan app:publish-models --module=luna.assets-account --module=luna.trade
+
+# 强制覆盖已存在的文件
+php artisan app:publish-models --force
+
+# 预览模式（不实际创建文件）
+php artisan app:publish-models --dry-run
+```
 
 ## 配置
 

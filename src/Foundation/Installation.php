@@ -42,9 +42,24 @@ abstract class Installation
     }
 
     /**
+     * 前置依赖的安装器列表
+     * 
+     * 在当前安装器执行之前，这些安装器会先被执行。
+     * 系统会自动处理依赖关系，确保安装顺序正确。
+     * 
      * @var class-string<Installation>[]
      */
     protected array $installations = [];
+
+    /**
+     * 获取当前安装器的依赖列表
+     * 
+     * @return class-string<Installation>[]
+     */
+    final public function getDependencies(): array
+    {
+        return $this->installations;
+    }
 
     /**
      * 安装逻辑
