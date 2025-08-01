@@ -144,13 +144,15 @@ class LunaUnitConversionConfigure extends LunaModuleConfigure
     public function register(Container $container): void
     {
         // 注册组件到容器
-        $container->singleton(LunaUnitConversion::class, function ($app) {
+        $container->singleton('luna.unit-conversion', function ($app) {
             return new LunaUnitConversion(
                 $this,
                 $app->make('cache.store'),
                 $app->make(LunaHandler::class)
             );
         });
+        
+        $container->alias('luna.unit-conversion', LunaUnitConversion::class);
     }
 
     /**
