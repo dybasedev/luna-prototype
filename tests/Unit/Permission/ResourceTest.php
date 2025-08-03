@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Permission;
+namespace Dybasedev\LunaPrototype\Tests\Unit\Permission;
 
 use Dybasedev\LunaPrototype\Permission\Resources\ResourceDefinition;
 use Dybasedev\LunaPrototype\Permission\Resources\SimpleResource;
@@ -15,7 +15,7 @@ class ResourceTest extends TestCase
 {
     use RefreshDatabase;
     /** @test */
-    public function it_creates_resource_definition()
+    public function 创建资源定义()
     {
         $resource = new SimpleResource('posts', 'Blog posts');
         
@@ -25,7 +25,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_can_set_actions()
+    public function 可以设置动作()
     {
         $resource = new SimpleResource('posts');
         $resource->setActions(['create', 'read', 'update', 'delete']);
@@ -34,7 +34,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_can_add_actions()
+    public function 可以添加动作()
     {
         $resource = new SimpleResource('posts');
         $resource->setActions(['read', 'write']);
@@ -44,7 +44,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_removes_duplicate_actions()
+    public function 移除重复动作()
     {
         $resource = new SimpleResource('posts');
         $resource->setActions(['read', 'write']);
@@ -54,7 +54,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_checks_if_has_action()
+    public function 检查是否有动作()
     {
         $resource = new SimpleResource('posts');
         $resource->setActions(['read', 'write', 'delete']);
@@ -69,7 +69,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_generates_resource_identifier()
+    public function 生成资源标识符()
     {
         $resource = new SimpleResource('posts');
         
@@ -79,7 +79,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_crud_resource()
+    public function 创建增删改查资源()
     {
         $resource = SimpleResource::crud('articles', 'News articles');
         
@@ -89,7 +89,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_read_only_resource()
+    public function 创建只读资源()
     {
         $resource = SimpleResource::readOnly('logs', 'System logs');
         
@@ -98,7 +98,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_admin_resource()
+    public function 创建管理员资源()
     {
         $resource = SimpleResource::admin('system', 'System configuration');
         
@@ -108,7 +108,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_from_array()
+    public function 从数组创建()
     {
         $definition = [
             'description' => 'User profiles',
@@ -124,7 +124,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_model_resource()
+    public function 创建模型资源()
     {
         $resource = new ModelResource(TestModel::class);
         
@@ -135,7 +135,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_generates_model_identifier()
+    public function 生成模型标识符()
     {
         $resource = new ModelResource(TestModel::class);
         $model = new TestModel(['id' => 'abc123']);
@@ -145,7 +145,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_read_only_model_resource()
+    public function 创建只读模型资源()
     {
         $resource = ModelResource::readOnlyModel(TestModel::class);
         
@@ -153,7 +153,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_model_class()
+    public function 验证模型类()
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('must extend ' . Model::class);
@@ -162,7 +162,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_callable_resource()
+    public function 创建可调用资源()
     {
         $resolver = function($name) {
             return [
@@ -180,7 +180,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function callable_resource_returns_resource_definition()
+    public function 可调用资源返回资源定义()
     {
         $resolver = function($name) {
             return SimpleResource::crud($name, 'Dynamic CRUD');
@@ -192,7 +192,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function callable_resource_caches_resolution()
+    public function 可调用资源缓存解析结果()
     {
         $callCount = 0;
         $resolver = function($name) use (&$callCount) {
@@ -211,7 +211,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function resource_registry_can_register_resources()
+    public function 资源注册表可以注册资源()
     {
         $registry = new ResourceRegistry();
         
@@ -233,7 +233,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function resource_registry_gets_resources()
+    public function 资源注册表获取资源()
     {
         $registry = new ResourceRegistry();
         $registry->register('test', ['description' => 'Test', 'actions' => ['read']]);
@@ -247,7 +247,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function resource_registry_can_register_many()
+    public function 资源注册表可以批量注册()
     {
         $registry = new ResourceRegistry();
         
@@ -263,7 +263,7 @@ class ResourceTest extends TestCase
     }
 
     /** @test */
-    public function resource_registry_lists_all_resources()
+    public function 资源注册表列出所有资源()
     {
         $registry = new ResourceRegistry();
         $registry->registerMany([

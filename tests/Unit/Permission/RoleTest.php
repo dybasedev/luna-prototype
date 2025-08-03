@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Permission;
+namespace Dybasedev\LunaPrototype\Tests\Unit\Permission;
 
 use Dybasedev\LunaPrototype\Foundation\Exception\LunaException;
 use Dybasedev\LunaPrototype\Permission\Models\Role;
@@ -21,7 +21,7 @@ class RoleTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_role()
+    public function 可以创建角色()
     {
         $role = Role::create([
             'name' => 'editor',
@@ -37,7 +37,7 @@ class RoleTest extends TestCase
     }
 
     /** @test */
-    public function it_implements_permission_subject()
+    public function 实现权限主体接口()
     {
         $role = Role::create([
             'name' => 'admin',
@@ -51,7 +51,7 @@ class RoleTest extends TestCase
     }
 
     /** @test */
-    public function it_can_find_by_name()
+    public function 可以按名称查找()
     {
         $role = Role::create([
             'name' => 'editor',
@@ -67,7 +67,7 @@ class RoleTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_system_role()
+    public function 可以创建系统角色()
     {
         $role = Role::createSystemRole('super-admin', 'Super Administrator', [
             'description' => 'Has all permissions',
@@ -82,7 +82,7 @@ class RoleTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_deleting_system_roles()
+    public function 阻止删除系统角色()
     {
         $role = Role::createSystemRole('system', 'System Role');
 
@@ -93,7 +93,7 @@ class RoleTest extends TestCase
     }
 
     /** @test */
-    public function it_cascades_delete_policy_assignments()
+    public function 级联删除策略分配()
     {
         $role = Role::create([
             'name' => 'temp-role',
@@ -123,7 +123,7 @@ class RoleTest extends TestCase
     }
 
     /** @test */
-    public function it_has_policy_assignments_relationship()
+    public function 拥有策略分配关系()
     {
         $role = Role::create([
             'name' => 'user',

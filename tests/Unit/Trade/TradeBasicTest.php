@@ -150,7 +150,7 @@ beforeEach(function () {
     app()->instance(LunaTradeConfigure::class, $tradeConfigure);
 });
 
-test('可以创建单个商品的交易', function () {
+it('可以创建单个商品的交易', function () {
     $user = new TestTradeUser(1);
     $product = new TestProduct(1, 'iPhone 15', 5999.00);
     
@@ -173,7 +173,7 @@ test('可以创建单个商品的交易', function () {
     expect($transaction->getTransactionNumber())->toStartWith('T');
 });
 
-test('可以创建多个商品的交易', function () {
+it('可以创建多个商品的交易', function () {
     $user = new TestTradeUser(1);
     $product1 = new TestProduct(1, 'iPhone 15', 5999.00);
     $product2 = new TestProduct(2, 'AirPods Pro', 1999.00);
@@ -199,7 +199,7 @@ test('可以创建多个商品的交易', function () {
     expect($tradables)->toHaveCount(2);
 });
 
-test('可以更新交易状态', function () {
+it('可以更新交易状态', function () {
     $user = new TestTradeUser(1);
     $product = new TestProduct(1, 'Test Product', 100.00);
     
@@ -217,7 +217,7 @@ test('可以更新交易状态', function () {
     expect($transaction->status)->toBe(StandardTransactionStatus::Paid->getCode());
 });
 
-test('可以取消交易', function () {
+it('可以取消交易', function () {
     $user = new TestTradeUser(1);
     $product = new TestProduct(1, 'Test Product', 100.00);
     
@@ -230,7 +230,7 @@ test('可以取消交易', function () {
     expect($transaction->canceled_at)->not->toBeNull();
 });
 
-test('可以查询用户的交易列表', function () {
+it('可以查询用户的交易列表', function () {
     $user = new TestTradeUser(1);
     $product = new TestProduct(1, 'Test Product', 100.00);
     
@@ -245,7 +245,7 @@ test('可以查询用户的交易列表', function () {
     expect($transactions->items())->toHaveCount(5);
 });
 
-test('可以使用辅助函数', function () {
+it('可以使用辅助函数', function () {
     expect(luna_trade())->toBe($this->trade);
     
     $user = new TestTradeUser(1);

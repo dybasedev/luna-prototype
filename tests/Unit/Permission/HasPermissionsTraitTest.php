@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Permission;
+namespace Dybasedev\LunaPrototype\Tests\Unit\Permission;
 
 use Dybasedev\LunaPrototype\Permission\Models\Policy;
 use Dybasedev\LunaPrototype\Permission\Models\PolicyAssignment;
@@ -37,7 +37,7 @@ class HasPermissionsTraitTest extends TestCase
     }
 
     /** @test */
-    public function it_implements_permission_subject()
+    public function 实现权限主体接口()
     {
         $user = $this->createTestUser('user-1', 'John Doe', 'john@example.com');
 
@@ -48,7 +48,7 @@ class HasPermissionsTraitTest extends TestCase
     }
 
     /** @test */
-    public function it_uses_fallback_for_display_name()
+    public function 使用回退显示名称()
     {
         // 没有 name 的用户
         $user1 = $this->createTestUser('user-1', null, 'user@example.com');
@@ -60,7 +60,7 @@ class HasPermissionsTraitTest extends TestCase
     }
 
     /** @test */
-    public function it_has_policy_assignments_relationship()
+    public function 拥有策略分配关系()
     {
         $user = $this->createTestUser('user-1', 'Test User');
         $policy = Policy::create(['name' => 'user-policy']);
@@ -73,7 +73,7 @@ class HasPermissionsTraitTest extends TestCase
     }
 
     /** @test */
-    public function it_has_permission_groups_relationship()
+    public function 拥有权限组关系()
     {
         $user = $this->createTestUser('user-1', 'Test User');
         
@@ -90,7 +90,7 @@ class HasPermissionsTraitTest extends TestCase
     }
 
     /** @test */
-    public function it_gets_all_policy_assignments_including_groups()
+    public function 获取所有策略分配包括组()
     {
         $user = $this->createTestUser('user-1', 'Test User');
         
@@ -115,7 +115,7 @@ class HasPermissionsTraitTest extends TestCase
     }
 
     /** @test */
-    public function it_filters_expired_assignments()
+    public function 过滤过期的分配()
     {
         $user = $this->createTestUser('user-1', 'Test User');
         $policy1 = Policy::create(['name' => 'temp-policy-expired']);
@@ -141,7 +141,7 @@ class HasPermissionsTraitTest extends TestCase
     }
 
     /** @test */
-    public function it_gets_effective_policies()
+    public function 获取有效的策略()
     {
         $user = $this->createTestUser('user-1', 'Test User');
         
@@ -170,7 +170,7 @@ class HasPermissionsTraitTest extends TestCase
     }
 
     /** @test */
-    public function it_checks_if_user_has_specific_policy()
+    public function 检查用户是否拥有特定策略()
     {
         $user = $this->createTestUser('user-haspolicy', 'Test User');
         
@@ -194,7 +194,7 @@ class HasPermissionsTraitTest extends TestCase
     }
 
     /** @test */
-    public function it_caches_policy_checks()
+    public function 缓存策略检查()
     {
         $user = $this->createTestUser('user-cache', 'Test User');
         $policy = Policy::create(['name' => 'cached-policy']);

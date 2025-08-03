@@ -7,7 +7,7 @@ use Dybasedev\LunaPrototype\Permission\Models\PolicyStatement;
 use Dybasedev\LunaPrototype\Permission\Models\Role;
 use Illuminate\Support\Facades\Cache;
 
-test('权限组件基本功能测试', function () {
+it('权限组件基本功能测试', function () {
     // 加载迁移
     $this->loadMigrationsFrom(__DIR__ . '/../../../src/Permission/migrations');
     

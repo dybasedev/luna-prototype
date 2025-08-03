@@ -20,7 +20,7 @@ beforeEach(function () {
     $this->permission = new LunaPermission($this->configure, Cache::store());
 });
 
-test('策略声明验证', function () {
+it('策略声明验证', function () {
     // 有效的声明
     $statement = new PolicyStatement([
         'effect' => 'allow',
@@ -40,7 +40,7 @@ test('策略声明验证', function () {
     expect(fn() => $statement->validate())->toThrow(LunaException::class);
 });
 
-test('策略声明通配符匹配', function () {
+it('策略声明通配符匹配', function () {
     $statement = new PolicyStatement(['action' => 'posts:*']);
     
     expect($statement->matchAction('posts:read'))->toBeTrue();
@@ -48,7 +48,7 @@ test('策略声明通配符匹配', function () {
     expect($statement->matchAction('comments:read'))->toBeFalse();
 });
 
-test('创建和管理策略', function () {
+it('创建和管理策略', function () {
     // 创建策略
     $policy = $this->permission->createPolicy('test-policy-basic', [
         'effect' => 'allow',
@@ -82,7 +82,7 @@ test('创建和管理策略', function () {
     expect($this->permission->getPolicyByName('test-policy-basic'))->toBeNull();
 });
 
-test('创建和管理角色', function () {
+it('创建和管理角色', function () {
     // 创建角色
     $role = $this->permission->createRole('editor-basic', 'Content Editor', 'Can edit content');
     
@@ -100,7 +100,7 @@ test('创建和管理角色', function () {
         ->toThrow(LunaException::class, '系统角色不允许删除');
 });
 
-test('策略分配和权限检查', function () {
+it('策略分配和权限检查', function () {
     // 创建策略
     $policy = $this->permission->createPolicy('read-posts', [
         'effect' => 'allow',
@@ -129,7 +129,7 @@ test('策略分配和权限检查', function () {
     expect($result)->toBe(1);
 });
 
-test('策略版本控制', function () {
+it('策略版本控制', function () {
     $policy = Policy::create(['name' => 'versioned-policy']);
     
     // 创建第一个版本
@@ -160,7 +160,7 @@ test('策略版本控制', function () {
     expect($policy->current_version_id)->toBe($version1);
 });
 
-test('策略声明构建器', function () {
+it('策略声明构建器', function () {
     $statement = PolicyStatement::builder()
         ->allow()
         ->action(['read', 'write'])

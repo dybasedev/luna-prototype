@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Permission;
+namespace Dybasedev\LunaPrototype\Tests\Unit\Permission;
 
 use Dybasedev\LunaPrototype\Permission\Models\Policy;
 use Dybasedev\LunaPrototype\Permission\Models\PolicyStatement;
@@ -22,7 +22,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_a_policy()
+    public function 可以创建策略()
     {
         $policy = Policy::create([
             'name' => 'test-policy',
@@ -39,7 +39,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_policy_version()
+    public function 可以创建策略版本()
     {
         $policy = Policy::create([
             'name' => 'test-policy',
@@ -67,7 +67,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_policy_statement()
+    public function 验证策略声明()
     {
         $policy = Policy::create([
             'name' => 'test-policy',
@@ -85,7 +85,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function it_requires_action_or_not_action()
+    public function 需要指定动作或排除动作()
     {
         $policy = Policy::create([
             'name' => 'test-policy',
@@ -101,7 +101,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function it_requires_resource()
+    public function 需要指定资源()
     {
         $policy = Policy::create([
             'name' => 'test-policy',
@@ -117,7 +117,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function it_can_find_policy_by_name()
+    public function 可以按名称查找策略()
     {
         $policy = Policy::create([
             'name' => 'test-policy',
@@ -134,7 +134,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function it_can_switch_versions()
+    public function 可以切换版本()
     {
         $policy = Policy::create([
             'name' => 'test-policy',
@@ -172,7 +172,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function it_returns_null_statement_when_no_version()
+    public function 无版本时返回空声明()
     {
         $policy = Policy::create([
             'name' => 'test-policy',
@@ -182,7 +182,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function it_can_query_by_name_scope()
+    public function 可以按名称范围查询()
     {
         Policy::create(['name' => 'policy-1']);
         Policy::create(['name' => 'policy-2']);
@@ -201,7 +201,7 @@ class PolicyTest extends TestCase
     }
 
     /** @test */
-    public function version_control_creates_unique_hashes()
+    public function 版本控制创建唯一哈希()
     {
         $policy = Policy::create([
             'name' => 'test-policy',

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Permission;
+namespace Dybasedev\LunaPrototype\Tests\Unit\Permission;
 
 use Dybasedev\LunaPrototype\Permission\Models\Policy;
 use Dybasedev\LunaPrototype\Permission\Models\PolicyAssignment;
@@ -22,7 +22,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_assignment()
+    public function 可以创建分配()
     {
         $policy = Policy::create(['name' => 'test-policy']);
         $role = Role::create(['name' => 'editor', 'display_name' => 'Editor']);
@@ -43,7 +43,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_can_assign_using_static_method()
+    public function 可以使用静态方法分配()
     {
         $policy = Policy::create(['name' => 'read-policy']);
         $policy->createVersion([
@@ -65,7 +65,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_can_assign_using_policy_name()
+    public function 可以使用策略名称分配()
     {
         $policy = Policy::create(['name' => 'write-policy']);
         $role = Role::create(['name' => 'writer', 'display_name' => 'Writer']);
@@ -76,7 +76,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_throws_exception_for_invalid_policy()
+    public function 无效策略抛出异常()
     {
         $role = Role::create(['name' => 'user', 'display_name' => 'User']);
 
@@ -87,7 +87,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_has_policy_relationship()
+    public function 拥有策略关系()
     {
         $policy = Policy::create(['name' => 'test-policy']);
         $role = Role::create(['name' => 'admin', 'display_name' => 'Admin']);
@@ -99,7 +99,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_can_get_subject_model()
+    public function 可以获取主体模型()
     {
         $policy = Policy::create(['name' => 'test-policy']);
         
@@ -121,7 +121,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_can_scope_by_subject()
+    public function 可以按主体查询()
     {
         $policy = Policy::create(['name' => 'test-policy']);
         $role1 = Role::create(['name' => 'role1', 'display_name' => 'Role 1']);
@@ -145,7 +145,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_can_scope_active_assignments()
+    public function 可以查询活跃分配()
     {
         $policy1 = Policy::create(['name' => 'test-policy-1']);
         $policy2 = Policy::create(['name' => 'test-policy-2']);
@@ -170,7 +170,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_can_check_expiration()
+    public function 可以检查过期状态()
     {
         $policy1 = Policy::create(['name' => 'test-policy-exp1']);
         $policy2 = Policy::create(['name' => 'test-policy-exp2']);
@@ -192,7 +192,7 @@ class PolicyAssignmentTest extends TestCase
     }
 
     /** @test */
-    public function it_handles_unknown_subject_types()
+    public function 处理未知主体类型()
     {
         $assignment = new PolicyAssignment([
             'policy_id' => 'test',

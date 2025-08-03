@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Permission;
+namespace Dybasedev\LunaPrototype\Tests\Unit\Permission;
 
 use Dybasedev\LunaPrototype\Foundation\Exception\LunaException;
 use Dybasedev\LunaPrototype\Permission\LunaPermission;
@@ -33,7 +33,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_policy()
+    public function 可以创建策略()
     {
         $statement = [
             'effect' => 'allow',
@@ -54,7 +54,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_duplicate_policy_names()
+    public function 防止重复的策略名称()
     {
         $statement = ['effect' => 'allow', 'action' => 'read', 'resource' => 'posts'];
         
@@ -67,7 +67,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_can_update_policy()
+    public function 可以更新策略()
     {
         $policy = $this->permission->createPolicy('test-policy-update', [
             'effect' => 'allow',
@@ -95,7 +95,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_can_delete_policy()
+    public function 可以删除策略()
     {
         $policy = $this->permission->createPolicy('test-policy-delete', [
             'effect' => 'allow',
@@ -125,7 +125,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_can_list_policies()
+    public function 可以列出策略()
     {
         $this->permission->createPolicy('policy-1', [
             'effect' => 'allow',
@@ -147,7 +147,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_and_manage_roles()
+    public function 可以创建和管理角色()
     {
         $role = $this->permission->createRole('editor', 'Content Editor', 'Can edit content');
 
@@ -166,7 +166,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_duplicate_role_names()
+    public function 防止重复的角色名称()
     {
         $this->permission->createRole('editor-dup', 'Editor');
 
@@ -177,7 +177,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_deleting_system_roles()
+    public function 防止删除系统角色()
     {
         $role = Role::createSystemRole('system-admin', 'System Admin');
 
@@ -188,7 +188,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_can_assign_policy_to_subject()
+    public function 可以分配策略到主体()
     {
         $policy = $this->permission->createPolicy('read-posts', [
             'effect' => 'allow',
@@ -210,7 +210,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_duplicate_policy_assignments()
+    public function 防止重复的策略分配()
     {
         $policy = $this->permission->createPolicy('test-policy-dup-assign', [
             'effect' => 'allow',
@@ -229,7 +229,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_allows_reassigning_expired_policies()
+    public function 允许重新分配过期的策略()
     {
         $policy = $this->permission->createPolicy('test-policy-expired', [
             'effect' => 'allow',
@@ -259,7 +259,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_can_revoke_policy()
+    public function 可以撤销策略()
     {
         $policy = $this->permission->createPolicy('test-policy-revoke', [
             'effect' => 'allow',
@@ -281,7 +281,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_subject_exists_when_assigning()
+    public function 分配时验证主体存在()
     {
         $policy = $this->permission->createPolicy('test-policy-validate', [
             'effect' => 'allow',
@@ -304,7 +304,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_handles_permission_checking()
+    public function 处理权限检查()
     {
         $policy = $this->permission->createPolicy('posts-policy', [
             'effect' => 'allow',
@@ -324,7 +324,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_batch_checks_permissions()
+    public function 批量检查权限()
     {
         $policy1 = $this->permission->createPolicy('read-policy', [
             'effect' => 'allow',
@@ -354,7 +354,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_handles_cache_without_lock_support()
+    public function 处理没有锁支持的缓存()
     {
         // 创建一个不支持锁的缓存 mock
         $cache = $this->createMock(\Illuminate\Contracts\Cache\Repository::class);
@@ -377,7 +377,7 @@ class LunaPermissionTest extends TestCase
     }
 
     /** @test */
-    public function it_registers_resources()
+    public function 注册资源()
     {
         $this->permission->registerResource('posts', [
             'description' => 'Blog posts',

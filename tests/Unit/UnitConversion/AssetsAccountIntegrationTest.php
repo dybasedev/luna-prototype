@@ -112,14 +112,14 @@ beforeEach(function () {
     app()->instance(LunaAssetsAccountConfigure::class, $assetsConfigure);
 });
 
-test('检查单位转换组件是否可用', function () {
+it('检查单位转换组件是否可用', function () {
     expect(AssetsAccountIntegration::isAvailable())->toBeTrue();
     
     // 测试组件不可用的情况 - 需要在另一个进程中测试
     // 由于单例模式，这里无法完全模拟组件不存在的情况
 });
 
-test('为账户类型添加货币支持', function () {
+it('为账户类型添加货币支持', function () {
     // 获取USD货币信息
     $currency = $this->unitConversion->getUnit('USD', 'currency');
     
@@ -142,7 +142,7 @@ test('为账户类型添加货币支持', function () {
     expect($metadata['currency']['code'])->toBe('USD');
 });
 
-test('创建多币种子账户配置', function () {
+it('创建多币种子账户配置', function () {
     // 测试多币种配置的生成
     $currencies = ['USD', 'CNY', 'EUR'];
     $configs = [];
@@ -178,7 +178,7 @@ test('创建多币种子账户配置', function () {
     expect($configs['CNY']['metadata']['currency']['code'])->toBe('CNY');
 });
 
-test('转换账户余额到指定货币', function () {
+it('转换账户余额到指定货币', function () {
     // USD到CNY的转换
     $convertedAmount = AssetsAccountIntegration::convertBalance(100, 'USD', 'CNY');
     expect($convertedAmount)->toBe(700.0); // 基于预设的汇率
@@ -188,7 +188,7 @@ test('转换账户余额到指定货币', function () {
     expect($convertedAmount2)->toBe(100.0);
 });
 
-test('获取账户的货币信息', function () {
+it('获取账户的货币信息', function () {
     $metadata = [
         'currency' => [
             'code' => 'USD',
@@ -209,7 +209,7 @@ test('获取账户的货币信息', function () {
     expect($noCurrency)->toBeNull();
 });
 
-test('格式化账户余额', function () {
+it('格式化账户余额', function () {
     $metadata = [
         'currency' => [
             'code' => 'CNY',
@@ -232,7 +232,7 @@ test('格式化账户余额', function () {
     expect($formatted3)->toBe('1,234.57');
 });
 
-test('完整的多币种账户使用流程模拟', function () {
+it('完整的多币种账户使用流程模拟', function () {
     // 1. 模拟多币种账户配置
     $currencies = ['USD', 'CNY'];
     $accountConfigs = [];
@@ -274,7 +274,7 @@ test('完整的多币种账户使用流程模拟', function () {
     expect($formattedUsd)->toBe('$100.00');
 });
 
-test('使用支持单位转换的账户操作', function () {
+it('使用支持单位转换的账户操作', function () {
     // 加载资产账户迁移
     $this->loadMigrationsFrom(__DIR__ . '/../../../src/AssetsAccount/migrations');
     
@@ -333,7 +333,7 @@ test('使用支持单位转换的账户操作', function () {
     expect((float)$usdAcc->available_balance)->toBe(1000.0);
 });
 
-test('单位转换转账操作', function () {
+it('单位转换转账操作', function () {
     // 加载资产账户迁移
     $this->loadMigrationsFrom(__DIR__ . '/../../../src/AssetsAccount/migrations');
     

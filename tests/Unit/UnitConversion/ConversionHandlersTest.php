@@ -57,7 +57,7 @@ afterEach(function () {
     app('cache.store')->forget('handler:entities');
 });
 
-test('固定比例处理器基本转换', function () {
+it('固定比例处理器基本转换', function () {
     $handler = new FixedRateHandler();
     $context = new ConversionContext();
     
@@ -69,7 +69,7 @@ test('固定比例处理器基本转换', function () {
     expect($result->getFee())->toBe(0.0);
 });
 
-test('固定比例处理器带手续费', function () {
+it('固定比例处理器带手续费', function () {
     $handler = new FixedRateHandler();
     $handler->withConfig([
         'fee' => [
@@ -88,7 +88,7 @@ test('固定比例处理器带手续费', function () {
     expect($result->getNetAmount())->toBe(688.0);
 });
 
-test('固定比例处理器手续费限制', function () {
+it('固定比例处理器手续费限制', function () {
     $handler = new FixedRateHandler();
     $handler->withConfig([
         'fee' => [
@@ -109,7 +109,7 @@ test('固定比例处理器手续费限制', function () {
     expect($result2->getFee())->toBe(50.0); // 最大值
 });
 
-test('动态比例处理器从API获取汇率', function () {
+it('动态比例处理器从API获取汇率', function () {
     // 模拟HTTP响应
     Http::fake([
         'api.example.com/*' => Http::response(['rate' => 7.25], 200),
@@ -129,7 +129,7 @@ test('动态比例处理器从API获取汇率', function () {
     expect($result->getToAmount())->toBe(725.0);
 });
 
-test('动态比例处理器从数据库获取汇率', function () {
+it('动态比例处理器从数据库获取汇率', function () {
     // 创建汇率表
     \DB::statement('CREATE TABLE exchange_rates (
         id INTEGER PRIMARY KEY AUTO_INCREMENT,
@@ -157,7 +157,7 @@ test('动态比例处理器从数据库获取汇率', function () {
     expect($result->getToAmount())->toBe(715.0);
 });
 
-test('动态比例处理器从回调获取汇率', function () {
+it('动态比例处理器从回调获取汇率', function () {
     $handler = new DynamicRateHandler();
     $handler->withConfig([
         'source' => 'callback',
@@ -185,7 +185,7 @@ test('动态比例处理器从回调获取汇率', function () {
     expect(round($result2->getRate(), 2))->toBe(7.14); // 7.0 * 1.02
 });
 
-test('条件化处理器根据条件应用不同规则', function () {
+it('条件化处理器根据条件应用不同规则', function () {
     $handler = new ConditionalRateHandler();
     $handler->withConfig([
         'rules' => [
@@ -224,7 +224,7 @@ test('条件化处理器根据条件应用不同规则', function () {
     expect($vipResult->getFee())->toBe(3.43); // 686 * 0.005
 });
 
-test('条件化处理器的复杂条件判断', function () {
+it('条件化处理器的复杂条件判断', function () {
     $handler = new ConditionalRateHandler();
     $handler->withConfig([
         'rules' => [
@@ -258,7 +258,7 @@ test('条件化处理器的复杂条件判断', function () {
     expect($result->getFee())->toBe(31.5);
 });
 
-test('创建自定义转换规则', function () {
+it('创建自定义转换规则', function () {
     // 创建处理器记录
     $handler = new Handler();
     $handler->id = 9001;

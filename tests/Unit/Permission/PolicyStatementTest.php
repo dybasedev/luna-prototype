@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Permission;
+namespace Dybasedev\LunaPrototype\Tests\Unit\Permission;
 
 use Dybasedev\LunaPrototype\Permission\Models\PolicyStatement;
 use Dybasedev\LunaPrototype\Permission\Models\PolicyStatementBuilder;
@@ -10,7 +10,7 @@ use Dybasedev\LunaPrototype\Tests\TestCase;
 class PolicyStatementTest extends TestCase
 {
     /** @test */
-    public function it_parses_statement_correctly()
+    public function 正确解析策略声明()
     {
         $data = [
             'effect' => 'allow',
@@ -32,7 +32,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_defaults_to_deny_effect()
+    public function 默认为拒绝效果()
     {
         $statement = new PolicyStatement([]);
         
@@ -42,7 +42,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_wraps_single_values_in_arrays()
+    public function 将单个值包装为数组()
     {
         $statement = new PolicyStatement([
             'action' => 'read',
@@ -56,7 +56,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_matches_actions_correctly()
+    public function 正确匹配动作()
     {
         // 简单匹配
         $statement = new PolicyStatement(['action' => 'read']);
@@ -77,7 +77,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_handles_not_actions()
+    public function 处理排除动作()
     {
         $statement = new PolicyStatement([
             'not_action' => ['delete', 'admin:*']
@@ -90,7 +90,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_matches_resources_with_patterns()
+    public function 使用模式匹配资源()
     {
         $statement = new PolicyStatement(['resource' => 'posts:*:comments']);
         
@@ -107,7 +107,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_matches_principals()
+    public function 匹配主体()
     {
         $statement = new PolicyStatement(['principal' => ['user:123', 'role:admin']]);
         
@@ -122,7 +122,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_required_fields()
+    public function 验证必填字段()
     {
         // 有效的声明
         $statement = new PolicyStatement([
@@ -135,7 +135,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_effect_values()
+    public function 验证效果值()
     {
         $statement = new PolicyStatement([
             'effect' => 'invalid',
@@ -148,7 +148,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_allows_not_action_without_action()
+    public function 允许没有动作的排除动作()
     {
         $statement = new PolicyStatement([
             'effect' => 'allow',
@@ -160,7 +160,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_allow_statement()
+    public function 创建允许声明()
     {
         $statement = PolicyStatement::allow('read', 'posts', [
             'condition' => ['ip' => '192.168.1.1']
@@ -173,7 +173,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_deny_statement()
+    public function 创建拒绝声明()
     {
         $statement = PolicyStatement::deny(['delete', 'admin:*'], '*');
 
@@ -183,7 +183,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function it_builds_statement_fluently()
+    public function 链式构建声明()
     {
         $statement = PolicyStatement::builder()
             ->allow()
@@ -207,7 +207,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function builder_handles_single_values()
+    public function 构建器处理单值()
     {
         $statement = PolicyStatement::builder()
             ->deny()
@@ -222,7 +222,7 @@ class PolicyStatementTest extends TestCase
     }
 
     /** @test */
-    public function empty_arrays_match_all()
+    public function 空数组匹配所有()
     {
         // 空 action 数组匹配所有操作
         $statement = new PolicyStatement(['resource' => 'posts']);

@@ -26,7 +26,7 @@ beforeEach(function () {
     );
 });
 
-test('可以创建单位类别', function () {
+it('可以创建单位类别', function () {
     $category = $this->unitConversion->createCategory('test_category', [
         'display_name' => '测试类别',
         'description' => '用于测试的类别',
@@ -38,7 +38,7 @@ test('可以创建单位类别', function () {
     expect($category->is_active)->toBeTrue();
 });
 
-test('可以使用 CategoryAttributes 创建单位类别', function () {
+it('可以使用 CategoryAttributes 创建单位类别', function () {
     $category = $this->unitConversion->createCategory('test_category', 
         CategoryAttributes::create()
             ->description('测试类别描述')
@@ -53,7 +53,7 @@ test('可以使用 CategoryAttributes 创建单位类别', function () {
     expect($category->config)->toBe(['key' => 'value']);
 });
 
-test('可以获取单位类别', function () {
+it('可以获取单位类别', function () {
     // 创建类别
     $this->unitConversion->createCategory('test_category', [
         'display_name' => '测试类别',
@@ -66,7 +66,7 @@ test('可以获取单位类别', function () {
     expect($category->name)->toBe('test_category');
 });
 
-test('可以创建单位定义', function () {
+it('可以创建单位定义', function () {
     $unit = $this->unitConversion->createUnit('currency', 'TEST', [
         'symbol' => 'T',
         'display_name' => '测试币',
@@ -81,7 +81,7 @@ test('可以创建单位定义', function () {
     expect($unit->base_value)->toBe(1.5);
 });
 
-test('可以使用 UnitAttributes 创建单位定义', function () {
+it('可以使用 UnitAttributes 创建单位定义', function () {
     $unit = $this->unitConversion->createUnit('currency', 'TEST', 
         UnitAttributes::create()
             ->symbol('T')
@@ -99,7 +99,7 @@ test('可以使用 UnitAttributes 创建单位定义', function () {
     expect($unit->base_value)->toBe(1.5);
 });
 
-test('第一个单位自动成为基准单位', function () {
+it('第一个单位自动成为基准单位', function () {
     $unit1 = $this->unitConversion->createUnit('new_category', 'UNIT1', [
         'display_name' => '单位1',
     ]);
@@ -116,7 +116,7 @@ test('第一个单位自动成为基准单位', function () {
     expect($unit2->base_value)->toBe(2.0);
 });
 
-test('可以获取单位定义', function () {
+it('可以获取单位定义', function () {
     // 创建单位
     $this->unitConversion->createUnit('currency', 'TEST', [
         'display_name' => '测试币',
@@ -133,7 +133,7 @@ test('可以获取单位定义', function () {
     expect($unit2->id)->toBe($unit->id);
 });
 
-test('同类别单位之间的固定比例转换', function () {
+it('同类别单位之间的固定比例转换', function () {
     // 创建货币单位
     $usd = $this->unitConversion->createUnit('currency', 'USD', [
         'symbol' => '$',
@@ -157,7 +157,7 @@ test('同类别单位之间的固定比例转换', function () {
     expect($result->getFee())->toBe(0.0);
 });
 
-test('单位值格式化', function () {
+it('单位值格式化', function () {
     $unit = $this->unitConversion->createUnit('currency', 'USD', [
         'symbol' => '$',
         'precision' => 2,
@@ -173,7 +173,7 @@ test('单位值格式化', function () {
     expect($unit2->formatValue(123.456))->toBe('m123.5');
 });
 
-test('转换上下文的使用', function () {
+it('转换上下文的使用', function () {
     // 创建单位
     $this->unitConversion->createUnit('currency', 'USD', [
         'base_value' => 1.0,
@@ -201,7 +201,7 @@ test('转换上下文的使用', function () {
     expect($context->getParameter('user_level'))->toBe('vip');
 });
 
-test('批量转换', function () {
+it('批量转换', function () {
     // 创建单位
     $this->unitConversion->createUnit('currency', 'USD', ['base_value' => 1.0, 'is_base' => true]);
     $this->unitConversion->createUnit('currency', 'CNY', ['base_value' => 7.0]);
@@ -222,7 +222,7 @@ test('批量转换', function () {
     expect($results['cny_to_eur']->getToAmount())->toBe(85.0);
 });
 
-test('获取转换率', function () {
+it('获取转换率', function () {
     // 创建单位
     $this->unitConversion->createUnit('length', 'm', ['base_value' => 1.0, 'is_base' => true]);
     $this->unitConversion->createUnit('length', 'km', ['base_value' => 1000.0]);
@@ -233,7 +233,7 @@ test('获取转换率', function () {
     expect($this->unitConversion->getRate('m', 'cm'))->toBe(0.01);
 });
 
-test('初始化预定义数据', function () {
+it('初始化预定义数据', function () {
     $this->unitConversion->initializePredefinedData();
     
     // 检查预定义类别
@@ -248,7 +248,7 @@ test('初始化预定义数据', function () {
     expect($this->unitConversion->getUnit('kg'))->not->toBeNull();
 });
 
-test('辅助函数工作正常', function () {
+it('辅助函数工作正常', function () {
     // 注册组件到容器
     app()->instance(LunaUnitConversion::class, $this->unitConversion);
     
@@ -265,7 +265,7 @@ test('辅助函数工作正常', function () {
     expect($formatted)->toBe('¥1,234.56');
 });
 
-test('批量获取单位定义', function () {
+it('批量获取单位定义', function () {
     // 创建多个单位
     $this->unitConversion->createUnit('currency', 'USD', ['display_name' => '美元']);
     $this->unitConversion->createUnit('currency', 'CNY', ['display_name' => '人民币']);
@@ -282,7 +282,7 @@ test('批量获取单位定义', function () {
     expect($allUnits)->toHaveCount(2);
 });
 
-test('获取所有单位类别（永久缓存）', function () {
+it('获取所有单位类别（永久缓存）', function () {
     // 创建多个类别
     $this->unitConversion->createCategory('test1', ['display_name' => '测试1']);
     $this->unitConversion->createCategory('test2', ['display_name' => '测试2']);
@@ -299,7 +299,7 @@ test('获取所有单位类别（永久缓存）', function () {
     expect($categories2)->toHaveCount(2); // 仍然是2个，因为使用了永久缓存
 });
 
-test('单位定义ID自动生成', function () {
+it('单位定义ID自动生成', function () {
     $category = $this->unitConversion->createCategory('test_category');
     $unit = $this->unitConversion->createUnit('test_category', 'TEST');
     
@@ -320,7 +320,7 @@ test('单位定义ID自动生成', function () {
     expect($newUnit->id)->toBe(hash_code('test_category:TEST2'));
 });
 
-test('缓存机制正常工作', function () {
+it('缓存机制正常工作', function () {
     // 创建类别和单位
     $this->unitConversion->createCategory('cache_test');
     $this->unitConversion->createUnit('cache_test', 'UNIT1');

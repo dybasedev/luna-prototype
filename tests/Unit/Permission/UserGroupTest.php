@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Permission;
+namespace Dybasedev\LunaPrototype\Tests\Unit\Permission;
 
 use Dybasedev\LunaPrototype\Permission\Models\UserGroup;
 use Dybasedev\LunaPrototype\Permission\Models\PolicyAssignment;
@@ -25,7 +25,7 @@ class UserGroupTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_user_group()
+    public function 可以创建用户组()
     {
         $group = UserGroup::create([
             'name' => 'administrators',
@@ -39,7 +39,7 @@ class UserGroupTest extends TestCase
     }
 
     /** @test */
-    public function it_implements_permission_subject()
+    public function 实现权限主体接口()
     {
         $group = UserGroup::create([
             'name' => 'editors',
@@ -53,7 +53,7 @@ class UserGroupTest extends TestCase
     }
 
     /** @test */
-    public function it_implements_user_group_contract()
+    public function 实现用户组契约()
     {
         $group = UserGroup::create([
             'name' => 'moderators',
@@ -66,7 +66,7 @@ class UserGroupTest extends TestCase
     }
 
     /** @test */
-    public function it_can_manage_members()
+    public function 可以管理成员()
     {
         $group = UserGroup::create(['name' => 'team']);
 
@@ -94,7 +94,7 @@ class UserGroupTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_duplicate_members()
+    public function 阻止重复成员()
     {
         $group = UserGroup::create(['name' => 'team']);
         $user = $this->createMockUser('user-1');
@@ -109,7 +109,7 @@ class UserGroupTest extends TestCase
     }
 
     /** @test */
-    public function it_cascades_delete()
+    public function 级联删除()
     {
         $group = UserGroup::create(['name' => 'temp-group']);
         $user = $this->createMockUser('user-1');
@@ -148,7 +148,7 @@ class UserGroupTest extends TestCase
     }
 
     /** @test */
-    public function it_has_policy_assignments_relationship()
+    public function 拥有策略分配关系()
     {
         $group = UserGroup::create(['name' => 'reviewers']);
 
