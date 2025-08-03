@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Foundation;
+namespace Dybasedev\LunaPrototype\Tests\Unit\Foundation;
 
 use Dybasedev\LunaPrototype\Foundation\LunaServiceProvider;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
