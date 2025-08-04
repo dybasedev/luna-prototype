@@ -15,6 +15,23 @@ use Dybasedev\LunaPrototype\Foundation\Configuration\Repository;
 abstract class BaseHandler
 {
     /**
+     * 配置信息实例
+     *
+     * 存储处理器的配置信息，通过 withConfig() 方法设置。
+     * 使用 protected(set) 确保只能通过指定方法修改配置。
+     *
+     * @var Repository|null
+     */
+    protected(set) ?Repository $config = null;
+
+    /**
+     * 处理器ID访问器
+     *
+     * 提供对处理器ID的读写访问。
+     */
+    protected(set) ?int $handlerId = null;
+
+    /**
      * 获取处理器名称
      * 
      * 返回处理器的唯一标识名称，用于注册和查找处理器。
@@ -49,36 +66,15 @@ abstract class BaseHandler
     }
 
     /**
-     * 配置信息实例
-     * 
-     * 存储处理器的配置信息，通过 withConfig() 方法设置。
-     * 使用 protected(set) 确保只能通过指定方法修改配置。
-     * 
-     * @var Repository|null
+     * 附加处理器实体 ID
+     *
+     * @param int $handlerId
+     * @return $this
      */
-    protected(set) ?Repository $config = null;
-
-    /**
-     * 处理器ID
-     * 
-     * 用于在数据库中标识处理器实例。
-     * 通常在处理器注册到系统时自动分配。
-     * 
-     * @var int|null
-     */
-    private ?int $_handlerId = null;
-    
-    /**
-     * 处理器ID访问器
-     * 
-     * 提供对处理器ID的读写访问。
-     * 使用 PHP 8.4 的属性钩子实现。
-     */
-    public ?int $handlerId {
-        get => $this->_handlerId;
-        set {
-            $this->_handlerId = $value;
-        }
+    public function withEntityId(int $handlerId): static
+    {
+        $this->handlerId = $handlerId;
+        return $this;
     }
 
     /**

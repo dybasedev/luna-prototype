@@ -5,6 +5,7 @@ namespace Dybasedev\LunaPrototype\Foundation\Handler;
 use Dybasedev\LunaPrototype\Foundation\Configuration\Repository;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
@@ -206,10 +207,11 @@ class LunaHandler
 
     /**
      * 创建处理器实例
-     * 
+     *
      * @param string|int $name 处理器名称或ID
      * @return BaseHandler
      * @throws RuntimeException
+     * @throws BindingResolutionException
      */
     public function createHandlerInstance(string|int $name): BaseHandler
     {
@@ -236,11 +238,6 @@ class LunaHandler
             $handler->withConfig($config);
         }
         
-        // 设置处理器ID（如果处理器支持）
-        if (property_exists($handler, 'handlerId')) {
-            $handler->handlerId = $entity->id;
-        }
-        
-        return $handler;
+        return $handler->withEntityId($entity->id);
     }
 }
