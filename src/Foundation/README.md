@@ -1,6 +1,6 @@
 # Foundation 组件
 
-Foundation 是 Luna Prototype 的核心基础组件，提供了整个框架的基础架构和通用功能。它包含了多个子模块，为其他组件提供统一的接口和工具。
+Foundation 是 Luna Prototype 的核心基础组件，提供了整个框架的基础架构和核心功能。它包含了多个子组件。该组件是所有组件默认必须依赖的组件。
 
 ## 组件构成
 
@@ -13,9 +13,9 @@ Foundation 是 Luna Prototype 的核心基础组件，提供了整个框架的�
 - **BaseHandler**: 处理器基类，提供统一的处理器接口和配置管理功能
 - **LunaHandler**: 处理器管理类，负责管理和维护所有注册的处理器
 - **LunaHandlerConfigure**: 处理器配置类，用于注册和配置处理器
-- **ModelHandler**: 模型处理器接口，用于与数据模型交互的处理器
-- **WithModelHandler**: Trait，提供模型处理器的辅助功能
-- **WithModelInstance**: Trait，为处理器提供模型实例管理功能
+- **ModelHandler**: 模型处理器接口，实现该接口的处理器可以处理模型数据，可配合 `WithModelInstance` 快速实现
+- **WithModelHandler**: Trait，提供模型处理器的辅助功能，通过该 Trait 可以模型中获取处理器实例
+- **WithModelInstance**: Trait，为处理器提供模型实例管理功能，区别于 `withModelHandler`，这个是提供给 Handler 反向获取模型实例的
 
 #### 使用示例
 

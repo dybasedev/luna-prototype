@@ -17,6 +17,7 @@ use Dybasedev\LunaPrototype\Foundation\Configuration\LunaConfiguration;
 use Dybasedev\LunaPrototype\Foundation\Exception\LunaException;
 use Dybasedev\LunaPrototype\Foundation\Exception\LunaExceptionMapperBuilder;
 use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
+use Dybasedev\LunaPrototype\Foundation\LunaApplication;
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\JsonResponse;
@@ -38,12 +39,8 @@ if (!function_exists('hash_code')) {
      * @return int 生成的哈希码（32位整数）
      * @throws InvalidArgumentException 当输入不是字符串时抛出
      */
-    function hash_code($str): int
+    function hash_code(string $str): int
     {
-        if (!is_string($str)) {
-            throw new InvalidArgumentException('hash_code() expects parameter 1 to be string, ' . gettype($str) . ' given');
-        }
-
         if ($str === '') {
             return 0;
         }
@@ -73,12 +70,8 @@ if (!function_exists('short_hash_code')) {
      * @return int 生成的短哈希码（0-254 范围内）
      * @throws InvalidArgumentException 当输入不是字符串时抛出
      */
-    function short_hash_code($str): int
+    function short_hash_code(string $str): int
     {
-        if (!is_string($str)) {
-            throw new InvalidArgumentException('short_hash_code() expects parameter 1 to be string, ' . gettype($str) . ' given');
-        }
-
         if ($str === '') {
             return 0;
         }
@@ -308,6 +301,63 @@ if (!function_exists('luna_handler')) {
     }
 }
 
+if (!function_exists('luna_configuration')) {
+    /**
+     * 获取 Luna 配置管理对象
+     *
+     * Luna 配置管理系统提供了灵活的配置存储和版本控制功能，支持分组管理、
+     * 缓存优化和动态配置更新。配置数据存储在数据库中，支持配置版本历史记录。
+     *
+     * 主要功能：
+     * - 分组管理：将配置项按业务逻辑分组，便于组织和访问
+     * - 版本控制：每次配置修改都会创建新版本，可追溯历史
+     * - 缓存支持：自动缓存配置项，提升读取性能
+     * - 动态更新：支持运行时修改配置并持久化到数据库
+     * - 点式访问：支持使用点语法访问嵌套配置项
+     *
+     * 使用示例：
+     * ```php
+     * // 获取配置管理实例
+     * $config = luna_configuration();
+     * 
+     * // 创建配置组和配置项
+     * $appGroup = $config->group('app');
+     * $appGroup->create('settings', '应用设置', [
+     *     'theme' => 'light',
+     *     'language' => 'zh-CN',
+     *     'features' => [
+     *         'darkMode' => true,
+     *         'notifications' => true
+     *     ]
+     * ]);
+     * 
+     * // 读取配置
+     * $theme = $appGroup->get('settings.theme'); // 'light'
+     * $features = $appGroup->get('settings.features'); // 数组
+     * 
+     * // 更新配置
+     * $appGroup->set('settings.theme', 'dark');
+     * $appGroup->set('settings.features.notifications', false);
+     * 
+     * // 保存配置（创建新版本）
+     * $appGroup->save();
+     * 
+     * // 检查配置是否存在
+     * if ($appGroup->exists('settings')) {
+     *     // 配置存在
+     * }
+     * ```
+     *
+     * @return LunaConfiguration 配置管理对象实例
+     * @see ConfigurationGroup 配置组管理类
+     * @see Repository 配置仓库类
+     */
+    function luna_configuration(): LunaConfiguration
+    {
+        return app('luna.config');
+    }
+}
+
 if (!function_exists('luna_exception_mapper')) {
     /**
      * 创建异常映射器构建器
@@ -376,9 +426,9 @@ if (!function_exists('luna_app')) {
      * $result = $app->importBackup($backupData);
      * ```
      *
-     * @return \Dybasedev\LunaPrototype\Foundation\LunaApplication 应用程序实例
+     * @return LunaApplication 应用程序实例
      */
-    function luna_app(): \Dybasedev\LunaPrototype\Foundation\LunaApplication
+    function luna_app(): LunaApplication
     {
         return app('luna');
     }

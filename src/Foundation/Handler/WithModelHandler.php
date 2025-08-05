@@ -25,6 +25,8 @@ trait WithModelHandler
     }
 
     /**
+     * 获取模型处理器的实例
+     *
      * @throws BindingResolutionException
      */
     public function handlerInstance(): BaseHandler

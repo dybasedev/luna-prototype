@@ -9,40 +9,40 @@ use RuntimeException;
 
 /**
  * Luna 处理器配置类
- * 
+ *
  * 用于管理和配置系统中的各种处理器组和处理器
  * 提供了处理器的分组管理、注册和依赖注入功能
- * 
+ *
  * @package Dybasedev\LunaPrototype\Foundation\Handler
  */
 class LunaHandlerConfigure extends LunaModuleConfigure
 {
     /**
      * 处理器组集合
-     * 
+     *
      * 键为组的哈希码，值包含组名、显示名和处理器列表
-     * 
+     *
      * @var array<string, array{name: string, display_name: ?string, handlers?: array}>
      */
     protected(set) array $groups = [];
 
     /**
      * 所有已注册的处理器类名列表
-     * 
+     *
      * @var array<class-string>
      */
     protected(set) array $handlers = [];
 
     /**
      * 处理器模型类名
-     * 
+     *
      * @var class-string<Models\Handler>
      */
     protected(set) string $model = Models\Handler::class;
 
     /**
      * 获取模块名称
-     * 
+     *
      * @return string
      */
     public function name(): string
@@ -52,7 +52,7 @@ class LunaHandlerConfigure extends LunaModuleConfigure
 
     /**
      * 向指定组添加处理器
-     * 
+     *
      * @param string $group 组名
      * @param string $handlerClass 处理器类名
      * @return static
@@ -62,6 +62,10 @@ class LunaHandlerConfigure extends LunaModuleConfigure
     {
         if (!isset($this->groups[hash_code($group)])) {
             throw new RuntimeException('Handler group not exists.');
+        }
+
+        if (!class_exists($handlerClass)) {
+            throw new RuntimeException('Handler class not exists.');
         }
 
         $this->groups[hash_code($group)]['handlers'][] = $handlerClass;
@@ -75,7 +79,7 @@ class LunaHandlerConfigure extends LunaModuleConfigure
 
     /**
      * 创建或配置处理器组
-     * 
+     *
      * @param string $name 组名（唯一标识）
      * @param string|null $displayName 显示名称
      * @param Closure|null $handlerRegister 处理器注册回调函数
@@ -95,16 +99,14 @@ class LunaHandlerConfigure extends LunaModuleConfigure
         if ($handlerRegister) {
             $handlerRegister(
                 new class($this, $handlerAppender) {
-                    public function __construct(protected LunaHandlerConfigure $configure, protected Closure $handlerAppender)
-                    {
+                    public function __construct(
+                        protected LunaHandlerConfigure $configure,
+                        protected Closure $handlerAppender
+                    ) {
                     }
 
                     public function handler(string $handlerClass): static
                     {
-                        if (!class_exists($handlerClass)) {
-                            throw new RuntimeException('Handler class not exists.');
-                        }
-
                         ($this->handlerAppender)($handlerClass);
                         return $this;
                     }
@@ -117,7 +119,7 @@ class LunaHandlerConfigure extends LunaModuleConfigure
 
     /**
      * 设置处理器模型类
-     * 
+     *
      * @param string $model 模型类名
      * @return static
      */
@@ -155,7 +157,7 @@ class LunaHandlerConfigure extends LunaModuleConfigure
 
     /**
      * 注册处理器服务到容器
-     * 
+     *
      * @param Container $container
      * @return void
      */

@@ -83,6 +83,205 @@ $this->extendModule(function() {
 });
 ```
 
+## 核心概念
+
+### 模块组件（Module）
+
+Luna Prototype 的核心是**组件化设计**。每个组件都是一个完整、独立的功能单元模块，具有清晰的职责边界和标准化的结构。
+
+#### 组件的标准结构
+
+每个 Luna 组件都包含三个核心部分：
+
+1. **配置器（Configure）** - 负责组件的配置和注册，提供了组件运行时必要的设置、定义，该类实例一定是单例的
+2. **访问入口类（Module）** - 组件的业务逻辑封装
+3. **服务提供者（ServiceProvider）** - Laravel 集成层（可选）
+
+```php
+// 组件的典型结构
+namespace Dybasedev\LunaPrototype\YourComponent;
+
+// 1. 配置器
+class LunaYourComponentConfigure extends LunaModuleConfigure { }
+
+// 2. 访问入口类  
+class LunaYourComponent extends LunaModule { }
+
+// 3. 服务提供者（可选）
+class LunaYourComponentServiceProvider extends ServiceProvider { }
+```
+
+#### 组件的概念
+
+组件是 Luna Prototype 的基本构建单元，每个组件：
+
+- **独立性**：可以独立安装、配置和使用
+- **原子性**：专注于单一的业务领域或功能
+- **可组合**：可以与其他组件自由组合使用
+- **可扩展**：提供标准化的扩展点和配置选项
+
+### 组件的配置器（Luna Module Configure）
+
+配置器是组件的核心，继承自 `LunaModuleConfigure` 基类，负责：
+
+#### 定义组件身份
+```php
+class LunaAssetsAccountConfigure extends LunaModuleConfigure
+{
+    public function name(): string
+    {
+        return 'luna.assets-account';  // 组件唯一标识
+    }
+    
+    public function dependencies(): array
+    {
+        return ['luna.foo'];  // 声明依赖的其他组件，此处仅作演示
+    }
+}
+```
+
+#### 配置选项管理
+```php
+class LunaAssetsAccountConfigure extends LunaModuleConfigure
+{
+    // 配置属性
+    protected(set) string $accountModel = AssetsAccount::class;
+    protected(set) string $accountTypeModel = AssetsAccountType::class;
+    
+    // 配置方法（流式接口，且强烈建议使用该方式）
+    public function useAccountModel(string $class): static
+    {
+        $this->accountModel = $class;
+        return $this;
+    }
+}
+```
+
+#### 服务注册
+
+> 组件不需要通过 ServiceProvider 进行注册，配置器提供了对组件注册的支持。
+
+```php
+public function register(Container $container): void
+{
+    // 注册单例服务
+    $container->singleton('luna.assets-account', function ($app) {
+        return new LunaAssetsAccount(
+            $this,
+            $app->make('cache.store'),
+            $app->make(LunaHandler::class)
+        );
+    });
+    
+    // 注册别名
+    $container->alias('luna.assets-account', LunaAssetsAccount::class);
+}
+```
+
+### 组件的访问入口类
+
+访问入口类继承自 `LunaModule` 基类，提供组件的主要 API 接口：
+
+```php
+class LunaAssetsAccount extends LunaModule
+{
+    // 提供业务方法
+    public function createAccountType(
+        string $name,
+        string $handler,
+        ?string $displayName = null
+    ): AssetsAccountType {
+        // 业务逻辑实现
+    }
+    
+    // 获取用户账户
+    public function ownerAccount(
+        Model $owner,
+        string $accountType
+    ): AssetsAccount {
+        // 业务逻辑实现
+    }
+}
+```
+
+访问组件的三种方式：
+
+```php
+// 1. 依赖注入
+public function __construct(LunaAssetsAccount $assetsAccount) { }
+
+// 2. 服务容器
+$assetsAccount = app('luna.assets-account');
+
+// 3. 辅助函数
+$assetsAccount = luna_assets_account();
+```
+
+### 组件的注册逻辑
+
+组件通过 `LunaServiceProvider` 进行注册：
+
+```php
+class AppServiceProvider extends LunaServiceProvider
+{
+    public function customRegister(): void
+    {
+        // 注册组件
+        $this->registerModule(
+            LunaAssetsAccountConfigure::create()
+                ->useAccountModel(CustomAccount::class)  // 自定义配置
+                ->build()
+        );
+        
+        // 扩展现有组件，一般而言通过注册组件即可，因为 Configure 提供了默认的值
+        $this->extendModule(function() {
+            return LunaHandlerConfigure::create()
+                ->group('payment', '支付处理器', function($register) {
+                    $register->handler(AlipayHandler::class);
+                })
+                ->build();
+        });
+    }
+}
+```
+
+注册流程：
+1. `registerModule()` 将组件配置添加到待注册列表
+2. Laravel 启动时自动调用每个组件的 Configure 类的 `register()` 方法
+3. 检查组件依赖关系，确保正确加载顺序
+4. 执行组件的 `boot()` 方法（如果有）
+
+### Foundation 组件概要
+
+Foundation 是 Luna Prototype 的基础组件，所有其他组件都依赖于它。它提供了整个框架的核心基础设施。
+
+#### 主要功能
+
+- **Handler（处理器系统）**：统一的处理器注册和执行机制 → [详细文档](docs/foundation/handler.md)
+- **Configuration（配置管理）**：灵活的配置存储和版本控制 → [详细文档](docs/foundation/configuration.md)
+- **BusinessEvent（业务事件）**：业务操作的事件定义和格式化 → [详细文档](docs/foundation/business-event.md)
+- **Exception（异常处理）**：统一的异常定义和处理机制 → [详细文档](docs/foundation/exception.md)
+- **Installation（安装器）**：模块化的安装流程管理 → [详细文档](docs/foundation/installation.md)
+- **Backupable（备份恢复）**：应用状态的备份和恢复 → [详细文档](docs/foundation/backupable.md)
+
+#### 核心类
+
+```php
+// 处理器管理
+$handler = luna_handler();
+$result = $handler->handle('payment', $data);
+
+// 配置管理
+$config = luna_configuration();
+$config->set('app.theme', 'dark');
+
+// 业务事件
+$event = luna_business_event();
+$message = $event->eventMessage('user.login', ['user' => 'Alice']);
+```
+
+Foundation 组件是其他所有组件的基石，提供了标准化的扩展点和基础服务。
+
 ## 系统要求
 
 - PHP 8.4+
@@ -200,10 +399,12 @@ $balanceType = $assetsAccount->createAccountType(
 ### Foundation 模块
 
 基础架构模块，提供：
-- 配置管理系统
-- 异常处理机制
-- 业务事件定义和格式化系统
-- 处理器模式
+- 配置管理系统 → [详细文档](docs/foundation/configuration.md)
+- 异常处理机制 → [详细文档](docs/foundation/exception.md)
+- 业务事件定义和格式化系统 → [详细文档](docs/foundation/business-event.md)
+- 处理器模式 → [详细文档](docs/foundation/handler.md)
+- 安装器框架 → [详细文档](docs/foundation/installation.md)
+- 备份恢复机制 → [详细文档](docs/foundation/backupable.md)
 - 辅助函数
 
 ### AssetsAccount 模块
@@ -213,6 +414,10 @@ $balanceType = $assetsAccount->createAccountType(
 - 账户创建和查询
 - 原子性账户操作
 - 余额类型管理（可用、冻结、锁定）
+- 变更日志记录
+- 统计和查询功能
+
+→ [详细文档](docs/assets-account.md)
 
 ### Schedule 模块
 
@@ -221,13 +426,22 @@ $balanceType = $assetsAccount->createAccountType(
 - 后台作业队列
 - 任务状态监控
 - 日志记录
+- 任务优先级管理
+- 失败重试机制
+
+→ [详细文档](docs/schedule.md)
 
 ### Membership 模块
 
 会员体系模块，提供：
 - 会员等级框架
+- 里程碑系统（等级系统）
+- 会员关系链管理
+- 推广代理机制
 - 权益管理接口
 - 会员数据绑定
+
+→ [详细文档](docs/membership.md)
 
 ### Showcase 模块
 
@@ -235,6 +449,11 @@ UI组件抽象模块，提供：
 - 表单字段组件
 - 数据表列组件
 - 多前端框架适配
+- 动态页面描述
+- 后台面板快速扩展
+- 前端页面装修
+
+→ [详细文档](docs/showcase.md)
 
 ### UnitConversion 模块
 
@@ -244,6 +463,9 @@ UI组件抽象模块，提供：
 - 转换上下文和手续费计算
 - 与资产账户系统的集成
 - 批量转换和缓存优化
+- 货币、度量衡等多种单位支持
+
+→ [详细文档](docs/unit-conversion.md)
 
 ### Trade 模块
 
@@ -255,6 +477,8 @@ UI组件抽象模块，提供：
 - 退款和撤销支持
 - 交易编号生成器
 
+→ [详细文档](docs/trade.md)
+
 ### HoldingObject 模块
 
 对象持有系统模块，提供：
@@ -263,6 +487,9 @@ UI组件抽象模块，提供：
 - 持有条件验证（数量限制、时间限制等）
 - 常见场景支持（每日签到、购买限制、抽奖机会等）
 - 并发控制和缓存优化
+- 高度抽象的业务组合能力
+
+→ [详细文档](docs/holding-object.md)
 
 ### Permission 模块
 
@@ -273,6 +500,8 @@ UI组件抽象模块，提供：
 - 灵活的权限分配和继承
 - 权限缓存和性能优化
 - 与 Laravel Gate 的集成
+
+→ [详细文档](docs/permission.md)
 
 ## 架构设计
 
