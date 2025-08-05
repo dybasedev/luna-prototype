@@ -16,20 +16,28 @@ Luna Prototype 是一个基于 Laravel 12.0 和 PHP 8.4 的模块化快速业务
 
 Luna Prototype 特别适合快速原型开发、概念验证、初创项目和需要快速迭代的业务场景。
 
-## 核心特性
+## 主要特性
+
+### 基础架构特性
 
 - **原子化模块架构**: 每个模块都是独立的原子化组件，可按需选择和组合
-- **资产账户系统**: 提供多层级账户类型、余额管理、原子化操作等基础功能
-- **调度任务系统**: 灵活的定时任务和后台作业管理基础框架
-- **会员体系框架**: 可扩展的会员等级和权益管理基础组件
-- **UI组件抽象层**: 前端无关的表单字段和数据展示组件抽象
-- **单位转换系统**: 支持多种单位类型转换，包括货币、长度、重量等，支持动态汇率
-- **交易系统**: 完整的交易流程管理，包括订单、支付、退款等功能
-- **对象持有系统**: 灵活的对象持有关系管理，支持签到、购买限制、抽奖等场景
-- **权限系统**: 基于策略的权限管理，支持角色、用户组和灵活的权限分配
 - **配置管理系统**: 支持版本控制的灵活配置存储和管理机制
 - **处理器扩展模式**: 基于处理器的业务逻辑扩展点，支持插件化开发
 - **业务事件系统**: 业务操作事件定义和用户友好的描述格式化机制
+- **异常处理机制**: 统一的异常定义、映射和处理框架
+- **安装器框架**: 模块化的安装流程管理
+- **备份恢复机制**: 应用状态的备份和恢复功能
+
+### 业务组件特性
+
+- **资产账户系统**: 提供多层级账户类型、余额管理、原子化操作等功能
+- **交易系统**: 完整的交易流程管理，包括订单、支付、退款等功能
+- **会员体系框架**: 可扩展的会员等级、里程碑系统和权益管理
+- **权限系统**: 基于策略的权限管理，支持角色、用户组和灵活的权限分配
+- **单位转换系统**: 支持多种单位类型转换，包括货币、度量衡等，支持动态汇率
+- **对象持有系统**: 灵活的对象持有关系管理，支持签到、购买限制、抽奖等场景
+- **调度任务系统**: 灵活的定时任务和后台作业管理框架
+- **UI组件抽象层**: 前端无关的表单字段和数据展示组件抽象
 
 ## 原子化组件优势
 
@@ -91,23 +99,23 @@ Luna Prototype 的核心是**组件化设计**。每个组件都是一个完整�
 
 #### 组件的标准结构
 
-每个 Luna 组件都包含三个核心部分：
+每个 Luna 组件通常包含三个核心部分：
 
-1. **配置器（Configure）** - 负责组件的配置和注册，提供了组件运行时必要的设置、定义，该类实例一定是单例的
-2. **访问入口类（Module）** - 组件的业务逻辑封装
-3. **服务提供者（ServiceProvider）** - Laravel 集成层（可选）
+1. **配置器（Configure）** - 组件的核心，负责服务注册、依赖管理和组件配置
+2. **访问入口类（Module）** - 组件的业务逻辑封装和 API 接口
+3. **服务提供者（ServiceProvider）** - 资源发布器（可选）
 
 ```php
 // 组件的典型结构
 namespace Dybasedev\LunaPrototype\YourComponent;
 
-// 1. 配置器
+// 1. 配置器 - 处理组件的注册和启动逻辑
 class LunaYourComponentConfigure extends LunaModuleConfigure { }
 
-// 2. 访问入口类  
+// 2. 访问入口类 - 提供组件的业务 API
 class LunaYourComponent extends LunaModule { }
 
-// 3. 服务提供者（可选）
+// 3. 服务提供者 - 负责资源文件的发布
 class LunaYourComponentServiceProvider extends ServiceProvider { }
 ```
 
@@ -159,7 +167,7 @@ class LunaAssetsAccountConfigure extends LunaModuleConfigure
 
 #### 服务注册
 
-> 组件不需要通过 ServiceProvider 进行注册，配置器提供了对组件注册的支持。
+配置器负责组件的服务注册，这是 Luna Prototype 的一个重要设计理念：
 
 ```php
 public function register(Container $container): void
@@ -176,6 +184,53 @@ public function register(Container $container): void
     // 注册别名
     $container->alias('luna.assets-account', LunaAssetsAccount::class);
 }
+```
+
+> **重要**：与传统 Laravel 包不同，Luna 组件的 `register()` 和 `boot()` 逻辑都在配置器（Configure）类中实现，而不是在服务提供者中。
+
+### 服务提供者的作用
+
+在 Luna Prototype 中，服务提供者（ServiceProvider）专注于**资源文件的发布**，这是它的主要职责：
+
+```php
+class LunaAssetsAccountServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        // 发布数据库迁移文件
+        $this->publishesMigrations([
+            __DIR__ . '/migrations' => database_path('migrations'),
+        ]);
+        
+        // 如果组件有配置文件、语言文件等其他资源
+        // $this->publishes([
+        //     __DIR__ . '/config/assets-account.php' => config_path('luna/assets-account.php'),
+        // ], 'luna-assets-account-config');
+        
+        // $this->publishes([
+        //     __DIR__ . '/lang' => lang_path('luna/assets-account'),
+        // ], 'luna-assets-account-lang');
+    }
+}
+```
+
+#### 为什么要分离服务提供者？
+
+1. **清晰的发布管理**：使用 `php artisan vendor:publish` 时，可以清楚地看到每个组件可发布的资源
+2. **按需发布**：开发者可以选择性地发布特定组件的资源文件
+3. **保持配置器纯粹**：配置器专注于组件逻辑，服务提供者专注于资源发布
+
+#### 使用资源发布
+
+```bash
+# 查看可发布的资源
+php artisan vendor:publish
+
+# 发布特定组件的迁移文件
+php artisan vendor:publish --provider="Dybasedev\LunaPrototype\AssetsAccount\LunaAssetsAccountServiceProvider"
+
+# 使用标签发布（如果定义了标签）
+php artisan vendor:publish --tag=luna-trade-migrations
 ```
 
 ### 组件的访问入口类
@@ -217,11 +272,12 @@ $assetsAccount = app('luna.assets-account');
 $assetsAccount = luna_assets_account();
 ```
 
-### 组件的注册逻辑
+### 组件的注册流程
 
-组件通过 `LunaServiceProvider` 进行注册：
+Luna Prototype 采用了独特的组件注册机制，通过继承 `LunaServiceProvider` 来管理所有组件：
 
 ```php
+// app/Providers/AppServiceProvider.php
 class AppServiceProvider extends LunaServiceProvider
 {
     public function customRegister(): void
@@ -233,7 +289,7 @@ class AppServiceProvider extends LunaServiceProvider
                 ->build()
         );
         
-        // 扩展现有组件，一般而言通过注册组件即可，因为 Configure 提供了默认的值
+        // 扩展现有组件
         $this->extendModule(function() {
             return LunaHandlerConfigure::create()
                 ->group('payment', '支付处理器', function($register) {
@@ -245,11 +301,36 @@ class AppServiceProvider extends LunaServiceProvider
 }
 ```
 
-注册流程：
-1. `registerModule()` 将组件配置添加到待注册列表
-2. Laravel 启动时自动调用每个组件的 Configure 类的 `register()` 方法
-3. 检查组件依赖关系，确保正确加载顺序
-4. 执行组件的 `boot()` 方法（如果有）
+#### 注册流程详解
+
+1. **继承 LunaServiceProvider**：您的 `AppServiceProvider` 需要继承 `LunaServiceProvider` 而不是 Laravel 的 `ServiceProvider`
+2. **配置组件**：在 `customRegister()` 方法中使用 `registerModule()` 注册需要的组件
+3. **自动注册服务提供者**：框架会自动注册组件配置器中声明的 ServiceProvider，无需手动添加到 `config/app.php`
+4. **处理依赖关系**：框架自动检查组件间的依赖关系，确保正确的加载顺序
+5. **执行生命周期方法**：依次执行配置器的 `register()` 方法、ServiceProvider 的注册、配置器的 `boot()` 方法
+
+#### 自动服务提供者注册机制
+
+Luna Prototype 的一个重要特性是**自动注册服务提供者**，这大大减少了业务开发者的样板代码：
+
+```php
+// 在组件的配置器中声明服务提供者
+class LunaAssetsAccountConfigure extends LunaModuleConfigure
+{
+    public function serviceProvider(): ?string
+    {
+        return LunaAssetsAccountServiceProvider::class;
+    }
+}
+
+// LunaServiceProvider 会自动注册这个服务提供者
+// 无需在 config/app.php 中手动添加！
+```
+
+这样设计的优势：
+- **减少配置**：无需手动维护 `config/app.php` 中的服务提供者列表
+- **保持一致性**：组件的所有相关配置都在配置器中管理
+- **避免遗漏**：不会因为忘记注册服务提供者而导致资源无法发布
 
 ### Foundation 组件概要
 
@@ -257,23 +338,28 @@ Foundation 是 Luna Prototype 的基础组件，所有其他组件都依赖于�
 
 #### 主要功能
 
-- **Handler（处理器系统）**：统一的处理器注册和执行机制 → [详细文档](docs/foundation/handler.md)
-- **Configuration（配置管理）**：灵活的配置存储和版本控制 → [详细文档](docs/foundation/configuration.md)
-- **BusinessEvent（业务事件）**：业务操作的事件定义和格式化 → [详细文档](docs/foundation/business-event.md)
-- **Exception（异常处理）**：统一的异常定义和处理机制 → [详细文档](docs/foundation/exception.md)
-- **Installation（安装器）**：模块化的安装流程管理 → [详细文档](docs/foundation/installation.md)
-- **Backupable（备份恢复）**：应用状态的备份和恢复 → [详细文档](docs/foundation/backupable.md)
+- **Handler（处理器系统）**：统一的处理器注册和执行机制
+- **Configuration（配置管理）**：灵活的配置存储和版本控制
+- **BusinessEvent（业务事件）**：业务操作的事件定义和格式化
+- **Exception（异常处理）**：统一的异常定义和处理机制
+- **Installation（安装器）**：模块化的安装流程管理
+- **Backupable（备份恢复）**：应用状态的备份和恢复
+
+→ [Foundation 详细文档](src/Foundation/README.md)
 
 #### 核心类
 
 ```php
 // 处理器管理
 $handler = luna_handler();
-$result = $handler->handle('payment', $data);
+$handlerInstance = $handler->createHandlerInstance('payment-handler');
+$result = $handlerInstance->process($data);
 
 // 配置管理
 $config = luna_configuration();
-$config->set('app.theme', 'dark');
+$appGroup = $config->group('app');
+$appGroup->set('settings.theme', 'dark');
+$appGroup->save();
 
 // 业务事件
 $event = luna_business_event();
@@ -317,15 +403,10 @@ class AppServiceProvider extends LunaServiceProvider
      */
     public function customRegister(): void
     {
-        // 注册自定义模块
-        // $this->registerModule(CustomModuleConfigure::create()->build());
-        
-        // 扩展现有模块配置
-        // $this->extendModule(function() {
-        //     return CustomModuleConfigure::create()
-        //         ->extend('existing_module')
-        //         ->build();
-        // });
+        // 注册需要的组件
+        // $this->registerModule(
+        //     LunaAssetsAccountConfigure::create()->build()
+        // );
     }
 
     /**
@@ -338,9 +419,15 @@ class AppServiceProvider extends LunaServiceProvider
 }
 ```
 
-### 2. 运行数据库迁移
+### 2. 发布和运行迁移文件
+
+Luna Prototype 会自动注册组件的服务提供者，无需手动在 `config/app.php` 中添加：
 
 ```bash
+# 发布组件的迁移文件
+php artisan vendor:publish --provider="Dybasedev\LunaPrototype\AssetsAccount\LunaAssetsAccountServiceProvider"
+
+# 运行迁移
 php artisan migrate
 ```
 
@@ -399,13 +486,15 @@ $balanceType = $assetsAccount->createAccountType(
 ### Foundation 模块
 
 基础架构模块，提供：
-- 配置管理系统 → [详细文档](docs/foundation/configuration.md)
-- 异常处理机制 → [详细文档](docs/foundation/exception.md)
-- 业务事件定义和格式化系统 → [详细文档](docs/foundation/business-event.md)
-- 处理器模式 → [详细文档](docs/foundation/handler.md)
-- 安装器框架 → [详细文档](docs/foundation/installation.md)
-- 备份恢复机制 → [详细文档](docs/foundation/backupable.md)
+- 配置管理系统
+- 异常处理机制
+- 业务事件定义和格式化系统
+- 处理器模式
+- 安装器框架
+- 备份恢复机制
 - 辅助函数
+
+→ [详细文档](src/Foundation/README.md)
 
 ### AssetsAccount 模块
 
@@ -417,7 +506,7 @@ $balanceType = $assetsAccount->createAccountType(
 - 变更日志记录
 - 统计和查询功能
 
-→ [详细文档](docs/assets-account.md)
+→ [详细文档](src/AssetsAccount/README.md)
 
 ### Schedule 模块
 
@@ -429,7 +518,7 @@ $balanceType = $assetsAccount->createAccountType(
 - 任务优先级管理
 - 失败重试机制
 
-→ [详细文档](docs/schedule.md)
+→ [详细文档](src/Schedule/README.md)
 
 ### Membership 模块
 
@@ -441,7 +530,7 @@ $balanceType = $assetsAccount->createAccountType(
 - 权益管理接口
 - 会员数据绑定
 
-→ [详细文档](docs/membership.md)
+→ [详细文档](src/Membership/README.md)
 
 ### Showcase 模块
 
@@ -453,7 +542,7 @@ UI组件抽象模块，提供：
 - 后台面板快速扩展
 - 前端页面装修
 
-→ [详细文档](docs/showcase.md)
+→ [详细文档](src/Showcase/README.md)
 
 ### UnitConversion 模块
 
@@ -465,7 +554,7 @@ UI组件抽象模块，提供：
 - 批量转换和缓存优化
 - 货币、度量衡等多种单位支持
 
-→ [详细文档](docs/unit-conversion.md)
+→ [详细文档](src/UnitConversion/README.md)
 
 ### Trade 模块
 
@@ -477,7 +566,7 @@ UI组件抽象模块，提供：
 - 退款和撤销支持
 - 交易编号生成器
 
-→ [详细文档](docs/trade.md)
+→ [详细文档](src/Trade/README.md)
 
 ### HoldingObject 模块
 
@@ -489,7 +578,7 @@ UI组件抽象模块，提供：
 - 并发控制和缓存优化
 - 高度抽象的业务组合能力
 
-→ [详细文档](docs/holding-object.md)
+→ [详细文档](src/HoldingObject/README.md)
 
 ### Permission 模块
 
@@ -501,7 +590,7 @@ UI组件抽象模块，提供：
 - 权限缓存和性能优化
 - 与 Laravel Gate 的集成
 
-→ [详细文档](docs/permission.md)
+→ [详细文档](src/Permission/README.md)
 
 ## 架构设计
 
