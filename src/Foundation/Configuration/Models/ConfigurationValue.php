@@ -30,6 +30,10 @@ class ConfigurationValue extends Model
     public $table = 'luna_configuration_values';
 
     public $incrementing = false;
+    
+    protected $primaryKey = 'version_id';
+    
+    protected $keyType = 'string';
 
     protected $fillable = [
         'version_id',

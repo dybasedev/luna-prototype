@@ -53,9 +53,13 @@ class AppServiceProvider extends LunaServiceProvider
 }
 ```
 
-### 2. 运行迁移
+### 2. 发布并运行迁移
 
 ```bash
+# 发布迁移文件到项目
+php artisan vendor:publish --provider="Dybasedev\LunaPrototype\AssetsAccount\LunaAssetsAccountServiceProvider" --tag=migrations
+
+# 运行迁移
 php artisan migrate
 ```
 

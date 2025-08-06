@@ -135,7 +135,7 @@ class ConfigurationGroup
     protected function target(string $key): array
     {
         if (str_contains($key, '.')) {
-            [$name, $keys] = explode('.', $key);
+            [$name, $keys] = explode('.', $key, 2);
         } else {
             $name = $key;
             $keys = null;
@@ -153,7 +153,7 @@ class ConfigurationGroup
 
         $repository = $this->repository($name);
         $originHidden = $repository->hidden;
-        $value = $this->repository($name)->setHidden($hidden)->get($keys, $default);
+        $value = $repository->setHidden($hidden)->get($keys, $default);
         $repository->setHidden($originHidden);
 
         return $value;
@@ -193,5 +193,126 @@ class ConfigurationGroup
                 $this->cache?->forget(sprintf('config:%s:%s', $this->group, $name));
             }
         }
+        
+        // 清空内存中的仓库，强制下次重新加载
+        $this->repositories = [];
+    }
+
+    /**
+     * 获取指定配置的指定版本
+     *
+     * @param string $name 配置名称
+     * @param string $versionId 版本ID
+     * @return Repository|null
+     * @throws RandomException
+     */
+    public function getVersion(string $name, string $versionId): ?Repository
+    {
+        $configuration = $this->getConfigurationRecord($name);
+        
+        if (!$configuration) {
+            throw new LunaException('Configuration not exists');
+        }
+
+        $version = $configuration->versions()
+            ->where('version_id', $versionId)
+            ->first();
+        
+        if (!$version) {
+            return null;
+        }
+
+        $bind = $this->configure->repositoryBinds[$this->group][$name] ?? $this->configure->defaultRepository;
+        return new $bind($version->value);
+    }
+
+    /**
+     * 切换到指定版本
+     *
+     * @param string $name 配置名称
+     * @param string $versionId 版本ID
+     * @return bool
+     * @throws RandomException
+     */
+    public function switchVersion(string $name, string $versionId): bool
+    {
+        $configuration = $this->getConfigurationRecord($name);
+        
+        if (!$configuration) {
+            throw new LunaException('Configuration not exists');
+        }
+
+        $result = $configuration->switchTo($versionId, true);
+        
+        if ($result) {
+            // 清理缓存
+            $this->cache?->forget(sprintf('config:%s:%s', $this->group, $name));
+            
+            // 更新内存中的仓库
+            unset($this->repositories[$name]);
+        }
+        
+        return $result;
+    }
+
+    /**
+     * 获取配置的所有版本列表
+     *
+     * @param string $name 配置名称
+     * @return array
+     * @throws RandomException
+     */
+    public function getVersionList(string $name): array
+    {
+        $configuration = $this->getConfigurationRecord($name);
+        
+        if (!$configuration) {
+            throw new LunaException('Configuration not exists');
+        }
+
+        // 刷新配置记录以获取最新的 current_version_id
+        $configuration->refresh();
+
+        $versions = $configuration->versions()
+            ->orderBy('created_at', 'desc')
+            ->orderBy('version_id', 'desc')
+            ->get()
+            ->map(function ($version) use ($configuration) {
+                return [
+                    'version_id' => $version->version_id,
+                    'is_current' => $version->version_id === $configuration->current_version_id,
+                    'created_at' => $version->created_at,
+                ];
+            })
+            ->toArray();
+            
+        // 如果所有版本的 created_at 相同，则将当前版本移到第一位
+        if (count($versions) > 1 && $versions[0]['created_at']->equalTo($versions[count($versions) - 1]['created_at'])) {
+            usort($versions, function($a, $b) {
+                if ($a['is_current']) return -1;
+                if ($b['is_current']) return 1;
+                return 0;
+            });
+        }
+        
+        return $versions;
+    }
+
+    /**
+     * 获取当前版本ID
+     *
+     * @param string $name 配置名称
+     * @return string|null
+     * @throws RandomException
+     */
+    public function getCurrentVersionId(string $name): ?string
+    {
+        $configuration = $this->getConfigurationRecord($name);
+        
+        if (!$configuration) {
+            throw new LunaException('Configuration not exists');
+        }
+
+        return $configuration->current_version_id;
     }
 }

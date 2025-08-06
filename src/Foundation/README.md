@@ -6,163 +6,949 @@ Foundation 是 Luna Prototype 的核心基础组件，提供了整个框架的�
 
 ### 1. Handler（处理器）
 
-处理器是 Luna Prototype 中用于执行特定业务逻辑的核心组件。通过统一的处理器接口，可以实现业务逻辑的模块化和可扩展性。
+处理器是 Luna Prototype 中用于执行特定业务逻辑的核心组件。处理器系统支持两种类型的处理器：
+
+1. **实体处理器（Entity Handler）**：在数据库中有对应记录的处理器实例，支持持久化配置和状态管理
+2. **纯定义处理器（Pure Handler）**：仅在代码中定义的处理器类，无需数据库记录
 
 #### 核心类
 
 - **BaseHandler**: 处理器基类，提供统一的处理器接口和配置管理功能
 - **LunaHandler**: 处理器管理类，负责管理和维护所有注册的处理器
 - **LunaHandlerConfigure**: 处理器配置类，用于注册和配置处理器
-- **ModelHandler**: 模型处理器接口，实现该接口的处理器可以处理模型数据，可配合 `WithModelInstance` 快速实现
-- **WithModelHandler**: Trait，提供模型处理器的辅助功能，通过该 Trait 可以模型中获取处理器实例
-- **WithModelInstance**: Trait，为处理器提供模型实例管理功能，区别于 `withModelHandler`，这个是提供给 Handler 反向获取模型实例的
+- **Handler (Model)**: 处理器实体模型，存储处理器的持久化配置
+- **ModelHandler**: 模型处理器接口，实现该接口的处理器可以处理模型数据
+- **WithModelHandler**: Trait，提供模型处理器的辅助功能，通过该 Trait 可以在模型中获取处理器实例
+- **WithModelInstance**: Trait，为处理器提供模型实例管理功能，用于处理器反向获取模型实例
 
-#### 使用示例
+#### 处理器分组机制
+
+处理器通过分组进行组织管理，每个处理器必须属于一个组：
 
 ```php
-// 创建自定义处理器
-class UserAuthHandler extends BaseHandler
+// 方式一：注册处理器组和处理器
+$configure = LunaHandlerConfigure::create()
+    ->registerGroup(hash_code('payment'), 'payment', '支付处理')
+    ->registerGroup(hash_code('auth'), 'auth', '认证处理')
+    ->registerHandler('payment', AlipayHandler::class)
+    ->registerHandler('payment', WechatPayHandler::class)
+    ->registerHandler('auth', JwtAuthHandler::class)
+    ->build();
+
+// 方式二：使用 group() 方法自动处理组注册
+$configure = LunaHandlerConfigure::create()
+    ->group('payment', '支付处理', function ($register) {
+        $register->handler(AlipayHandler::class);
+        $register->handler(WechatPayHandler::class);
+    })
+    ->group('auth', '认证处理', function ($register) {
+        $register->handler(JwtAuthHandler::class);
+    })
+    ->build();
+```
+
+使用 `group()` 方法时，系统会自动：
+- 计算组的 hash_code
+- 注册组（如果尚未注册）
+- 在回调函数中，`handler()` 方法会自动将处理器归入当前组，无需手动指定组名
+
+#### 实体处理器示例
+
+实体处理器适用于需要动态配置或多实例的场景：
+
+```php
+// 1. 定义支付处理器基类
+abstract class PaymentHandler extends BaseHandler
+{
+    abstract public function pay(array $order): array;
+    abstract public function refund(string $transactionId, float $amount): bool;
+}
+
+// 2. 实现具体的支付处理器
+class AlipayHandler extends PaymentHandler
 {
     public function handlerName(): string
     {
-        return 'user-auth';
+        return '支付宝支付';
     }
     
     public function handlerDescription(): string
     {
-        return '用户认证处理器';
+        return '支付宝支付处理器，支持支付、退款等操作';
     }
     
-    public function authenticate(array $credentials): bool
+    public function pay(array $order): array
     {
-        // 认证逻辑
+        $config = $this->getConfig();
+        
+        // 使用配置中的商户信息
+        $appId = $config->get('app_id');
+        $privateKey = $config->get('private_key');
+        
+        // 调用支付宝SDK进行支付
+        return [
+            'transaction_id' => 'ALIPAY' . uniqid(),
+            'pay_url' => 'https://alipay.com/...',
+        ];
+    }
+    
+    public function refund(string $transactionId, float $amount): bool
+    {
+        // 退款逻辑
+        return true;
+    }
+    
+    // 指定配置仓库类（可选）
+    public static function configurationRepository(): string
+    {
+        return PaymentConfigRepository::class;
     }
 }
 
-// 注册处理器
-$configure = LunaHandlerConfigure::create()
-    ->registerHandler(UserAuthHandler::class)
-    ->registerGroup(hash_code('auth'), 'auth', '认证')
-    ->build();
-
-// 创建处理器实体
-$handler = luna_handler()->createEntityHandler(
-    group: 'auth',
-    name: 'main-auth', 
-    handler: UserAuthHandler::class,
-    displayName: '主认证处理器'
+// 3. 创建处理器实体（存储到数据库）
+$alipayHandler = luna_handler()->createEntityHandler(
+    group: 'payment',
+    name: 'alipay-merchant1',
+    handler: AlipayHandler::class,
+    config: new Repository([
+        'app_id' => '2021001234567890',
+        'private_key' => 'MIIEvQIBADANBgkqhkiG9w0BAQ...',
+        'public_key' => 'MIIBIjANBgkqhkiG9w0BAQEFA...',
+        'gateway' => 'https://openapi.alipay.com/gateway.do',
+        'sandbox' => false,
+    ]),
+    displayName: '支付宝商户1',
+    description: '用于主营业务的支付宝账户'
 );
 
-// 使用处理器
-$instance = luna_handler()->createHandlerInstance('main-auth');
-$result = $instance->authenticate(['username' => 'test', 'password' => '123456']);
+// 4. 使用处理器实体
+$paymentHandler = luna_handler()->createHandlerInstance('alipay-merchant1');
+$result = $paymentHandler->pay([
+    'order_no' => 'ORDER123456',
+    'amount' => 99.99,
+    'subject' => '商品订单',
+]);
+
+// 5. 可以创建多个配置不同的实例
+$alipayHandler2 = luna_handler()->createEntityHandler(
+    group: 'payment',
+    name: 'alipay-merchant2',
+    handler: AlipayHandler::class,
+    config: new Repository([
+        'app_id' => '2021009876543210',
+        // 不同的商户配置...
+    ]),
+    displayName: '支付宝商户2',
+    description: '用于海外业务的支付宝账户'
+);
+```
+
+#### 纯定义处理器示例
+
+纯定义处理器适用于无需配置或单例的场景：
+
+```php
+// 1. 定义缓存处理器
+class RedisCacheHandler extends BaseHandler
+{
+    public function handlerName(): string
+    {
+        return 'Redis缓存';
+    }
+    
+    public function handlerDescription(): string
+    {
+        return 'Redis缓存处理器，提供高性能的缓存服务';
+    }
+    
+    public function get(string $key): mixed
+    {
+        return Redis::get($key);
+    }
+    
+    public function set(string $key, mixed $value, int $ttl = 3600): bool
+    {
+        return Redis::setex($key, $ttl, serialize($value));
+    }
+    
+    public function flush(): bool
+    {
+        return Redis::flushdb();
+    }
+}
+
+// 2. 注册处理器
+$configure = LunaHandlerConfigure::create()
+    ->registerGroup(hash_code('cache'), 'cache', '缓存处理')
+    ->registerHandler('cache', RedisCacheHandler::class)
+    ->build();
+
+// 3. 直接使用处理器类（无需创建实体）
+$cacheHandler = app(RedisCacheHandler::class);
+$cacheHandler->set('user:1', ['name' => '张三', 'age' => 25]);
+$userData = $cacheHandler->get('user:1');
+```
+
+#### 处理器配置管理
+
+处理器支持灵活的配置管理：
+
+```php
+// 自定义配置仓库
+class PaymentConfigRepository extends Repository
+{
+    public function getGatewayUrl(): string
+    {
+        return $this->get('sandbox') ? 
+            'https://sandbox.alipay.com/gateway.do' : 
+            $this->get('gateway');
+    }
+    
+    public function isProduction(): bool
+    {
+        return !$this->get('sandbox', false);
+    }
+}
+
+// 在处理器中使用
+class AlipayHandler extends PaymentHandler
+{
+    public static function configurationRepository(): string
+    {
+        return PaymentConfigRepository::class;
+    }
+    
+    public function pay(array $order): array
+    {
+        /** @var PaymentConfigRepository $config */
+        $config = $this->getConfig();
+        $gatewayUrl = $config->getGatewayUrl();
+        // ...
+    }
+}
+```
+
+#### 处理器管理 API
+
+```php
+// 获取所有处理器组
+$groups = luna_handler()->groups();
+
+// 获取指定组的所有处理器类
+$handlers = luna_handler()->handlers('payment');
+
+// 获取所有实体处理器
+$entities = luna_handler()->getAllEntityHandlers();
+
+// 获取指定组的实体处理器
+$paymentEntities = luna_handler()->entityHandlers('payment');
+
+// 检查实体处理器是否存在
+if (luna_handler()->existsEntityHandler('alipay-merchant1')) {
+    // 处理器存在
+}
+
+// 获取单个实体处理器
+$entity = luna_handler()->entityHandler('alipay-merchant1');
 ```
 
 ### 2. BusinessEvent（业务事件）
 
-业务事件系统用于记录和处理系统中的重要操作，可以用于审计日志、操作历史记录、业务流程跟踪等场景。
+业务事件系统用于记录和处理系统中的重要操作，提供了灵活的事件处理和格式化机制。可以用于审计日志、操作历史记录、业务流程跟踪、通知推送等场景。
 
 #### 核心类
 
-- **BusinessEventHandler**: 业务事件处理器基类，提供事件格式化功能
-- **LunaBusinessEvent**: 业务事件管理类，负责管理和维护系统中的业务事件
-- **LunaBusinessEventConfigure**: 业务事件配置类
-- **DefaultBusinessEventHandler**: 默认业务事件处理器实现
+- **BusinessEventHandler**: 业务事件处理器基类，继承自 BaseHandler，提供事件数据格式化功能
+- **DefaultBusinessEventHandler**: 默认业务事件处理器，提供基础的模板替换格式化功能
+- **LunaBusinessEvent**: 业务事件管理类，负责创建、管理和触发业务事件
+- **LunaBusinessEventConfigure**: 业务事件配置类，用于注册事件组
+- **BusinessEvent (Model)**: 业务事件实体模型，存储事件配置和格式化模板
 
-#### 使用示例
+#### 标准事件处理器机制
+
+DefaultBusinessEventHandler 提供了最常用的事件处理场景——基于模板的文本格式化：
 
 ```php
-// 创建自定义事件处理器
+// 1. 使用默认事件处理器
+$configure = LunaBusinessEventConfigure::create()
+    ->registerGroup(hash_code('user'), 'user', '用户事件')
+    ->build();
+
+// 2. 先创建处理器实体
+luna_handler()->createEntityHandler(
+    group: 'business-event',  // 业务事件使用特定的组
+    name: 'user-event-handler',
+    handler: DefaultBusinessEventHandler::class,
+    displayName: '用户事件处理器'
+);
+
+// 3. 创建业务事件，使用模板格式化
+$event = luna_business_event()->createBusinessEvent(
+    name: 'user.registered',
+    group: 'user',
+    handler: 'user-event-handler',
+    formatter: '新用户注册：{{username}}（{{email}}）于 {{time}} 注册成功',
+    displayName: '用户注册事件'
+);
+
+// 4. 触发事件
+$message = luna_business_event()->eventMessage('user.registered', [
+    'username' => '张三',
+    'email' => 'zhangsan@example.com',
+    'time' => now()->format('Y-m-d H:i:s')
+]);
+// 输出: "新用户注册：张三（zhangsan@example.com）于 2024-01-01 12:00:00 注册成功"
+```
+
+#### 自定义事件处理器
+
+通过继承 BusinessEventHandler 实现更复杂的格式化逻辑：
+
+```php
+// 1. 定义订单事件处理器
 class OrderEventHandler extends BusinessEventHandler
 {
     public function handlerName(): string
     {
-        return 'order-event';
+        return '订单事件处理器';
     }
     
     public function handlerDescription(): string
     {
-        return '订单事件处理器';
+        return '处理订单相关的业务事件，支持多种格式化输出';
     }
     
     public function formatPayloadToText(array $payload, ?string $format = null, array $context = []): string
     {
-        return sprintf(
-            '用户 %s 创建了订单 %s，金额：%s',
-            $payload['user_name'],
-            $payload['order_no'],
-            $payload['amount']
-        );
+        // 根据不同的格式返回不同的文本
+        switch ($format) {
+            case 'simple':
+                return sprintf('订单 %s 已创建', $payload['order_no']);
+                
+            case 'detailed':
+                return sprintf(
+                    "订单详情：\n订单号：%s\n用户：%s\n金额：￥%.2f\n时间：%s",
+                    $payload['order_no'],
+                    $payload['user_name'],
+                    $payload['amount'],
+                    $payload['created_at']
+                );
+                
+            case 'markdown':
+                return sprintf(
+                    "## 新订单通知\n\n- **订单号**: `%s`\n- **用户**: %s\n- **金额**: ￥%.2f\n- **时间**: %s",
+                    $payload['order_no'],
+                    $payload['user_name'],
+                    $payload['amount'],
+                    $payload['created_at']
+                );
+                
+            default:
+                // 使用模板格式化（如果事件配置了formatter）
+                if ($this->modelInstance?->formatter) {
+                    return parent::formatPayloadToText($payload, $format, $context);
+                }
+                
+                // 默认格式
+                return sprintf(
+                    '用户 %s 创建了订单 %s，金额：￥%.2f',
+                    $payload['user_name'],
+                    $payload['order_no'],
+                    $payload['amount']
+                );
+        }
     }
     
     public function formatPayloadToViewData(array $payload, ?string $format = null, array $context = []): ?array
     {
-        return [
-            'title' => '新订单',
-            'user' => $payload['user_name'],
-            'order_no' => $payload['order_no'],
-            'amount' => $payload['amount'],
-            'time' => $payload['created_at'],
-        ];
+        // 根据不同的视图格式返回不同的数据结构
+        switch ($format) {
+            case 'list':
+                return [
+                    'order_no' => $payload['order_no'],
+                    'amount' => $payload['amount'],
+                    'status' => $payload['status'] ?? 'pending',
+                    'created_at' => $payload['created_at'],
+                ];
+                
+            case 'detail':
+                return [
+                    'title' => '订单详情',
+                    'sections' => [
+                        'basic' => [
+                            'order_no' => $payload['order_no'],
+                            'user_name' => $payload['user_name'],
+                            'amount' => $payload['amount'],
+                        ],
+                        'items' => $payload['items'] ?? [],
+                        'timeline' => [
+                            'created_at' => $payload['created_at'],
+                            'paid_at' => $payload['paid_at'] ?? null,
+                        ]
+                    ]
+                ];
+                
+            case 'card':
+                return [
+                    'type' => 'order',
+                    'title' => '新订单',
+                    'subtitle' => $payload['user_name'],
+                    'content' => sprintf('￥%.2f', $payload['amount']),
+                    'footer' => $payload['created_at'],
+                    'actions' => [
+                        ['label' => '查看详情', 'url' => "/orders/{$payload['order_no']}"],
+                        ['label' => '处理订单', 'url' => "/orders/{$payload['order_no']}/process"],
+                    ]
+                ];
+                
+            default:
+                return [
+                    'order' => $payload
+                ];
+        }
     }
 }
 
-// 注册事件组
+// 2. 注册处理器和事件
 $configure = LunaBusinessEventConfigure::create()
     ->registerGroup(hash_code('order'), 'order', '订单事件')
     ->build();
+
+// 创建处理器实体
+luna_handler()->createEntityHandler(
+    group: 'business-event',
+    name: 'order-handler',
+    handler: OrderEventHandler::class,
+    displayName: '订单事件处理器'
+);
 
 // 创建业务事件
 $event = luna_business_event()->createBusinessEvent(
     name: 'order.created',
     group: 'order',
     handler: 'order-handler',
-    formatter: OrderEventHandler::class,
-    displayName: '订单创建'
+    formatter: '订单 {{order_no}} 创建成功', // 可选的默认模板
+    displayName: '订单创建事件'
 );
 
-// 获取事件消息
-$message = luna_business_event()->eventMessage('order.created', [
+// 3. 使用不同格式输出
+$payload = [
     'user_name' => '张三',
     'order_no' => 'ORD202401001',
-    'amount' => 99.99,
+    'amount' => 299.99,
+    'created_at' => now()->format('Y-m-d H:i:s'),
+    'items' => [
+        ['name' => '商品A', 'price' => 199.99, 'quantity' => 1],
+        ['name' => '商品B', 'price' => 100.00, 'quantity' => 1],
+    ]
+];
+
+// 获取简单文本
+$simpleText = luna_business_event()
+    ->getAllEvents()
+    ->where('name', 'order.created')
+    ->first()
+    ->handlerInstance()
+    ->formatPayloadToText($payload, 'simple');
+
+// 获取Markdown格式
+$markdownText = luna_business_event()
+    ->getAllEvents()
+    ->where('name', 'order.created')
+    ->first()
+    ->handlerInstance()
+    ->formatPayloadToText($payload, 'markdown');
+
+// 获取卡片视图数据
+$cardData = luna_business_event()
+    ->getAllEvents()
+    ->where('name', 'order.created')
+    ->first()
+    ->handlerInstance()
+    ->formatPayloadToViewData($payload, 'card');
+```
+
+#### 业务事件管理 API
+
+```php
+// 获取所有事件组
+$groups = luna_business_event()->groups();
+
+// 获取指定组的事件
+$orderEvents = luna_business_event()->events('order');
+
+// 检查事件是否存在
+if (luna_business_event()->existsBusinessEvent('order.created')) {
+    // 事件存在
+}
+
+// 获取所有业务事件
+$allEvents = luna_business_event()->getAllEvents();
+
+// 直接触发事件并获取格式化消息
+$message = luna_business_event()->eventMessage('order.created', [
+    'user_name' => '李四',
+    'order_no' => 'ORD202401002',
+    'amount' => 199.99,
     'created_at' => now()
 ]);
 ```
 
+#### 扩展业务事件处理器
+
+可以基于抽象类创建特定领域的事件处理器：
+
+```php
+// 审计日志事件处理器
+abstract class AuditEventHandler extends BusinessEventHandler
+{
+    public function formatPayloadToText(array $payload, ?string $format = null, array $context = []): string
+    {
+        $operator = $payload['operator'] ?? '系统';
+        $action = $payload['action'] ?? '操作';
+        $target = $payload['target'] ?? '对象';
+        $ip = $payload['ip'] ?? '0.0.0.0';
+        $time = $payload['time'] ?? now();
+        
+        return sprintf(
+            "[%s] %s 从 %s 对 %s 执行了 %s",
+            $time,
+            $operator,
+            $ip,
+            $target,
+            $action
+        );
+    }
+    
+    public function formatPayloadToViewData(array $payload, ?string $format = null, array $context = []): ?array
+    {
+        return [
+            'type' => 'audit',
+            'severity' => $payload['severity'] ?? 'info',
+            'operator' => $payload['operator'],
+            'action' => $payload['action'],
+            'target' => $payload['target'],
+            'changes' => $payload['changes'] ?? [],
+            'metadata' => [
+                'ip' => $payload['ip'],
+                'user_agent' => $payload['user_agent'] ?? null,
+                'session_id' => $payload['session_id'] ?? null,
+            ],
+            'timestamp' => $payload['time'],
+        ];
+    }
+}
+
+// 通知事件处理器
+abstract class NotificationEventHandler extends BusinessEventHandler  
+{
+    abstract public function getChannels(array $payload): array;
+    abstract public function shouldNotify(array $payload): bool;
+    
+    public function formatPayloadToText(array $payload, ?string $format = null, array $context = []): string
+    {
+        // 根据通知渠道格式化
+        $channel = $context['channel'] ?? 'default';
+        
+        return match($channel) {
+            'sms' => $this->formatForSms($payload),
+            'email' => $this->formatForEmail($payload),
+            'push' => $this->formatForPush($payload),
+            default => parent::formatPayloadToText($payload, $format, $context)
+        };
+    }
+    
+    abstract protected function formatForSms(array $payload): string;
+    abstract protected function formatForEmail(array $payload): string;
+    abstract protected function formatForPush(array $payload): string;
+}
+```
+
 ### 3. Configuration（配置管理）
 
-提供统一的配置管理功能，支持分组配置、版本控制和数据库存储。
+提供统一的配置管理功能，支持分组配置、版本控制和数据库存储。配置系统基于版本化设计，每次修改都会创建新版本，支持配置回滚和历史追踪。
 
 #### 核心类
 
 - **Repository**: 配置仓库基类，提供配置数据的存储和访问功能
-- **LunaConfiguration**: 配置管理类，负责管理配置组
-- **ConfigurationGroup**: 配置组类，处理特定组的配置
+- **LunaConfiguration**: 配置管理类，负责管理所有配置组
+- **ConfigurationGroup**: 配置组类，处理特定组的配置项
 - **LunaConfigurationConfigure**: 配置系统的配置类
+- **Configuration (Model)**: 配置实体模型，存储配置元数据
+- **ConfigurationValue (Model)**: 配置值模型，存储配置的实际值和版本信息
 
-#### 使用示例
+#### 配置仓库基础用法
 
 ```php
-// 创建配置仓库
+// 1. 创建配置仓库
 $config = new Repository([
+    'app_name' => 'Luna App',
     'debug' => true,
     'cache_ttl' => 3600,
     'features' => [
         'sms' => true,
-        'email' => false
+        'email' => false,
+        'push' => true
+    ],
+    'api' => [
+        'timeout' => 30,
+        'retry' => 3,
+        'endpoints' => [
+            'user' => 'https://api.example.com/user',
+            'order' => 'https://api.example.com/order'
+        ]
     ]
 ]);
 
-// 访问配置
-$debug = $config->get('debug'); // true
-$smtpHost = $config->get('smtp.host', 'localhost'); // 使用默认值
-$config->set('cache_ttl', 7200);
+// 2. 访问配置（支持点语法）
+$appName = $config->get('app_name'); // "Luna App"
+$smsEnabled = $config->get('features.sms'); // true
+$userApi = $config->get('api.endpoints.user'); // "https://api.example.com/user"
+$defaultTimeout = $config->get('api.timeout', 60); // 30（存在值）
+$missing = $config->get('api.rate_limit', 100); // 100（使用默认值）
 
-// 使用配置组
-$dbConfig = luna_config('database');
-$dbConfig->set('host', '127.0.0.1');
-$dbConfig->save(); // 保存到数据库
+// 3. 修改配置
+$config->set('debug', false);
+$config->set('features.sms', false);
+$config->set('api.endpoints.payment', 'https://api.example.com/payment');
+
+// 4. 检查配置是否存在
+if ($config->has('features.push')) {
+    // 配置存在
+}
+
+// 5. 隐藏敏感配置
+$config->setHidden(['api.secret', 'database.password']);
+$safeConfig = $config->toArray(); // 敏感配置会被过滤
+```
+
+#### 配置组管理
+
+配置组提供了更高级的配置管理功能，支持数据库存储和版本控制：
+
+```php
+// 1. 创建配置组
+$systemGroup = luna_configuration()->group('system');
+
+// 2. 创建新的配置项（存储到数据库）
+$appConfig = $systemGroup->create(
+    name: 'app',
+    displayName: '应用配置',
+    initialValues: [
+        'name' => 'Luna Application',
+        'version' => '1.0.0',
+        'debug' => false,
+        'timezone' => 'Asia/Shanghai',
+        'locale' => 'zh-CN'
+    ],
+    description: '应用程序基础配置'
+);
+
+// 3. 获取配置仓库
+$appRepo = $systemGroup->repository('app');
+
+// 4. 读取配置
+$appName = $systemGroup->get('app.name'); // "Luna Application"
+$debug = $systemGroup->get('app.debug'); // false
+
+// 5. 更新配置（支持事务）
+$systemGroup->set('app.version', '1.0.1');
+$systemGroup->set('app.debug', true);
+$systemGroup->save(); // 保存到数据库，创建新版本
+
+// 6. 使用多个配置项
+$systemGroup->create('email', '邮件配置', [
+    'driver' => 'smtp',
+    'host' => 'smtp.example.com',
+    'port' => 587,
+    'username' => 'noreply@example.com',
+    'password' => 'secret',
+    'encryption' => 'tls',
+    'from' => [
+        'address' => 'noreply@example.com',
+        'name' => 'Luna App'
+    ]
+]);
+
+// 获取邮件配置
+$mailDriver = $systemGroup->get('email.driver'); // "smtp"
+$mailFrom = $systemGroup->get('email.from.address'); // "noreply@example.com"
+```
+
+#### 自定义配置仓库
+
+可以创建自定义配置仓库来提供类型安全的配置访问：
+
+```php
+// 1. 定义应用配置仓库
+class AppConfigRepository extends Repository
+{
+    public function getAppName(): string
+    {
+        return $this->get('name', 'Luna App');
+    }
+    
+    public function getVersion(): string
+    {
+        return $this->get('version', '0.0.0');
+    }
+    
+    public function isDebugMode(): bool
+    {
+        return $this->get('debug', false);
+    }
+    
+    public function getTimezone(): string
+    {
+        return $this->get('timezone', 'UTC');
+    }
+    
+    public function getMaintenanceMode(): array
+    {
+        return $this->get('maintenance', [
+            'enabled' => false,
+            'message' => '系统维护中',
+            'retry_after' => 3600
+        ]);
+    }
+}
+
+// 2. 定义支付配置仓库
+class PaymentConfigRepository extends Repository
+{
+    public function getGateways(): array
+    {
+        return $this->get('gateways', []);
+    }
+    
+    public function getGatewayConfig(string $gateway): array
+    {
+        return $this->get("gateways.{$gateway}", []);
+    }
+    
+    public function isGatewayEnabled(string $gateway): bool
+    {
+        return $this->get("gateways.{$gateway}.enabled", false);
+    }
+    
+    public function getDefaultGateway(): string
+    {
+        return $this->get('default_gateway', 'alipay');
+    }
+    
+    public function getTimeout(): int
+    {
+        return $this->get('timeout', 30);
+    }
+}
+
+// 3. 注册自定义仓库
+$configure = LunaConfigurationConfigure::create()
+    ->bindRepository('system', 'app', AppConfigRepository::class)
+    ->bindRepository('payment', 'config', PaymentConfigRepository::class)
+    ->build();
+
+// 4. 使用自定义仓库
+/** @var AppConfigRepository $appConfig */
+$appConfig = luna_configuration()->group('system')->repository('app');
+$appName = $appConfig->getAppName();
+$isDebug = $appConfig->isDebugMode();
+
+/** @var PaymentConfigRepository $paymentConfig */
+$paymentConfig = luna_configuration()->group('payment')->repository('config');
+$alipayConfig = $paymentConfig->getGatewayConfig('alipay');
+```
+
+#### 配置版本管理
+
+配置系统支持完整的版本控制，每次修改配置都会创建新版本：
+
+```php
+// 1. 获取当前版本ID
+$currentVersionId = luna_configuration()
+    ->group('system')
+    ->getCurrentVersionId('app'); // 返回当前版本的SHA1 hash
+
+// 2. 获取版本列表
+$versions = luna_configuration()
+    ->group('system')
+    ->getVersionList('app');
+
+// 返回格式：
+// [
+//     [
+//         'version_id' => 'a1b2c3d4e5f6...',
+//         'is_current' => true,
+//         'created_at' => Carbon实例
+//     ],
+//     [
+//         'version_id' => 'f6e5d4c3b2a1...',
+//         'is_current' => false,
+//         'created_at' => Carbon实例
+//     ]
+// ]
+
+// 3. 获取指定版本的配置
+$oldVersion = luna_configuration()
+    ->group('system')
+    ->getVersion('app', 'f6e5d4c3b2a1...');
+
+// 可以像普通配置仓库一样使用
+$oldAppName = $oldVersion->get('name');
+$oldDebugMode = $oldVersion->get('debug');
+
+// 4. 切换到指定版本（回滚）
+$success = luna_configuration()
+    ->group('system')
+    ->switchVersion('app', 'f6e5d4c3b2a1...');
+
+if ($success) {
+    // 版本切换成功，缓存已自动清理
+    // 后续获取的配置将是指定版本的内容
+}
+
+// 5. 版本对比示例
+$systemGroup = luna_configuration()->group('system');
+$currentVersion = $systemGroup->repository('app');
+$previousVersion = $systemGroup->getVersion('app', 'f6e5d4c3b2a1...');
+
+// 对比配置差异
+$currentDebug = $currentVersion->get('debug'); // true
+$previousDebug = $previousVersion->get('debug'); // false
+
+// 6. 完整的版本管理流程示例
+// 修改配置并创建新版本
+$systemGroup->set('app.version', '2.0.0');
+$systemGroup->set('app.features.new_feature', true);
+$systemGroup->save(); // 自动创建新版本
+
+// 获取最新的版本列表
+$versions = $systemGroup->getVersionList('app');
+$latestVersion = $versions[0]['version_id']; // 最新版本
+$previousVersion = $versions[1]['version_id']; // 上一个版本
+
+// 如果需要回滚
+if ($needRollback) {
+    $systemGroup->switchVersion('app', $previousVersion);
+}
+
+// 7. 使用配置记录直接操作（底层API）
+$configRecord = luna_configuration()
+    ->group('system')
+    ->getConfigurationRecord('app');
+
+// 查看所有版本
+$allVersions = $configRecord->versions()
+    ->orderBy('created_at', 'desc')
+    ->limit(10)
+    ->get();
+
+foreach ($versions as $version) {
+    echo sprintf(
+        "版本 %d - %s: %s\n",
+        $version->id,
+        $version->created_at,
+        json_encode($version->value)
+    );
+}
+
+// 3. 获取当前版本
+$currentVersion = $configRecord->current;
+
+// 4. 回滚到特定版本
+$oldVersion = $configRecord->values()
+    ->where('id', 123)
+    ->first();
+
+if ($oldVersion) {
+    $configRecord->current_id = $oldVersion->id;
+    $configRecord->save();
+    
+    // 清除缓存
+    Cache::forget('config:system:app');
+}
+```
+
+#### 高级功能
+
+```php
+// 1. 批量更新配置
+$systemGroup = luna_configuration()->group('system');
+
+// 开始批量更新
+$appRepo = $systemGroup->repository('app');
+$emailRepo = $systemGroup->repository('email');
+
+$appRepo->set('version', '2.0.0');
+$appRepo->set('features.new_ui', true);
+
+$emailRepo->set('driver', 'ses');
+$emailRepo->set('region', 'us-east-1');
+
+// 一次性保存所有更改
+$systemGroup->save();
+
+// 2. 配置缓存控制
+$configure = LunaConfigurationConfigure::create()
+    ->cacheDriver('redis') // 使用 Redis 缓存
+    ->cacheTtl(300) // 缓存 5 分钟
+    ->build();
+
+// 3. 配置导出和导入
+// 导出配置
+$configs = luna_configuration()
+    ->group('system')
+    ->repository('app')
+    ->all();
+
+file_put_contents('config_backup.json', json_encode($configs, JSON_PRETTY_PRINT));
+
+// 导入配置
+$importedConfigs = json_decode(file_get_contents('config_backup.json'), true);
+$systemGroup->repository('app')->set(null, $importedConfigs);
+$systemGroup->save();
+
+// 4. 配置验证
+class ValidatedConfigRepository extends Repository
+{
+    public function set(string|null $key, mixed $value, bool $overwrite = true): static
+    {
+        // 验证配置值
+        if ($key === 'port' && (!is_int($value) || $value < 1 || $value > 65535)) {
+            throw new InvalidArgumentException('端口号必须在 1-65535 之间');
+        }
+        
+        if ($key === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('无效的邮箱地址');
+        }
+        
+        return parent::set($key, $value, $overwrite);
+    }
+}
+```
+
+#### 配置管理 API
+
+```php
+// 获取配置组
+$systemGroup = luna_configuration()->group('system');
+
+// 检查配置是否存在
+if ($systemGroup->exists('app')) {
+    // 配置存在
+}
+
+// 获取配置值（支持点语法和默认值）
+$value = $systemGroup->get('app.features.sms', false);
+
+// 设置配置值
+$systemGroup->set('app.features.sms', true);
+
+// 保存更改
+$systemGroup->save();
+
+// 获取原始配置记录
+$record = $systemGroup->getConfigurationRecord('app');
 ```
 
 ### 4. Exception（异常处理）
@@ -372,10 +1158,14 @@ Foundation 组件包含以下数据库表：
 3. **luna_handlers** - 存储处理器实体
 4. **luna_business_events** - 存储业务事件配置
 
-运行迁移：
+发布并运行迁移：
 
 ```bash
-php artisan migrate --path=vendor/dybasedev/luna-prototype/src/Foundation/migrations
+# 发布迁移文件到项目
+php artisan vendor:publish --provider="Dybasedev\LunaPrototype\Foundation\LunaServiceProvider" --tag=migrations
+
+# 运行迁移
+php artisan migrate
 ```
 
 ## 命令行工具

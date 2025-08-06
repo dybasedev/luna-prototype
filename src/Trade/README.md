@@ -79,6 +79,24 @@ $context = TransactionContext::make()
     ->withParameters(['member_level' => 'vip']);
 ```
 
+## 安装配置
+
+### 1. 发布并运行迁移
+
+```bash
+# 发布迁移文件到项目
+php artisan vendor:publish --provider="Dybasedev\LunaPrototype\Trade\LunaTradeServiceProvider" --tag=luna-trade-migrations
+
+# 运行迁移
+php artisan migrate
+```
+
+这会创建以下数据表：
+- `luna_trade_transactions` - 交易事务表
+- `luna_trade_transaction_tradables` - 交易商品关联表
+- `luna_trade_transaction_activities` - 交易活动日志表
+- `luna_trade_order_sources` - 订单来源表
+
 ## 快速开始
 
 ### 1. 配置组件

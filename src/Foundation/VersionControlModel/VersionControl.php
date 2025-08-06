@@ -108,6 +108,8 @@ trait VersionControl
             // 生成 hash 值
             $hash = sha1(json_encode(['id' => $this->{$this->relationLocalKey()}, 'hash' => sha1(json_encode($data))]));
 
+            $versionId = $hash;
+            
             try {
                 /** @var Model $model */
                 $model = new ($this->versionValueModel());
@@ -123,9 +125,10 @@ trait VersionControl
                 if ($exception->getCode() !== '23000') {
                     throw $exception;
                 }
+                // 如果是重复主键，版本已存在，直接使用计算出的 hash
             }
 
-            $this->{$this->currentVersionValueKey()} = $model->{$this->relationVersionValueLocalKey()};
+            $this->{$this->currentVersionValueKey()} = $versionId;
             $this->save();
         };
 

@@ -29,6 +29,42 @@ Schedule 模块提供了灵活的任务调度和后台作业管理功能，支�
 
 记录通过调度系统执行的命令的详细日志。
 
+## 安装配置
+
+### 1. 注册模块
+
+在 `AppServiceProvider` 中注册 Schedule 模块：
+
+```php
+public function register(): void
+{
+    parent::register();
+    
+    $this->registerModule(
+        LunaScheduleConfigure::create()
+            ->addCommand('backup:database')
+            ->addCommand('cache:clear')
+            ->addCommand('queue:work')
+            ->build()
+    );
+}
+```
+
+### 2. 发布并运行迁移
+
+```bash
+# 发布迁移文件到项目
+php artisan vendor:publish --provider="Dybasedev\LunaPrototype\Schedule\LunaScheduleServiceProvider" --tag=migrations
+
+# 运行迁移
+php artisan migrate
+```
+
+这会创建以下数据表：
+- `luna_schedule_tasks` - 调度任务表
+- `luna_schedule_task_logs` - 任务执行日志表
+- `luna_command_execute_logs` - 命令执行日志表
+
 ## 快速开始
 
 ### 创建调度任务

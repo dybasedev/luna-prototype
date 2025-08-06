@@ -81,7 +81,23 @@ class VipMilestoneHandler extends MemberMilestoneHandler
 }
 ```
 
-### 2. 注册里程碑处理器
+### 2. 发布并运行迁移
+
+```bash
+# 发布迁移文件到项目
+php artisan vendor:publish --provider="Dybasedev\LunaPrototype\Membership\LunaMembershipServiceProvider"
+
+# 运行迁移
+php artisan migrate
+```
+
+这会创建以下数据表：
+- `luna_membership_milestone_types` - 里程碑类型表
+- `luna_membership_milestones` - 会员里程碑表
+- `luna_membership_conditions` - 里程碑条件表
+- `luna_membership_milestone_histories` - 里程碑历史记录表
+
+### 3. 注册里程碑处理器
 
 会员模块会自动注册 `membership-milestones` 处理器组，你只需要在 `AppServiceProvider` 中添加自己的处理器：
 
