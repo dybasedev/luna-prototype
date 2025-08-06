@@ -88,7 +88,7 @@ class LunaHandler
      * 
      * @param string|int $group 所属组名称或ID
      * @param string $name 实体名称（应该是唯一的）
-     * @param string $handler 处理器类名（必须已注册）
+     * @param string $handler 处理器类名或别名（必须已注册）
      * @param Repository|null $config 配置信息
      * @param string|null $displayName 显示名称，默认使用 name
      * @param string|null $description 描述信息
@@ -108,6 +108,9 @@ class LunaHandler
         if (!isset($this->configure->groups[$group])) {
             throw new RuntimeException('Handler group not exists');
         }
+
+        // 尝试通过别名解析处理器类名
+        $handler = $this->resolveHandlerClass($handler);
 
         if (!in_array($handler, $this->configure->handlers)) {
             throw new RuntimeException('Handler class not exists');
@@ -239,5 +242,109 @@ class LunaHandler
         }
         
         return $handler->withEntityId($entity->id);
+    }
+
+    /**
+     * 获取纯处理器实例
+     *
+     * 获取不需要数据库实体的处理器实例。
+     * 这些处理器通常作为单例使用，不支持多实例配置。
+     *
+     * @param string $handlerClass 处理器类名或别名
+     * @param array|Repository|null $config 可选的配置
+     * @return BaseHandler 处理器实例
+     * @throws RuntimeException 处理器未注册或不是纯处理器时抛出异常
+     * @throws BindingResolutionException
+     */
+    public function getPureHandler(string $handlerClass, array|Repository|null $config = null): BaseHandler
+    {
+        // 尝试通过别名解析处理器类名
+        $handlerClass = $this->resolveHandlerClass($handlerClass);
+
+        // 检查处理器是否已注册
+        if (!in_array($handlerClass, $this->configure->handlers)) {
+            throw new RuntimeException(sprintf('Handler class "%s" not registered', $handlerClass));
+        }
+
+        // 检查是否为纯处理器
+        if ($handlerClass::requiresEntity()) {
+            throw new RuntimeException(sprintf('Handler "%s" requires entity, use createEntityHandler() instead', $handlerClass));
+        }
+
+        /** @var BaseHandler $handler */
+        $handler = app()->make($handlerClass);
+
+        // 如果提供了配置，设置配置
+        if ($config !== null) {
+            $handler->withConfig($config);
+        }
+
+        return $handler;
+    }
+
+    /**
+     * 获取指定组的所有纯处理器类
+     * 
+     * 返回指定组中所有不需要实体的处理器类名。
+     * 
+     * @param string|int $group 处理器组名称或ID
+     * @return array 纯处理器类名数组
+     */
+    public function getPureHandlerClasses(string|int $group): array
+    {
+        $group = is_string($group) ? hash_code($group) : $group;
+        
+        if (!isset($this->configure->groups[$group])) {
+            return [];
+        }
+
+        $pureHandlers = [];
+        foreach ($this->configure->handlers as $handlerClass) {
+            // 检查处理器是否属于该组
+            $groupHandlers = $this->configure->groupHandlers[$group] ?? [];
+            if (in_array($handlerClass, $groupHandlers) && !$handlerClass::requiresEntity()) {
+                $pureHandlers[] = $handlerClass;
+            }
+        }
+
+        return $pureHandlers;
+    }
+
+    /**
+     * 解析处理器类名
+     * 
+     * 如果传入的是别名，返回实际的处理器类名。
+     * 如果传入的已经是类名，直接返回。
+     * 
+     * @param string $handlerClassOrAlias 处理器类名或别名
+     * @return class-string<BaseHandler> 处理器类名
+     */
+    protected function resolveHandlerClass(string $handlerClassOrAlias): string
+    {
+        // 如果是类名并且存在，直接返回
+        if (class_exists($handlerClassOrAlias)) {
+            return $handlerClassOrAlias;
+        }
+
+        // 尝试通过别名解析
+        $aliasHash = hash_code($handlerClassOrAlias);
+        if (isset($this->configure->handlerAliases[$aliasHash])) {
+            return $this->configure->handlerAliases[$aliasHash];
+        }
+
+        // 返回原始值，让后续处理报错
+        return $handlerClassOrAlias;
+    }
+
+    /**
+     * 通过别名获取处理器类名
+     * 
+     * @param string $alias 处理器别名
+     * @return string|null 处理器类名，不存在时返回 null
+     */
+    public function getHandlerClassByAlias(string $alias): ?string
+    {
+        $aliasHash = hash_code($alias);
+        return $this->configure->handlerAliases[$aliasHash] ?? null;
     }
 }

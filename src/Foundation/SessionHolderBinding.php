@@ -77,7 +77,7 @@ class SessionHolderBinding
     /**
      * 获取目标类（绑定的模型类）
      *
-     * @return string|null
+     * @return string|class-string<Model>|null
      */
     public function getTargetClass(): ?string
     {

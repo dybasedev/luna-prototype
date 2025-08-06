@@ -703,9 +703,7 @@ class LunaPermission extends LunaModule
             'group' => $this->configure->userGroupContract 
                 ? app($this->configure->userGroupContract)::query()->where('id', $subjectId)->exists()
                 : UserGroup::query()->where('id', $subjectId)->exists(),
-            'user' => $this->configure->binding 
-                ? app($this->configure->binding->getTargetClass())::query()->where('id', $subjectId)->exists()
-                : false,
+            'user' => $this->checkUserExists($subjectId),
             default => false,
         };
         
@@ -713,6 +711,27 @@ class LunaPermission extends LunaModule
             throw LunaException::create('权限主体不存在')
                 ->withDisplayMessage('指定的' . $this->getSubjectTypeDisplayName($subjectType) . '不存在');
         }
+    }
+
+    /**
+     * 检查用户是否存在
+     *
+     * @param string|int $userId
+     * @return bool
+     */
+    protected function checkUserExists(string|int $userId): bool
+    {
+        // 遍历所有的用户绑定
+        foreach ($this->configure->bindings as $binding) {
+            $modelClass = $binding->getTargetClass();
+            if (class_exists($modelClass)) {
+                if (app($modelClass)::query()->where('id', $userId)->exists()) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
     /**
@@ -803,5 +822,209 @@ class LunaPermission extends LunaModule
     public static function getServiceProviderClassName(): string
     {
         return LunaPermissionServiceProvider::class;
+    }
+
+    /**
+     * 检查当前认证用户是否有权限
+     *
+     * @param string $action 操作
+     * @param string $resource 资源
+     * @param array $context 上下文
+     * @return bool
+     */
+    public function can(string $action, string $resource, array $context = []): bool
+    {
+        $user = auth()->user();
+        
+        if (!$user instanceof PermissionSubject) {
+            return false;
+        }
+        
+        return $this->check($user, $action, $resource, $context);
+    }
+
+    /**
+     * 检查当前认证用户是否没有权限
+     *
+     * @param string $action 操作
+     * @param string $resource 资源
+     * @param array $context 上下文
+     * @return bool
+     */
+    public function cannot(string $action, string $resource, array $context = []): bool
+    {
+        return !$this->can($action, $resource, $context);
+    }
+
+    /**
+     * 检查当前认证用户是否有任一权限
+     *
+     * @param array $actions 操作列表
+     * @param string $resource 资源
+     * @param array $context 上下文
+     * @return bool
+     */
+    public function canAny(array $actions, string $resource, array $context = []): bool
+    {
+        foreach ($actions as $action) {
+            if ($this->can($action, $resource, $context)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * 检查当前认证用户是否有所有权限
+     *
+     * @param array $actions 操作列表
+     * @param string $resource 资源
+     * @param array $context 上下文
+     * @return bool
+     */
+    public function canAll(array $actions, string $resource, array $context = []): bool
+    {
+        foreach ($actions as $action) {
+            if (!$this->can($action, $resource, $context)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * 授权检查，失败时抛出异常
+     *
+     * @param string $action 操作
+     * @param string|Model $resource 资源
+     * @param array $context 上下文
+     * @return void
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     */
+    public function authorize(string $action, $resource, array $context = []): void
+    {
+        $user = auth()->user();
+        
+        if (!$user instanceof PermissionSubject) {
+            abort(403, '用户未实现权限接口');
+        }
+        
+        // 添加当前用户到上下文
+        $context['current_user'] = $user->getSubjectId();
+        
+        // 如果是模型实例，提取资源信息
+        if ($resource instanceof Model) {
+            $resourceName = strtolower(class_basename($resource));
+            $resourceId = $resource->getKey();
+            
+            // 自动提取资源属性
+            $context['resource_id'] = $resourceId;
+            
+            // 尝试提取所有者信息
+            foreach (['user_id', 'owner_id', 'created_by'] as $field) {
+                if (isset($resource->{$field})) {
+                    $context['resource_owner'] = $resource->{$field};
+                    break;
+                }
+            }
+            
+            $resource = $resourceName . '.' . $resourceId;
+        }
+        
+        if (!$this->check($user, $action, $resource, $context)) {
+            abort(403, '无权执行此操作');
+        }
+    }
+
+    /**
+     * 授权检查任一权限，失败时抛出异常
+     *
+     * @param array $actions 操作列表
+     * @param string|Model $resource 资源
+     * @param array $context 上下文
+     * @return void
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     */
+    public function authorizeAny(array $actions, $resource, array $context = []): void
+    {
+        $user = auth()->user();
+        
+        if (!$user instanceof PermissionSubject) {
+            abort(403, '用户未实现权限接口');
+        }
+        
+        // 添加当前用户到上下文
+        $context['current_user'] = $user->getSubjectId();
+        
+        // 处理模型实例
+        if ($resource instanceof Model) {
+            $resourceName = strtolower(class_basename($resource));
+            $context['resource_id'] = $resource->getKey();
+            
+            foreach (['user_id', 'owner_id', 'created_by'] as $field) {
+                if (isset($resource->{$field})) {
+                    $context['resource_owner'] = $resource->{$field};
+                    break;
+                }
+            }
+            
+            $resource = $resourceName . '.' . $resource->getKey();
+        }
+        
+        $hasPermission = false;
+        foreach ($actions as $action) {
+            if ($this->check($user, $action, $resource, $context)) {
+                $hasPermission = true;
+                break;
+            }
+        }
+        
+        if (!$hasPermission) {
+            abort(403, '无权执行任何请求的操作');
+        }
+    }
+
+    /**
+     * 授权检查所有权限，失败时抛出异常
+     *
+     * @param array $actions 操作列表
+     * @param string|Model $resource 资源
+     * @param array $context 上下文
+     * @return void
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     */
+    public function authorizeAll(array $actions, $resource, array $context = []): void
+    {
+        $user = auth()->user();
+        
+        if (!$user instanceof PermissionSubject) {
+            abort(403, '用户未实现权限接口');
+        }
+        
+        // 添加当前用户到上下文
+        $context['current_user'] = $user->getSubjectId();
+        
+        // 处理模型实例
+        if ($resource instanceof Model) {
+            $resourceName = strtolower(class_basename($resource));
+            $context['resource_id'] = $resource->getKey();
+            
+            foreach (['user_id', 'owner_id', 'created_by'] as $field) {
+                if (isset($resource->{$field})) {
+                    $context['resource_owner'] = $resource->{$field};
+                    break;
+                }
+            }
+            
+            $resource = $resourceName . '.' . $resource->getKey();
+        }
+        
+        foreach ($actions as $action) {
+            if (!$this->check($user, $action, $resource, $context)) {
+                abort(403, '缺少必要的权限');
+            }
+        }
     }
 }

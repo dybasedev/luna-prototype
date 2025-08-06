@@ -14,6 +14,11 @@ it('权限组件基本功能测试', function () {
     // 初始化权限模块
     $configure = LunaPermissionConfigure::create();
     $this->app->instance(LunaPermissionConfigure::class, $configure);
+    
+    // 注册并启动权限模块以确保处理器被注册
+    $configure->register($this->app);
+    $configure->boot($this->app);
+    
     $permission = new LunaPermission($configure, Cache::store());
     
     // 1. 测试策略声明

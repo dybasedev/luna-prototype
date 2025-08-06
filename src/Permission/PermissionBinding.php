@@ -15,31 +15,94 @@ use Illuminate\Database\Eloquent\Model;
 class PermissionBinding extends SessionHolderBinding
 {
     /**
-     * 初始化绑定
-     *
-     * @param \Illuminate\Contracts\Foundation\Application $app
-     * @return void
+     * 绑定标识符
      */
-    public function initialize($app): void
-    {
-        parent::initialize($app);
+    protected(set) ?string $identifier = null;
 
+    /**
+     * 绑定描述
+     */
+    protected(set) ?string $description = null;
+
+    /**
+     * 构造函数
+     *
+     * @param string $owner 绑定的用户模型类
+     * @param string|null $identifier 绑定标识符（如：'user', 'admin', 'api_client'）
+     * @throws \RuntimeException 当模型未实现必要的接口时抛出异常
+     */
+    public function __construct(string $owner, ?string $identifier = null)
+    {
+        parent::__construct($owner);
+        
+        // 设置标识符，如果未提供则使用类名的简短形式
+        $this->identifier = $identifier ?: strtolower(class_basename($owner));
+        
+        // 自动设置 table 为 owner
+        $this->table($owner);
+        
+        // 验证模型是否实现了必要的接口和 trait
+        $this->validateTargetClass();
+    }
+
+    /**
+     * 验证目标类是否满足权限系统的要求
+     *
+     * @return void
+     * @throws \RuntimeException
+     */
+    protected function validateTargetClass(): void
+    {
         $class = $this->getTargetClass();
         
         if (!$class) {
             return;
         }
 
-        // 添加权限相关的 trait
-        if (!in_array(HasPermissions::class, class_uses_recursive($class))) {
-            // 注意：在实际使用中，需要手动将 trait 添加到用户模型
-            // 这里只是确保接口实现
-        }
-
         // 确保用户模型实现 PermissionSubject 接口
         if (!in_array(PermissionSubject::class, class_implements($class))) {
-            // 注意：在实际使用中，需要手动实现接口
+            throw new \RuntimeException(
+                sprintf('Model %s must implement %s interface', $class, PermissionSubject::class)
+            );
         }
+
+        // 检查是否使用了 HasPermissions trait（仅警告，不强制）
+        if (!in_array(HasPermissions::class, class_uses_recursive($class))) {
+            // 可以通过日志记录警告，但不抛出异常
+            // 因为用户可能选择自己实现接口方法
+        }
+    }
+
+    /**
+     * 设置描述
+     *
+     * @param string $description
+     * @return static
+     */
+    public function withDescription(string $description): static
+    {
+        $this->description = $description;
+        return $this;
+    }
+
+    /**
+     * 获取标识符
+     *
+     * @return string|null
+     */
+    public function getIdentifier(): ?string
+    {
+        return $this->identifier;
+    }
+
+    /**
+     * 获取描述
+     *
+     * @return string|null
+     */
+    public function getDescription(): ?string
+    {
+        return $this->description;
     }
 
     /**
@@ -57,15 +120,5 @@ class PermissionBinding extends SessionHolderBinding
         }
 
         return $class::query()->find($id);
-    }
-
-    /**
-     * 获取当前认证用户
-     *
-     * @return Model|PermissionSubject|null
-     */
-    public function getCurrentUser(): Model|PermissionSubject|null
-    {
-        return auth()->user();
     }
 }

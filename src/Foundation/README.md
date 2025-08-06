@@ -23,7 +23,12 @@ Foundation 是 Luna Prototype 的核心基础组件，提供了整个框架的�
 
 #### 处理器分组机制
 
-处理器通过分组进行组织管理，每个处理器必须属于一个组：
+处理器通过分组进行组织管理，每个处理器必须属于一个组。从架构设计上，处理器分为两种类型：
+
+1. **实体处理器（Entity Handler）**：需要在数据库中创建实体记录，支持多实例和持久化配置
+2. **纯处理器（Pure Handler）**：仅在代码中定义，不需要数据库记录，通常作为单例使用
+
+每个处理器类通过 `requiresEntity()` 方法来声明自己的类型：
 
 ```php
 // 方式一：注册处理器组和处理器
@@ -35,15 +40,22 @@ $configure = LunaHandlerConfigure::create()
     ->registerHandler('auth', JwtAuthHandler::class)
     ->build();
 
-// 方式二：使用 group() 方法自动处理组注册
+// 方式二：使用 group() 方法自动处理组注册（推荐）
 $configure = LunaHandlerConfigure::create()
     ->group('payment', '支付处理', function ($register) {
-        $register->handler(AlipayHandler::class);
-        $register->handler(WechatPayHandler::class);
+        $register->handler(AlipayHandler::class, 'payment.alipay');  // 带别名
+        $register->handler(WechatPayHandler::class, 'payment.wechat');
     })
     ->group('auth', '认证处理', function ($register) {
-        $register->handler(JwtAuthHandler::class);
+        $register->handler(JwtAuthHandler::class, 'auth.jwt');
     })
+    ->build();
+
+// 方式三：单独设置别名
+$configure = LunaHandlerConfigure::create()
+    ->group('payment', '支付处理')
+    ->handler('payment', AlipayHandler::class)
+    ->alias('payment.alipay', AlipayHandler::class)  // 单独设置别名
     ->build();
 ```
 
@@ -105,11 +117,17 @@ class AlipayHandler extends PaymentHandler
     }
 }
 
-// 3. 创建处理器实体（存储到数据库）
+// 3. 注册处理器时可以提供别名
+luna_handler_configure()->group('payment', '支付处理', function ($register) {
+    $register->handler(AlipayHandler::class, 'payment.alipay');
+    $register->handler(WechatPayHandler::class, 'payment.wechat');
+});
+
+// 4. 创建处理器实体（存储到数据库）
 $alipayHandler = luna_handler()->createEntityHandler(
     group: 'payment',
     name: 'alipay-merchant1',
-    handler: AlipayHandler::class,
+    handler: AlipayHandler::class,  // 也可以使用别名 'payment.alipay'
     config: new Repository([
         'app_id' => '2021001234567890',
         'private_key' => 'MIIEvQIBADANBgkqhkiG9w0BAQ...',
@@ -226,6 +244,67 @@ class AlipayHandler extends PaymentHandler
         // ...
     }
 }
+```
+
+#### 纯处理器示例
+
+纯处理器适用于不需要动态配置、作为单例使用的场景：
+
+```php
+// 1. 定义纯处理器
+class PermissionHandler extends BasePermissionHandler
+{
+    // 声明为纯处理器
+    public static function requiresEntity(): bool
+    {
+        return false;
+    }
+    
+    public function handlerName(): string
+    {
+        return '权限处理器';
+    }
+    
+    public function handlerDescription(): string
+    {
+        return '基于策略的权限检查处理器';
+    }
+    
+    public function check(
+        PermissionSubject $subject,
+        string $action,
+        string $resource,
+        array $context = []
+    ): bool {
+        // 权限检查逻辑
+        return $this->checkPolicy($subject, $action, $resource, $context);
+    }
+}
+
+// 2. 注册纯处理器（带别名）
+$configure = LunaHandlerConfigure::create()
+    ->group('permission', '权限', function ($register) {
+        $register->handler(PermissionHandler::class, 'permission.default');
+    })
+    ->build();
+
+// 3. 使用纯处理器（通过类名或别名）
+$handler = luna_handler()->getPureHandler(PermissionHandler::class);
+// 或通过别名获取
+$handler = luna_handler()->getPureHandler('permission.default');
+
+// 可以传入临时配置
+$handler = luna_handler()->getPureHandler('permission.default', [
+    'cache_ttl' => 300,
+    'strict_mode' => true
+]);
+
+// 4. 获取指定组的所有纯处理器类
+$pureHandlers = luna_handler()->getPureHandlerClasses('permission');
+
+// 5. 查询处理器别名
+$handlerClass = luna_handler()->getHandlerClassByAlias('permission.default');
+// 返回: Dybasedev\LunaPrototype\Permission\Handlers\PermissionHandler
 ```
 
 #### 处理器管理 API

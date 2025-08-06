@@ -2,7 +2,6 @@
 
 namespace Dybasedev\LunaPrototype\Permission\Handlers;
 
-use Dybasedev\LunaPrototype\Foundation\Handler\BaseHandler;
 use Dybasedev\LunaPrototype\Permission\PermissionSubject;
 use Dybasedev\LunaPrototype\Permission\Models\Policy;
 use Dybasedev\LunaPrototype\Permission\Models\PolicyAssignment;
@@ -11,17 +10,12 @@ use Dybasedev\LunaPrototype\Permission\Resources\ResourceRegistry;
 use Illuminate\Support\Collection;
 
 /**
- * 权限检查处理器
+ * 标准权限检查处理器
+ * 
+ * 提供基于策略的权限检查实现，支持策略分配、条件评估等功能
  */
-class PermissionHandler extends BaseHandler
+class PermissionHandler extends BasePermissionHandler
 {
-    /**
-     * 资源注册器
-     *
-     * @var ResourceRegistry
-     */
-    protected ResourceRegistry $resourceRegistry;
-
     /**
      * 获取处理器名称
      *
@@ -29,7 +23,7 @@ class PermissionHandler extends BaseHandler
      */
     public function handlerName(): string
     {
-        return 'permission';
+        return '标准权限处理器';
     }
 
     /**
@@ -39,43 +33,9 @@ class PermissionHandler extends BaseHandler
      */
     public function handlerDescription(): string
     {
-        return '权限检查处理器';
+        return '基于策略的标准权限检查处理器，支持策略分配、条件评估、优先级处理等功能';
     }
 
-    /**
-     * 策略缓存
-     *
-     * @var array
-     */
-    protected array $policyCache = [];
-
-    /**
-     * 超级管理员检查回调
-     *
-     * @var \Closure|null
-     */
-    protected ?\Closure $superAdminChecker = null;
-
-    /**
-     * 创建权限处理器
-     *
-     * @param ResourceRegistry $resourceRegistry
-     */
-    public function __construct(ResourceRegistry $resourceRegistry)
-    {
-        $this->resourceRegistry = $resourceRegistry;
-    }
-
-    /**
-     * 设置超级管理员检查器
-     *
-     * @param \Closure $checker
-     * @return void
-     */
-    public function setSuperAdminChecker(\Closure $checker): void
-    {
-        $this->superAdminChecker = $checker;
-    }
 
     /**
      * 检查权限
@@ -112,82 +72,6 @@ class PermissionHandler extends BaseHandler
         return $this->evaluateStatements($matchedStatements);
     }
 
-    /**
-     * 批量检查权限
-     *
-     * @param PermissionSubject $subject
-     * @param array $permissions 格式: [['action' => 'read', 'resource' => 'users'], ...]
-     * @param array $context
-     * @return array
-     */
-    public function checkMany(
-        PermissionSubject $subject,
-        array $permissions,
-        array $context = []
-    ): array {
-        $results = [];
-
-        foreach ($permissions as $permission) {
-            $action = $permission['action'] ?? '*';
-            $resource = $permission['resource'] ?? '*';
-            
-            $results[] = [
-                'action' => $action,
-                'resource' => $resource,
-                'allowed' => $this->check($subject, $action, $resource, $context),
-            ];
-        }
-
-        return $results;
-    }
-
-    /**
-     * 检查是否可以执行任一操作
-     *
-     * @param PermissionSubject $subject
-     * @param array $actions
-     * @param string $resource
-     * @param array $context
-     * @return bool
-     */
-    public function checkAny(
-        PermissionSubject $subject,
-        array $actions,
-        string $resource,
-        array $context = []
-    ): bool {
-        foreach ($actions as $action) {
-            if ($this->check($subject, $action, $resource, $context)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 检查是否可以执行所有操作
-     *
-     * @param PermissionSubject $subject
-     * @param array $actions
-     * @param string $resource
-     * @param array $context
-     * @return bool
-     */
-    public function checkAll(
-        PermissionSubject $subject,
-        array $actions,
-        string $resource,
-        array $context = []
-    ): bool {
-        foreach ($actions as $action) {
-            if (!$this->check($subject, $action, $resource, $context)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
     /**
      * 获取主体的所有策略
@@ -326,6 +210,15 @@ class PermissionHandler extends BaseHandler
             case 'date_range':
                 return $this->evaluateDateRangeCondition($condition);
             
+            case 'resource_owner':
+                return $this->evaluateResourceOwnerCondition($condition, $context);
+            
+            case 'resource_id':
+                return $this->evaluateResourceIdCondition($condition, $context);
+            
+            case 'resource_attribute':
+                return $this->evaluateResourceAttributeCondition($condition, $context);
+            
             default:
                 // 自定义条件评估
                 return $this->evaluateCustomCondition($key, $condition, $context);
@@ -395,6 +288,149 @@ class PermissionHandler extends BaseHandler
     }
 
     /**
+     * 评估资源所有者条件
+     *
+     * @param mixed $condition
+     * @param array $context
+     * @return bool
+     */
+    protected function evaluateResourceOwnerCondition(mixed $condition, array $context): bool
+    {
+        // 资源所有者由业务端在 context 中提供
+        $resourceOwner = $context['resource_owner'] ?? null;
+        
+        if ($resourceOwner === null) {
+            return false;
+        }
+
+        // 特殊值处理
+        if ($condition === '@self') {
+            // 检查当前用户是否是资源所有者
+            $currentUser = $context['current_user'] ?? null;
+            return $currentUser && $resourceOwner == $currentUser;
+        }
+
+        // 支持多个所有者
+        if (is_array($condition)) {
+            return in_array($resourceOwner, $condition);
+        }
+
+        return $resourceOwner == $condition;
+    }
+
+    /**
+     * 评估资源ID条件
+     *
+     * @param mixed $condition
+     * @param array $context
+     * @return bool
+     */
+    protected function evaluateResourceIdCondition(mixed $condition, array $context): bool
+    {
+        $resourceId = $context['resource_id'] ?? null;
+        
+        if ($resourceId === null) {
+            return false;
+        }
+
+        // 支持单个ID或ID列表
+        if (is_array($condition)) {
+            return in_array($resourceId, $condition);
+        }
+
+        // 支持范围条件
+        if (is_array($condition) && isset($condition['operator'])) {
+            return $this->evaluateOperatorCondition($resourceId, $condition);
+        }
+
+        return $resourceId == $condition;
+    }
+
+    /**
+     * 评估资源属性条件
+     *
+     * @param mixed $condition
+     * @param array $context
+     * @return bool
+     */
+    protected function evaluateResourceAttributeCondition(mixed $condition, array $context): bool
+    {
+        if (!is_array($condition) || !isset($condition['attribute'], $condition['value'])) {
+            return false;
+        }
+
+        $attributeName = $condition['attribute'];
+        $expectedValue = $condition['value'];
+        $operator = $condition['operator'] ?? '=';
+
+        // 从 context 中获取资源属性
+        $resourceAttributes = $context['resource_attributes'] ?? [];
+        
+        if (!isset($resourceAttributes[$attributeName])) {
+            return false;
+        }
+
+        $actualValue = $resourceAttributes[$attributeName];
+
+        return $this->evaluateOperatorCondition($actualValue, [
+            'operator' => $operator,
+            'value' => $expectedValue
+        ]);
+    }
+
+    /**
+     * 评估操作符条件
+     *
+     * @param mixed $value
+     * @param array $condition
+     * @return bool
+     */
+    protected function evaluateOperatorCondition(mixed $value, array $condition): bool
+    {
+        $operator = $condition['operator'] ?? '=';
+        $compareValue = $condition['value'] ?? null;
+
+        switch ($operator) {
+            case '=':
+            case '==':
+                return $value == $compareValue;
+            
+            case '!=':
+            case '<>':
+                return $value != $compareValue;
+            
+            case '>':
+                return $value > $compareValue;
+            
+            case '>=':
+                return $value >= $compareValue;
+            
+            case '<':
+                return $value < $compareValue;
+            
+            case '<=':
+                return $value <= $compareValue;
+            
+            case 'in':
+                return is_array($compareValue) && in_array($value, $compareValue);
+            
+            case 'not_in':
+                return is_array($compareValue) && !in_array($value, $compareValue);
+            
+            case 'like':
+                return is_string($value) && is_string($compareValue) && 
+                       str_contains(strtolower($value), strtolower($compareValue));
+            
+            case 'not_like':
+                return is_string($value) && is_string($compareValue) && 
+                       !str_contains(strtolower($value), strtolower($compareValue));
+            
+            default:
+                return false;
+        }
+    }
+
+    /**
      * 评估自定义条件
      *
      * @param string $key
@@ -410,6 +446,11 @@ class PermissionHandler extends BaseHandler
         }
 
         $contextValue = $context[$key];
+
+        // 如果条件是数组且包含 operator，使用操作符评估
+        if (is_array($condition) && isset($condition['operator'])) {
+            return $this->evaluateOperatorCondition($contextValue, $condition);
+        }
 
         // 简单相等比较
         if (is_scalar($condition)) {
@@ -494,35 +535,20 @@ class PermissionHandler extends BaseHandler
     }
 
     /**
-     * 清除策略缓存
-     *
-     * @param PermissionSubject|null $subject
-     * @return void
-     */
-    public function clearCache(?PermissionSubject $subject = null): void
-    {
-        if ($subject) {
-            unset($this->policyCache[$subject->getSubjectIdentifier()]);
-        } else {
-            $this->policyCache = [];
-        }
-    }
-
-    /**
-     * 检查是否为超级管理员
+     * 重写父类的超级管理员检查方法
      *
      * @param PermissionSubject $subject
      * @return bool
      */
     protected function isSuperAdmin(PermissionSubject $subject): bool
     {
-        // 如果设置了自定义检查器，使用它
-        if ($this->superAdminChecker) {
-            return call_user_func($this->superAdminChecker, $subject);
+        // 首先调用父类的检查（使用自定义检查器）
+        if (parent::isSuperAdmin($subject)) {
+            return true;
         }
 
         // 默认检查：是否有 super-admin 角色
-        if ($subject->getSubjectType() === 'role' && $subject instanceof Models\Role) {
+        if ($subject->getSubjectType() === 'role' && $subject instanceof \Dybasedev\LunaPrototype\Permission\Models\Role) {
             return $subject->name === 'super-admin';
         }
 

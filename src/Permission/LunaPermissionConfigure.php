@@ -3,6 +3,8 @@
 namespace Dybasedev\LunaPrototype\Permission;
 
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Dybasedev\LunaPrototype\Permission\UserGroupContract;
 use Dybasedev\LunaPrototype\Permission\Handlers\PermissionHandler;
 use Dybasedev\LunaPrototype\Permission\Resources\ResourceRegistry;
@@ -14,9 +16,15 @@ use Illuminate\Contracts\Container\Container;
 class LunaPermissionConfigure extends LunaModuleConfigure
 {
     /**
-     * 权限绑定实例
+     * 权限绑定实例集合
+     * 
+     * @var PermissionBinding[]
      */
-    protected(set) ?PermissionBinding $binding = null;
+    protected(set) array $bindings = [] {
+        get {
+            return $this->bindings;
+        }
+    }
 
     /**
      * 策略模型类名
@@ -52,9 +60,23 @@ class LunaPermissionConfigure extends LunaModuleConfigure
     protected(set) array $resources = [];
 
     /**
+     * 资源提供者
+     * 
+     * @var Support\AttributeResourceProvider|null
+     */
+    protected(set) ?Support\AttributeResourceProvider $resourceProvider = null;
+
+    /**
      * 超级管理员检查回调
      */
     protected(set) ?\Closure $superAdminChecker = null;
+
+    /**
+     * 默认权限处理器类
+     * 
+     * @var class-string<Handlers\BasePermissionHandler>
+     */
+    protected(set) string $defaultHandlerClass = PermissionHandler::class;
 
     /**
      * 创建配置实例
@@ -67,14 +89,16 @@ class LunaPermissionConfigure extends LunaModuleConfigure
     }
 
     /**
-     * 设置权限绑定
+     * 添加权限绑定
      *
      * @param PermissionBinding $binding
      * @return $this
      */
     public function bind(PermissionBinding $binding): static
     {
-        $this->binding = $binding;
+        $bindings = $this->bindings;
+        $bindings[] = $binding;
+        $this->bindings = $bindings;
         return $this;
     }
 
@@ -136,6 +160,42 @@ class LunaPermissionConfigure extends LunaModuleConfigure
     public function registerResource(string $name, $definition): static
     {
         $this->resources[$name] = $definition;
+        return $this;
+    }
+
+    /**
+     * 使用资源提供者
+     *
+     * @param Support\AttributeResourceProvider $provider
+     * @return $this
+     */
+    public function useResourceProvider(Support\AttributeResourceProvider $provider): static
+    {
+        $this->resourceProvider = $provider;
+        return $this;
+    }
+
+    /**
+     * 从目录扫描资源（便捷方法）
+     *
+     * @param string ...$directories 要扫描的目录
+     * @return $this
+     */
+    public function scanResources(string ...$directories): static
+    {
+        $this->resourceProvider = Support\AttributeResourceProvider::create($directories);
+        return $this;
+    }
+
+    /**
+     * 从应用目录扫描资源
+     *
+     * @param string ...$paths 相对于 app 目录的路径
+     * @return $this
+     */
+    public function scanAppResources(string ...$paths): static
+    {
+        $this->resourceProvider = Support\AttributeResourceProvider::fromApp(...$paths);
         return $this;
     }
 
@@ -208,10 +268,10 @@ class LunaPermissionConfigure extends LunaModuleConfigure
      */
     public function boot(Container $container): void
     {
-        // 如果设置了绑定，执行绑定初始化
-        if ($this->binding && $container->resolved(PermissionBinding::class)) {
-            $this->binding->initialize($container);
-        }
+        // 注册权限处理器组和默认处理器
+        $container->make(LunaHandlerConfigure::class)->group('permission', '权限', function ($register) {
+            $register->handler($this->defaultHandlerClass, 'permission.default');
+        });
     }
 
     /**
@@ -225,8 +285,18 @@ class LunaPermissionConfigure extends LunaModuleConfigure
         
         if ($registry === null) {
             $registry = new ResourceRegistry();
+            
+            // 注册手动定义的资源
             foreach ($this->resources as $name => $definition) {
                 $registry->register($name, $definition);
+            }
+            
+            // 从资源提供者获取资源
+            if ($this->resourceProvider) {
+                $scannedResources = $this->resourceProvider->getResources();
+                foreach ($scannedResources as $resource) {
+                    $registry->register($resource['name'], $resource);
+                }
             }
         }
         
@@ -237,17 +307,23 @@ class LunaPermissionConfigure extends LunaModuleConfigure
      * 获取权限处理器
      *
      * @return PermissionHandler
+     * @deprecated 使用 LunaHandler 获取处理器实例
      */
     public function getPermissionHandler(): PermissionHandler
     {
         static $handler = null;
         
         if ($handler === null) {
-            $handler = new PermissionHandler($this->getResourceRegistry());
+            // 通过 Handler 系统获取纯处理器实例，可以使用别名
+            /** @var PermissionHandler $handler */
+            $handler = app()->make(LunaHandler::class)->getPureHandler('permission.default');
+            
+            // 设置资源注册器
+            $handler->withResourceRegistry($this->getResourceRegistry());
             
             // 如果设置了超级管理员检查器，注入到处理器
             if ($this->superAdminChecker) {
-                $handler->setSuperAdminChecker($this->superAdminChecker);
+                $handler->withSuperAdminChecker($this->superAdminChecker);
             }
         }
         
@@ -255,16 +331,51 @@ class LunaPermissionConfigure extends LunaModuleConfigure
     }
 
     /**
-     * 获取用户模型类名
+     * 通过模型类名获取绑定
+     *
+     * @param string $modelClass
+     * @return PermissionBinding|null
+     */
+    public function getBindingByModel(string $modelClass): ?PermissionBinding
+    {
+        foreach ($this->bindings as $binding) {
+            if ($binding->getTargetClass() === $modelClass) {
+                return $binding;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * 通过标识符获取绑定
+     *
+     * @param string $identifier
+     * @return PermissionBinding|null
+     */
+    public function getBindingByIdentifier(string $identifier): ?PermissionBinding
+    {
+        foreach ($this->bindings as $binding) {
+            if ($binding->getIdentifier() === $identifier) {
+                return $binding;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * 获取第一个用户模型类名（向后兼容）
      *
      * @return string|null
+     * @deprecated 使用 getBindings() 获取所有绑定
      */
     public static function getUserModelClass(): ?string
     {
         try {
             $config = app(LunaPermissionConfigure::class);
-            if ($config && $config->binding) {
-                return $config->binding->getTargetClass();
+            if ($config && !empty($config->bindings)) {
+                return $config->bindings[0]->getTargetClass();
             }
         } catch (\Throwable $e) {
             // 忽略错误

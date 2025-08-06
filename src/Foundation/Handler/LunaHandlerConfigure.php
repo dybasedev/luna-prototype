@@ -34,6 +34,24 @@ class LunaHandlerConfigure extends LunaModuleConfigure
     protected(set) array $handlers = [];
 
     /**
+     * 处理器与组的映射关系
+     * 
+     * 键为组的哈希码，值为该组的处理器类名数组
+     * 
+     * @var array<int, array<class-string>>
+     */
+    protected(set) array $groupHandlers = [];
+
+    /**
+     * 处理器别名映射
+     * 
+     * 键为别名的哈希码，值为处理器类名
+     * 
+     * @var array<int, class-string>
+     */
+    protected(set) array $handlerAliases = [];
+
+    /**
      * 处理器模型类名
      *
      * @var class-string<Models\Handler>
@@ -55,12 +73,15 @@ class LunaHandlerConfigure extends LunaModuleConfigure
      *
      * @param string $group 组名
      * @param string $handlerClass 处理器类名
+     * @param string|null $alias 处理器别名
      * @return static
      * @throws RuntimeException 当组不存在时抛出异常
      */
-    public function handler(string $group, string $handlerClass): static
+    public function handler(string $group, string $handlerClass, ?string $alias = null): static
     {
-        if (!isset($this->groups[hash_code($group)])) {
+        $groupId = hash_code($group);
+        
+        if (!isset($this->groups[$groupId])) {
             throw new RuntimeException('Handler group not exists.');
         }
 
@@ -68,10 +89,24 @@ class LunaHandlerConfigure extends LunaModuleConfigure
             throw new RuntimeException('Handler class not exists.');
         }
 
-        $this->groups[hash_code($group)]['handlers'][] = $handlerClass;
+        $this->groups[$groupId]['handlers'][] = $handlerClass;
 
         if (!in_array($handlerClass, $this->handlers)) {
             $this->handlers[] = $handlerClass;
+        }
+        
+        // 添加到组处理器映射
+        if (!isset($this->groupHandlers[$groupId])) {
+            $this->groupHandlers[$groupId] = [];
+        }
+        
+        if (!in_array($handlerClass, $this->groupHandlers[$groupId])) {
+            $this->groupHandlers[$groupId][] = $handlerClass;
+        }
+
+        // 如果提供了别名，注册别名
+        if ($alias !== null) {
+            $this->handlerAliases[hash_code($alias)] = $handlerClass;
         }
 
         return $this;
@@ -92,8 +127,8 @@ class LunaHandlerConfigure extends LunaModuleConfigure
             'display_name' => $displayName,
         ];
 
-        $handlerAppender = function (string $handlerClass) use ($name) {
-            $this->handler($name, $handlerClass);
+        $handlerAppender = function (string $handlerClass, ?string $alias = null) use ($name) {
+            $this->handler($name, $handlerClass, $alias);
         };
 
         if ($handlerRegister) {
@@ -105,9 +140,9 @@ class LunaHandlerConfigure extends LunaModuleConfigure
                     ) {
                     }
 
-                    public function handler(string $handlerClass): static
+                    public function handler(string $handlerClass, ?string $alias = null): static
                     {
-                        ($this->handlerAppender)($handlerClass);
+                        ($this->handlerAppender)($handlerClass, $alias);
                         return $this;
                     }
                 }
@@ -152,6 +187,24 @@ class LunaHandlerConfigure extends LunaModuleConfigure
         if (!in_array($handlerClass, $this->handlers)) {
             $this->handlers[] = $handlerClass;
         }
+        return $this;
+    }
+
+    /**
+     * 为处理器设置别名
+     *
+     * @param string $alias 别名
+     * @param string $handlerClass 处理器类名
+     * @return static
+     * @throws RuntimeException 当处理器类不存在时抛出异常
+     */
+    public function alias(string $alias, string $handlerClass): static
+    {
+        if (!class_exists($handlerClass)) {
+            throw new RuntimeException('Handler class not exists.');
+        }
+
+        $this->handlerAliases[hash_code($alias)] = $handlerClass;
         return $this;
     }
 

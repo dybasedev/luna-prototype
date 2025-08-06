@@ -10,6 +10,10 @@ use Dybasedev\LunaPrototype\Foundation\Configuration\Repository;
  * 提供统一的处理器接口和配置管理功能。
  * 处理器是 Luna Prototype 中用于执行特定业务逻辑的核心组件。
  * 
+ * 处理器分为两种类型：
+ * - 实体处理器（Entity Handler）：需要在数据库中存储配置，支持多实例
+ * - 纯处理器（Pure Handler）：仅在代码中定义，通常为单例
+ * 
  * @package Dybasedev\LunaPrototype\Foundation\Handler
  */
 abstract class BaseHandler
@@ -50,6 +54,21 @@ abstract class BaseHandler
      * @return string 处理器描述
      */
     abstract public function handlerDescription(): string;
+
+    /**
+     * 判断处理器是否需要实体
+     * 
+     * 返回 true 表示该处理器需要在数据库中创建实体记录，支持多实例和持久化配置。
+     * 返回 false 表示该处理器为纯代码定义，通常作为单例使用。
+     * 
+     * 子类可以重写此方法来指定处理器类型。
+     * 
+     * @return bool 是否需要实体
+     */
+    public static function requiresEntity(): bool
+    {
+        return true;
+    }
 
     /**
      * 关联的配置仓库类

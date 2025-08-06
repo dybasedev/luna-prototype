@@ -16,6 +16,10 @@ beforeEach(function () {
     $this->configure = LunaPermissionConfigure::create();
     $this->app->instance(LunaPermissionConfigure::class, $this->configure);
     
+    // 注册并启动权限模块以确保处理器被注册
+    $this->configure->register($this->app);
+    $this->configure->boot($this->app);
+    
     // 创建权限实例
     $this->permission = new LunaPermission($this->configure, Cache::store());
 });
