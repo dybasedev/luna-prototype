@@ -25,11 +25,27 @@ if (!function_exists('luna_schedule')) {
      * // 获取定时任务管理器
      * $schedule = luna_schedule();
      * 
+     * // 创建新任务
+     * $task = $schedule->createTask(
+     *     'daily-backup',
+     *     'backup:database',
+     *     '0 2 * * *'
+     * );
+     * 
+     * // 手动执行任务
+     * $result = $schedule->runTask('daily-backup');
+     * 
      * // 获取激活的任务列表
      * $activeTasks = $schedule->getActiveTasks();
      * 
-     * // 获取可用的命令列表
-     * $commands = $schedule->availableCommands();
+     * // 执行命令并记录日志（操作者必须实现 SessionHolder 接口）
+     * $user = User::find(1); // User 必须实现 SessionHolder 接口
+     * $log = $schedule->executeCommand(
+     *     'cache:clear',
+     *     ['--force' => true],
+     *     $user,
+     *     '手动清理缓存'
+     * );
      * ```
      *
      * @return LunaSchedule 定时任务管理器实例

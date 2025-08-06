@@ -49,7 +49,7 @@ return new class extends Migration {
             $table->json('payload')->comment('配置');
             $table->string('comment')->comment('备注');
             $table->timestamp('ran_at')->index()->comment('开始时间');
-            $table->timestamp('end_at')->index()->comment('结束时间');
+            $table->timestamp('end_at')->nullable()->index()->comment('结束时间');
             $table->decimal('duration', 24, 14)->comment('持续时间');
             $table->unsignedTinyInteger('status')->comment('状态');
             $table->longText('output')->comment('输出');

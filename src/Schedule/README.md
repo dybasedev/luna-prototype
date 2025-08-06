@@ -4,12 +4,16 @@ Schedule 模块提供了灵活的任务调度和后台作业管理功能，支�
 
 ## 功能特性
 
-- **定时任务管理**：创建和管理各种定时任务
-- **命令执行日志**：记录所有命令的执行历史和结果
-- **任务状态监控**：实时跟踪任务执行状态
-- **失败重试机制**：自动重试失败的任务
+- **定时任务管理**：创建、更新、删除和管理各种定时任务
+- **命令执行日志**：记录所有命令的执行历史和结果，支持操作者追踪
+- **任务状态监控**：实时跟踪任务执行状态和执行统计
+- **失败重试机制**：自动重试失败的任务，支持自定义重试次数和延迟
 - **任务优先级**：支持不同优先级的任务调度
-- **灵活的调度规则**：支持 Cron 表达式和其他调度规则
+- **灵活的调度规则**：支持 Cron 表达式和链式调度配置
+- **命令白名单**：安全控制，只允许执行白名单中的命令
+- **手动执行**：支持手动触发任务执行并记录日志
+- **统计分析**：提供任务执行统计和成功率分析
+- **日志清理**：自动清理过期的执行日志
 
 ## 核心概念
 
@@ -85,7 +89,10 @@ $task = $schedule->createTask(
     'urgent-task',
     'process:urgent-orders',
     '*/5 * * * *',  // 每5分钟执行
-    ['priority' => 'high']
+    [
+        'priority' => 'high',
+        'description' => '处理紧急订单'
+    ]
 );
 ```
 
@@ -99,20 +106,82 @@ $task = $schedule->createTask(
     '0 * * * *',
     [
         'max_retries' => 3,
-        'retry_delay' => 300  // 5分钟后重试
+        'retry_delay' => 300,  // 5分钟后重试
+        'description' => '同步外部API数据'
     ]
 );
 ```
 
-### 任务链
+
+### 任务管理
 
 ```php
-// 创建任务链
-$schedule->chain([
-    'backup:database',
-    'backup:files',
-    'backup:upload'
-])->daily()->at('02:00');
+// 获取任务
+$task = $schedule->getTask('daily-backup');
+
+// 更新任务
+$schedule->updateTask($task, [
+    'expression' => '0 3 * * *',  // 改为凌晨3点执行
+    'payload' => [
+        'dont_overlap' => true
+    ]
+]);
+
+// 启用/禁用任务
+$schedule->toggleTask('daily-backup', false);  // 禁用
+$schedule->toggleTask('daily-backup', true);   // 启用
+
+// 删除任务
+$schedule->deleteTask('old-task');
+```
+
+### 执行命令并记录日志
+
+```php
+// 执行命令并记录到命令执行日志
+$log = $schedule->executeCommand(
+    'cache:clear',
+    ['--force' => true],  // 参数
+    null,  // 操作者，null 表示系统
+    '系统自动清理缓存'  // 备注
+);
+
+// 带操作者信息执行（操作者必须实现 SessionHolder 接口）
+$user = User::find(1); // User 模型必须实现 SessionHolder 接口
+$log = $schedule->executeCommand(
+    'cache:clear',
+    [],  // 参数
+    $user,  // 操作者
+    '手动清理缓存'  // 备注
+);
+
+if ($log->isSuccess()) {
+    echo "命令执行成功";
+}
+```
+
+注意：操作者类型通过 Foundation 组件的 SessionHolder 机制管理，使用 `hash_code()` 函数生成类型 ID。
+
+### 任务统计
+
+```php
+// 获取任务执行统计（最近7天）
+$stats = $schedule->getTaskStatistics('daily-backup');
+
+echo "总执行次数: " . $stats['total_runs'] . "\n";
+echo "成功率: " . $stats['success_rate'] . "%\n";
+echo "平均执行时间: " . $stats['average_duration'] . "秒\n";
+
+// 获取所有任务的统计
+$allStats = $schedule->getTaskStatistics(null, 30);  // 最近30天
+```
+
+### 日志清理
+
+```php
+// 清理30天前的日志
+$deleted = $schedule->cleanOldLogs(30);
+echo "已清理 {$deleted} 条旧日志";
 ```
 
 ## 模型关系

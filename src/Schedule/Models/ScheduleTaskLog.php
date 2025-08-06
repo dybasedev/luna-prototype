@@ -49,6 +49,49 @@ class ScheduleTaskLog extends Model
             'id');
     }
 
+    /**
+     * 判断任务是否执行成功
+     *
+     * @return bool
+     */
+    public function isSuccess(): bool
+    {
+        return $this->status === 1;
+    }
+
+    /**
+     * 获取错误信息
+     *
+     * @return string
+     */
+    public function getError(): string
+    {
+        if ($this->isSuccess()) {
+            return '';
+        }
+
+        // 从输出中提取错误信息
+        return $this->output ?: 'Unknown error';
+    }
+
+    /**
+     * 获取格式化的持续时间
+     *
+     * @return string
+     */
+    public function getFormattedDuration(): string
+    {
+        $duration = (float)$this->duration;
+        
+        if ($duration < 1) {
+            return round($duration * 1000, 2) . 'ms';
+        } elseif ($duration < 60) {
+            return round($duration, 2) . 's';
+        } else {
+            return round($duration / 60, 2) . 'm';
+        }
+    }
+
     protected function casts(): array
     {
         return [

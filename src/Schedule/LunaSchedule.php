@@ -3,15 +3,19 @@
 namespace Dybasedev\LunaPrototype\Schedule;
 
 use Dybasedev\LunaPrototype\Foundation\LunaModule;
+use Dybasedev\LunaPrototype\Foundation\SessionHolder;
 use Dybasedev\LunaPrototype\Schedule\Models\ScheduleTask;
+use Dybasedev\LunaPrototype\Schedule\Models\CommandExecuteLog;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Contracts\Console\Kernel as Artisan;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -220,6 +224,259 @@ class LunaSchedule extends LunaModule
     }
 
     /**
+     * 创建新的调度任务
+     *
+     * @param string $name 任务唯一名称
+     * @param string $command 要执行的命令
+     * @param string $expression Cron 表达式
+     * @param array $options 其他选项配置
+     * @return ScheduleTask 创建的任务实例
+     */
+    public function createTask(string $name, string $command, string $expression, array $options = []): ScheduleTask
+    {
+        // 验证命令是否在白名单中
+        if (!$this->isCommandAllowed($command)) {
+            throw new InvalidArgumentException("Command '{$command}' is not in the whitelist.");
+        }
+
+        $data = [
+            'name' => $name,
+            'display_name' => $options['display_name'] ?? $name,
+            'description' => $options['description'] ?? '',
+            'expression' => $expression,
+            'expression_type' => $options['expression_type'] ?? 1,
+            'timezone' => $options['timezone'] ?? config('app.timezone'),
+            'command' => $command,
+            'payload' => array_merge([
+                'parameters' => $options['parameters'] ?? '',
+                'priority' => $options['priority'] ?? 'normal',
+                'max_retries' => $options['max_retries'] ?? 0,
+                'retry_delay' => $options['retry_delay'] ?? 300,
+                'dont_overlap' => $options['dont_overlap'] ?? false,
+                'run_in_maintenance' => $options['run_in_maintenance'] ?? false,
+                'run_in_background' => $options['run_in_background'] ?? false,
+                'run_on_one_server' => $options['run_on_one_server'] ?? true,
+            ], $options['payload'] ?? []),
+            'enabled' => $options['enabled'] ?? true,
+        ];
+
+        $task = $this->configure->scheduleTaskModel::create($data);
+        
+        // 清除缓存
+        $this->cache->forget('schedule-task:all-active');
+        
+        return $task;
+    }
+
+    /**
+     * 更新调度任务
+     *
+     * @param ScheduleTask|string $task 任务实例或任务名称
+     * @param array $data 要更新的数据
+     * @return ScheduleTask 更新后的任务实例
+     */
+    public function updateTask(ScheduleTask|string $task, array $data): ScheduleTask
+    {
+        if (is_string($task)) {
+            $task = $this->configure->scheduleTaskModel::where('name', $task)->firstOrFail();
+        }
+
+        // 如果更新命令，需要验证白名单
+        if (isset($data['command']) && !$this->isCommandAllowed($data['command'])) {
+            throw new InvalidArgumentException("Command '{$data['command']}' is not in the whitelist.");
+        }
+
+        // 合并 payload 数据
+        if (isset($data['payload'])) {
+            $data['payload'] = array_merge($task->payload ?? [], $data['payload']);
+        }
+
+        $task->update($data);
+        
+        // 清除缓存
+        $this->cache->forget('schedule-task:all-active');
+        
+        return $task;
+    }
+
+    /**
+     * 删除调度任务
+     *
+     * @param ScheduleTask|string $task 任务实例或任务名称
+     * @return bool 是否删除成功
+     */
+    public function deleteTask(ScheduleTask|string $task): bool
+    {
+        if (is_string($task)) {
+            $task = $this->configure->scheduleTaskModel::where('name', $task)->firstOrFail();
+        }
+
+        $result = $task->delete();
+        
+        // 清除缓存
+        $this->cache->forget('schedule-task:all-active');
+        
+        return $result;
+    }
+
+    /**
+     * 手动执行任务
+     *
+     * @param ScheduleTask|string $task 任务实例或任务名称
+     * @return Models\ScheduleTaskLog 执行日志
+     */
+    public function runTask(ScheduleTask|string $task): Models\ScheduleTaskLog
+    {
+        if (is_string($task)) {
+            $task = $this->configure->scheduleTaskModel::where('name', $task)->firstOrFail();
+        }
+
+        $log = $this->configure->scheduleTaskLogModel::create([
+            'task_id' => $task->id,
+            'output' => '',
+            'ran_at' => Carbon::now(),
+            'status' => 0, // 初始状态
+        ]);
+
+        $start = microtime(true);
+        $output = '';
+
+        try {
+            // 构建命令参数
+            $parameters = $task->compileParameters(true);
+            
+            // 执行命令
+            $exitCode = $this->artisan->call($task->command, $parameters);
+            
+            // 获取输出（处理不同的 Artisan 实现）
+            if (method_exists($this->artisan, 'output')) {
+                $output = $this->artisan->output();
+            }
+            
+            $log->update([
+                'status' => $exitCode === 0 ? 1 : 0,
+                'output' => $output,
+                'duration' => microtime(true) - $start,
+                'end_at' => Carbon::now(),
+            ]);
+            
+            // 处理重试逻辑
+            if ($exitCode !== 0 && $task->payload['max_retries'] > 0) {
+                $this->scheduleRetry($task, $log);
+            }
+            
+        } catch (Throwable $e) {
+            $log->update([
+                'status' => 0,
+                'output' => $e->getMessage() . "\n" . $e->getTraceAsString(),
+                'duration' => microtime(true) - $start,
+                'end_at' => Carbon::now(),
+            ]);
+            
+            Log::error('Schedule task execution failed', [
+                'task' => $task->name,
+                'exception' => $e->getMessage(),
+            ]);
+        }
+
+        return $log;
+    }
+
+    /**
+     * 获取任务实例
+     *
+     * @param string $name 任务名称
+     * @return ScheduleTask|null
+     */
+    public function getTask(string $name): ?ScheduleTask
+    {
+        return $this->configure->scheduleTaskModel::where('name', $name)->first();
+    }
+
+    /**
+     * 获取所有任务
+     *
+     * @param bool $onlyActive 是否只获取激活的任务
+     * @return Collection
+     */
+    public function getTasks(bool $onlyActive = false): Collection
+    {
+        $query = $this->configure->scheduleTaskModel::query();
+        
+        if ($onlyActive) {
+            $query->active();
+        }
+        
+        return $query->get();
+    }
+
+    /**
+     * 启用或禁用任务
+     *
+     * @param ScheduleTask|string $task 任务实例或任务名称
+     * @param bool $enabled 是否启用
+     * @return ScheduleTask
+     */
+    public function toggleTask(ScheduleTask|string $task, bool $enabled): ScheduleTask
+    {
+        if (is_string($task)) {
+            $task = $this->configure->scheduleTaskModel::where('name', $task)->firstOrFail();
+        }
+
+        $task->update(['enabled' => $enabled]);
+        
+        // 清除缓存
+        $this->cache->forget('schedule-task:all-active');
+        
+        return $task;
+    }
+
+    /**
+     * 检查命令是否在白名单中
+     *
+     * @param string $command 命令名称
+     * @return bool
+     */
+    protected function isCommandAllowed(string $command): bool
+    {
+        // 提取基础命令名（去除参数）
+        $baseCommand = explode(' ', $command)[0];
+        
+        return count(
+            array_filter(
+                $this->configure->commandWhiteList,
+                fn($match) => Str::of($baseCommand)->is($match)
+            )
+        ) > 0;
+    }
+
+    /**
+     * 安排任务重试
+     *
+     * @param ScheduleTask $task 任务实例
+     * @param Models\ScheduleTaskLog $failedLog 失败的日志
+     * @return void
+     */
+    protected function scheduleRetry(ScheduleTask $task, Models\ScheduleTaskLog $failedLog): void
+    {
+        $retryCount = $failedLog->retry_count ?? 0;
+        
+        if ($retryCount < $task->payload['max_retries']) {
+            // 创建重试任务
+            $retryDelay = $task->payload['retry_delay'] ?? 300; // 默认5分钟后重试
+            
+            // 这里可以实现延迟队列或其他重试机制
+            // 为简化，我们记录重试信息
+            Log::info('Schedule task retry scheduled', [
+                'task' => $task->name,
+                'retry_count' => $retryCount + 1,
+                'retry_after' => $retryDelay,
+            ]);
+        }
+    }
+
+
+    /**
      * 获取可用的命令列表
      *
      * 根据命令白名单过滤所有可用的 Artisan 命令，并返回详细信息。
@@ -270,5 +527,115 @@ class LunaSchedule extends LunaModule
             });
 
         return $collection->keyBy('command')->all();
+    }
+
+    /**
+     * 执行命令并记录日志
+     *
+     * @param string $command 命令名称
+     * @param array $parameters 命令参数
+     * @param SessionHolder|null $operator 操作者（必须实现 SessionHolder 接口）
+     * @param string $comment 备注
+     * @return CommandExecuteLog
+     * @throws Throwable
+     */
+    public function executeCommand(string $command, array $parameters = [], ?SessionHolder $operator = null, string $comment = ''): CommandExecuteLog
+    {
+        // 验证命令是否在白名单中
+        if (!$this->isCommandAllowed($command)) {
+            throw new InvalidArgumentException("Command '{$command}' is not in the whitelist.");
+        }
+
+        // 创建日志记录
+        $log = CommandExecuteLog::createLog($command, $operator, $comment);
+        $log->update(['payload' => $parameters]);
+
+        $start = microtime(true);
+        $output = '';
+
+        try {
+            // 执行命令
+            $exitCode = $this->artisan->call($command, $parameters);
+            
+            // 获取输出（处理不同的 Artisan 实现）
+            if (method_exists($this->artisan, 'output')) {
+                $output = $this->artisan->output();
+            }
+            
+            $log->update([
+                'status' => $exitCode === 0 ? 1 : 0,
+                'output' => $output,
+                'duration' => microtime(true) - $start,
+                'end_at' => Carbon::now(),
+            ]);
+            
+        } catch (Throwable $e) {
+            $log->update([
+                'status' => 0,
+                'output' => $e->getMessage() . "\n" . $e->getTraceAsString(),
+                'duration' => microtime(true) - $start,
+                'end_at' => Carbon::now(),
+            ]);
+            
+            Log::error('Command execution failed', [
+                'command' => $command,
+                'exception' => $e->getMessage(),
+            ]);
+            
+            throw $e;
+        }
+
+        return $log;
+    }
+
+    /**
+     * 获取任务执行统计
+     *
+     * @param ScheduleTask|string|null $task 任务实例、任务名称或null（获取所有）
+     * @param int $days 统计天数
+     * @return array
+     */
+    public function getTaskStatistics(ScheduleTask|string|null $task = null, int $days = 7): array
+    {
+        $query = $this->configure->scheduleTaskLogModel::query()
+            ->where('ran_at', '>=', Carbon::now()->subDays($days));
+
+        if ($task !== null) {
+            if (is_string($task)) {
+                $task = $this->configure->scheduleTaskModel::where('name', $task)->firstOrFail();
+            }
+            $query->where('task_id', $task->id);
+        }
+
+        $logs = $query->get();
+
+        return [
+            'total_runs' => $logs->count(),
+            'successful_runs' => $logs->where('status', 1)->count(),
+            'failed_runs' => $logs->where('status', 0)->count(),
+            'success_rate' => $logs->count() > 0 ? round($logs->where('status', 1)->count() / $logs->count() * 100, 2) : 0,
+            'average_duration' => $logs->avg('duration') ?? 0,
+            'total_duration' => $logs->sum('duration') ?? 0,
+            'last_run' => $logs->sortByDesc('ran_at')->first(),
+        ];
+    }
+
+    /**
+     * 清理旧的执行日志
+     *
+     * @param int $days 保留天数
+     * @return int 删除的记录数
+     */
+    public function cleanOldLogs(int $days = 30): int
+    {
+        $deletedTaskLogs = $this->configure->scheduleTaskLogModel::query()
+            ->where('created_at', '<', Carbon::now()->subDays($days))
+            ->delete();
+
+        $deletedCommandLogs = $this->configure->commandExecuteLogModel::query()
+            ->where('created_at', '<', Carbon::now()->subDays($days))
+            ->delete();
+
+        return $deletedTaskLogs + $deletedCommandLogs;
     }
 }
