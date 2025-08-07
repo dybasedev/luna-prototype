@@ -37,6 +37,8 @@ return new class extends Migration
             $table->string('title')->comment('标题');
             $table->string('keywords', 1000)->default('')->comment('关键词');
             $table->string('description', 1000)->default('')->comment('描述');
+            $table->unsignedBigInteger('handler_id')->nullable()->comment('内容处理器ID');
+            $table->json('handler_config')->nullable()->comment('内容处理器配置');
             $table->char('current_version_id', 40)->nullable()->comment('当前版本ID');
             $table->json('payload')->comment('内容载荷，存储扩展数据');
             $table->timestamp('published_at')->nullable()->comment('发布时间，为 null 表示未发布');
@@ -45,6 +47,7 @@ return new class extends Migration
 
             $table->index(['owner_type', 'owner_id'], 'owner_index');
             $table->index('published_at');
+            $table->index('handler_id');
 
             $table->comment('内容表');
         });
