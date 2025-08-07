@@ -57,22 +57,22 @@ class LunaDnWConfigure extends LunaModuleConfigure
     /**
      * @var bool 是否启用出金审核
      */
-    public protected(set) bool $enableWithdrawReview = true;
+    protected(set) bool $enableWithdrawReview = true;
 
     /**
      * @var float 免审核金额阈值
      */
-    public protected(set) float $withdrawReviewThreshold = 10000.00;
+    protected(set) float $withdrawReviewThreshold = 10000.00;
 
     /**
      * @var bool 是否启用交易日志
      */
-    public protected(set) bool $enableTransactionLog = true;
+    protected(set) bool $enableTransactionLog = true;
 
     /**
      * @var bool 是否启用绑定验证
      */
-    public protected(set) bool $requireBindingVerification = false;
+    protected(set) bool $requireBindingVerification = false;
 
     public function name(): string
     {

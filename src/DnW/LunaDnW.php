@@ -12,6 +12,7 @@ use Dybasedev\LunaPrototype\DnW\TransactionStatus;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Dybasedev\LunaPrototype\Foundation\LunaModule;
 use Dybasedev\LunaPrototype\Foundation\Exception\LunaException;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -396,6 +397,7 @@ class LunaDnW extends LunaModule
 
     /**
      * 获取入金处理器实例
+     * @throws BindingResolutionException
      */
     public function getDepositHandler(string $handlerClass, ?DepositChannel $channel = null): ?Handlers\Contracts\DepositHandlerInterface
     {
@@ -403,7 +405,7 @@ class LunaDnW extends LunaModule
             return null;
         }
         
-        $handler = app($handlerClass);
+        $handler = app()->make($handlerClass);
         
         if (!($handler instanceof Handlers\Contracts\DepositHandlerInterface)) {
             throw LunaException::create("Handler {$handlerClass} must implement DepositHandlerInterface")
