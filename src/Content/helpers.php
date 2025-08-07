@@ -10,6 +10,6 @@ if (!function_exists('luna_content')) {
      */
     function luna_content(): LunaContent
     {
-        return app(LunaContent::class);
+        return app('luna.content');
     }
 }

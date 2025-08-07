@@ -3,6 +3,7 @@
 namespace Dybasedev\LunaPrototype\Content\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -63,7 +64,10 @@ class ContentCategory extends Model
      */
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(static::class, 'parent_id');
+        return $this->belongsTo(
+            luna_module_configure(LunaContentConfigure::class)->categoryModel,
+            'parent_id'
+        );
     }
 
     /**
@@ -73,7 +77,10 @@ class ContentCategory extends Model
      */
     public function children(): HasMany
     {
-        return $this->hasMany(static::class, 'parent_id')
+        return $this->hasMany(
+            luna_module_configure(LunaContentConfigure::class)->categoryModel,
+            'parent_id'
+        )
             ->orderBy('sort')
             ->orderBy('id');
     }
@@ -95,7 +102,12 @@ class ContentCategory extends Model
      */
     public function contents(): BelongsToMany
     {
-        return $this->belongsToMany(Content::class, 'luna_content_category_relations', 'category_id', 'content_id')
+        return $this->belongsToMany(
+            luna_module_configure(LunaContentConfigure::class)->contentModel,
+            'luna_content_category_relations',
+            'category_id',
+            'content_id'
+        )
             ->withPivot('sort')
             ->withTimestamps()
             ->orderBy('pivot_sort');

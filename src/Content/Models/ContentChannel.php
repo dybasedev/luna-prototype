@@ -5,6 +5,7 @@ namespace Dybasedev\LunaPrototype\Content\Models;
 use Illuminate\Database\Eloquent\Model;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Dybasedev\LunaPrototype\Foundation\Handler\WithModelHandler;
+use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -84,7 +85,12 @@ class ContentChannel extends Model
      */
     public function contents(): BelongsToMany
     {
-        return $this->belongsToMany(Content::class, 'luna_channel_contents', 'channel_id', 'content_id')
+        return $this->belongsToMany(
+            luna_module_configure(LunaContentConfigure::class)->contentModel,
+            'luna_channel_contents',
+            'channel_id',
+            'content_id'
+        )
             ->withPivot('sort', 'config')
             ->withTimestamps()
             ->orderByPivot('sort');

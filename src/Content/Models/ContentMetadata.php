@@ -3,6 +3,7 @@
 namespace Dybasedev\LunaPrototype\Content\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ContentMetadata extends Model
@@ -61,7 +62,10 @@ class ContentMetadata extends Model
      */
     public function content(): BelongsTo
     {
-        return $this->belongsTo(Content::class, 'content_id');
+        return $this->belongsTo(
+            luna_module_configure(LunaContentConfigure::class)->contentModel,
+            'content_id'
+        );
     }
 
     /**

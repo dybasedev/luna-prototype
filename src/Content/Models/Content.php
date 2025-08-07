@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Dybasedev\LunaPrototype\Foundation\SessionHolder;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Dybasedev\LunaPrototype\Foundation\Handler\WithModelHandler;
+use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -96,7 +97,11 @@ class Content extends Model
      */
     public function currentVersion(): HasOne
     {
-        return $this->hasOne(ContentVersion::class, 'version_id', 'current_version_id');
+        return $this->hasOne(
+            luna_module_configure(LunaContentConfigure::class)->versionModel,
+            'version_id',
+            'current_version_id'
+        );
     }
 
     /**
@@ -106,8 +111,10 @@ class Content extends Model
      */
     public function versions(): HasMany
     {
-        return $this->hasMany(ContentVersion::class, 'content_id')
-            ->orderBy('created_at', 'desc');
+        return $this->hasMany(
+            luna_module_configure(LunaContentConfigure::class)->versionModel,
+            'content_id'
+        )->orderBy('created_at', 'desc');
     }
 
     /**
@@ -117,7 +124,12 @@ class Content extends Model
      */
     public function channels(): BelongsToMany
     {
-        return $this->belongsToMany(ContentChannel::class, 'luna_channel_contents', 'content_id', 'channel_id')
+        return $this->belongsToMany(
+            luna_module_configure(LunaContentConfigure::class)->channelModel,
+            'luna_channel_contents',
+            'content_id',
+            'channel_id'
+        )
             ->withPivot('sort', 'config')
             ->withTimestamps();
     }
@@ -129,7 +141,12 @@ class Content extends Model
      */
     public function categories(): BelongsToMany
     {
-        return $this->belongsToMany(ContentCategory::class, 'luna_content_category_relations', 'content_id', 'category_id')
+        return $this->belongsToMany(
+            luna_module_configure(LunaContentConfigure::class)->categoryModel,
+            'luna_content_category_relations',
+            'content_id',
+            'category_id'
+        )
             ->withPivot('sort')
             ->withTimestamps()
             ->orderByPivot('sort');
@@ -142,7 +159,10 @@ class Content extends Model
      */
     public function metadata(): HasMany
     {
-        return $this->hasMany(ContentMetadata::class, 'content_id');
+        return $this->hasMany(
+            luna_module_configure(LunaContentConfigure::class)->metadataModel,
+            'content_id'
+        );
     }
 
     /**
@@ -152,8 +172,10 @@ class Content extends Model
      */
     public function attachments(): HasMany
     {
-        return $this->hasMany(ContentAttachment::class, 'owner_id')
-            ->where('owner_type', hash_code(static::class));
+        return $this->hasMany(
+            luna_module_configure(LunaContentConfigure::class)->attachmentModel,
+            'owner_id'
+        )->where('owner_type', hash_code(static::class));
     }
 
 
@@ -177,7 +199,8 @@ class Content extends Model
             'editor_id' => $editor ? $editor->getOperatorId() : null,
         ]);
 
-        $version = ContentVersion::create($versionData);
+        $versionModel = luna_module_configure(LunaContentConfigure::class)->versionModel;
+        $version = $versionModel::create($versionData);
 
         // 如果没有当前版本，设置为当前版本
         if (!$this->current_version_id) {

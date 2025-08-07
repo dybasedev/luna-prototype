@@ -81,7 +81,7 @@ class LunaContentConfigure extends LunaModuleConfigure
      */
     public function name(): string
     {
-        return 'luna-content';
+        return 'luna.content';
     }
 
     /**
