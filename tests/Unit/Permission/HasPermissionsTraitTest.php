@@ -216,7 +216,7 @@ class HasPermissionsTraitTest extends TestCase
      */
     protected function createTestUser($id, $name = null, $email = null)
     {
-        return TestUser::create([
+        return TestHasPermissionsUser::create([
             'id' => $id,
             'name' => $name,
             'email' => $email,
@@ -227,7 +227,7 @@ class HasPermissionsTraitTest extends TestCase
 /**
  * 测试用户模型
  */
-class TestUser extends Model implements PermissionSubject
+class TestHasPermissionsUser extends Model implements PermissionSubject
 {
     use HasPermissions;
 

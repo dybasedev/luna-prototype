@@ -61,7 +61,7 @@ class TestMilestoneHandler extends MemberMilestoneHandler
 }
 
 // 测试用的用户模型
-class TestUser implements SessionHolder
+class TestMembershipUser implements SessionHolder
 {
     public function __construct(
         public int $id,
@@ -139,7 +139,7 @@ test('里程碑条件获取', function () {
 });
 
 test('里程碑评估 - 不满足任何条件', function () {
-    $user = new TestUser(1, points: 50, purchases: 0);
+    $user = new TestMembershipUser(1, points: 50, purchases: 0);
     
     $level = $this->handler->evaluate($user);
     
@@ -147,7 +147,7 @@ test('里程碑评估 - 不满足任何条件', function () {
 });
 
 test('里程碑评估 - 达到青铜等级', function () {
-    $user = new TestUser(1, points: 150, purchases: 2);
+    $user = new TestMembershipUser(1, points: 150, purchases: 2);
     
     $level = $this->handler->evaluate($user);
     
@@ -156,7 +156,7 @@ test('里程碑评估 - 达到青铜等级', function () {
 });
 
 test('里程碑评估 - 达到白银等级', function () {
-    $user = new TestUser(1, points: 600, purchases: 6);
+    $user = new TestMembershipUser(1, points: 600, purchases: 6);
     
     $level = $this->handler->evaluate($user);
     
@@ -165,7 +165,7 @@ test('里程碑评估 - 达到白银等级', function () {
 });
 
 test('里程碑评估 - 从高到低评估', function () {
-    $user = new TestUser(1, points: 5500, purchases: 25);
+    $user = new TestMembershipUser(1, points: 5500, purchases: 25);
     
     $level = $this->handler->evaluate($user);
     
@@ -180,7 +180,7 @@ test('里程碑更新', function () {
     ]);
     $this->handler->withConfig($config);
     
-    $user = new TestUser(1, points: 600, purchases: 6);
+    $user = new TestMembershipUser(1, points: 600, purchases: 6);
     $level = new MilestoneLevel('silver', '白银会员', 2);
     
     $milestone = $this->handler->updateMilestone($user, $level, ['reason' => 'manual']);
@@ -199,7 +199,7 @@ test('里程碑更新', function () {
 });
 
 test('里程碑升级记录', function () {
-    $user = new TestUser(1);
+    $user = new TestMembershipUser(1);
     
     // 先设置为青铜
     $bronze = new MilestoneLevel('bronze', '青铜会员', 1);
@@ -216,7 +216,7 @@ test('里程碑升级记录', function () {
 });
 
 test('获取当前里程碑', function () {
-    $user = new TestUser(1);
+    $user = new TestMembershipUser(1);
     $level = new MilestoneLevel('gold', '黄金会员', 3);
     
     $this->handler->updateMilestone($user, $level);
@@ -227,7 +227,7 @@ test('获取当前里程碑', function () {
 });
 
 test('检查历史里程碑', function () {
-    $user = new TestUser(1);
+    $user = new TestMembershipUser(1);
     
     // 创建一些历史记录
     $levels = ['bronze', 'silver', 'gold'];
@@ -242,7 +242,7 @@ test('检查历史里程碑', function () {
 });
 
 test('里程碑触发', function () {
-    $user = new TestUser(1, points: 1200, purchases: 12);
+    $user = new TestMembershipUser(1, points: 1200, purchases: 12);
     
     $level = $this->handler->trigger($user);
     
@@ -261,7 +261,7 @@ test('配置 - 不允许降级', function () {
     ]);
     $this->handler->withConfig($config);
     
-    $user = new TestUser(1);
+    $user = new TestMembershipUser(1);
     
     // 先设置为黄金
     $gold = new MilestoneLevel('gold', '黄金会员', 3);
@@ -282,7 +282,7 @@ test('配置 - 允许降级', function () {
     ]);
     $this->handler->withConfig($config);
     
-    $user = new TestUser(1);
+    $user = new TestMembershipUser(1);
     
     // 先设置为黄金
     $gold = new MilestoneLevel('gold', '黄金会员', 3);
@@ -303,7 +303,7 @@ test('条件策略 - all', function () {
     ]);
     $this->handler->withConfig($config);
     
-    $user = new TestUser(1, points: 600, purchases: 3); // 积分够但购买次数不够
+    $user = new TestMembershipUser(1, points: 600, purchases: 3); // 积分够但购买次数不够
     
     $level = $this->handler->evaluate($user);
     expect($level)->not->toBeNull();
@@ -311,7 +311,7 @@ test('条件策略 - all', function () {
 });
 
 test('获取里程碑历史', function () {
-    $user = new TestUser(1);
+    $user = new TestMembershipUser(1);
     
     // 创建一些历史
     foreach (['bronze', 'silver', 'gold'] as $levelId) {

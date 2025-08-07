@@ -426,8 +426,8 @@ class LunaDnW extends LunaModule
         }
         
         // 设置处理器ID
-        if ($channel && $channel->handler && property_exists($handler, 'handlerId')) {
-            $handler->handlerId = $channel->handler->id;
+        if ($channel && $channel->handler && method_exists($handler, 'withEntityId')) {
+            $handler->withEntityId($channel->handler->id);
         }
         
         // 设置模型实例
@@ -468,8 +468,8 @@ class LunaDnW extends LunaModule
         }
         
         // 设置处理器ID
-        if ($channel && $channel->handler && property_exists($handler, 'handlerId')) {
-            $handler->handlerId = $channel->handler->id;
+        if ($channel && $channel->handler && method_exists($handler, 'withEntityId')) {
+            $handler->withEntityId($channel->handler->id);
         }
         
         // 设置模型实例

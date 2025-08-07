@@ -11,10 +11,11 @@ use Dybasedev\LunaPrototype\Foundation\LunaSessionHolder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Auth;
 
-class TestUser extends Authenticatable implements PermissionSubject, SessionHolder
+class TestPermissionMethodsUser extends Authenticatable implements PermissionSubject, SessionHolder
 {
     use HasPermissions, LunaSessionHolder;
     
+    protected $table = 'test_permission_methods_users';
     protected $fillable = ['name', 'email'];
     
     public function getOperatorTypeName(): string
@@ -29,7 +30,7 @@ beforeEach(function () {
     $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
     
     // 创建用户表
-    $this->app['db']->connection()->getSchemaBuilder()->create('test_users', function ($table) {
+    $this->app['db']->connection()->getSchemaBuilder()->create('test_permission_methods_users', function ($table) {
         $table->id();
         $table->string('name');
         $table->string('email');
@@ -38,7 +39,7 @@ beforeEach(function () {
     
     // 配置权限模块
     $this->configure = LunaPermissionConfigure::create()
-        ->bind(new PermissionBinding(TestUser::class, 'test_user'));
+        ->bind(new PermissionBinding(TestPermissionMethodsUser::class, 'test_user'));
     $this->app->instance(LunaPermissionConfigure::class, $this->configure);
     
     // 注册并启动权限模块以确保处理器被注册
@@ -46,7 +47,7 @@ beforeEach(function () {
     $this->configure->boot($this->app);
     
     // 创建测试用户
-    $this->user = TestUser::create([
+    $this->user = TestPermissionMethodsUser::create([
         'name' => 'Test User',
         'email' => 'test@example.com'
     ]);
@@ -70,7 +71,7 @@ beforeEach(function () {
 
 afterEach(function () {
     // 清理用户表
-    $this->app['db']->connection()->getSchemaBuilder()->dropIfExists('test_users');
+    $this->app['db']->connection()->getSchemaBuilder()->dropIfExists('test_permission_methods_users');
 });
 
 it('luna_permission 函数返回 LunaPermission 实例', function () {
