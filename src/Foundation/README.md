@@ -1579,7 +1579,9 @@ php artisan app:install --force --backup-file=my-backup.dat
 
 ### app:publish-models 命令详细说明
 
-发布模型命令用于将 Luna 模块中的模型发布到应用程序：
+发布模型命令用于将 Luna 模块中的模型发布到应用程序的 `App\Models` 目录。发布的模型将继承原始模块模型，并保留字段注释以便 IDE 识别。
+
+#### 基本用法
 
 ```bash
 # 发布所有模块的模型
@@ -1593,6 +1595,88 @@ php artisan app:publish-models --force
 
 # 预览模式（不实际创建文件）
 php artisan app:publish-models --dry-run
+
+# 自动为冲突的模型添加 Luna 前缀
+php artisan app:publish-models --prefix
+```
+
+#### 处理同名模型
+
+当目标目录中已存在同名模型时，命令提供以下处理方式：
+
+1. **交互式选择**（默认）：命令会询问您如何处理
+   - 跳过此模型
+   - 添加 Luna 前缀（例如：`AssetsAccount` → `LunaAssetsAccount`）
+   - 覆盖现有文件
+
+2. **自动添加前缀**：使用 `--prefix` 选项
+   ```bash
+   php artisan app:publish-models --prefix
+   ```
+   所有冲突的模型都会自动添加 `Luna` 前缀
+
+3. **强制覆盖**：使用 `--force` 选项
+   ```bash
+   php artisan app:publish-models --force
+   ```
+   直接覆盖已存在的文件
+
+4. **非交互模式**：使用 `--no-interaction` 选项
+   ```bash
+   php artisan app:publish-models --no-interaction
+   ```
+   在非交互模式下，默认跳过已存在的文件
+
+#### 生成的模型示例
+
+普通情况下生成的模型：
+```php
+<?php
+
+namespace App\Models;
+
+use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccount as BaseAssetsAccount;
+
+/**
+ * AssetsAccount Model
+ * 
+ * 继承自 Luna 模块的 AssetsAccount 模型
+ * 
+ * @property int $id
+ * @property string $name
+ * @property float $balance
+ * 
+ * @package App\Models
+ */
+class AssetsAccount extends BaseAssetsAccount
+{
+    //
+}
+```
+
+使用前缀时生成的模型：
+```php
+<?php
+
+namespace App\Models;
+
+use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccount;
+
+/**
+ * LunaAssetsAccount Model
+ * 
+ * 继承自 Luna 模块的 AssetsAccount 模型
+ * 
+ * @property int $id
+ * @property string $name
+ * @property float $balance
+ * 
+ * @package App\Models
+ */
+class LunaAssetsAccount extends AssetsAccount
+{
+    //
+}
 ```
 
 ## 配置

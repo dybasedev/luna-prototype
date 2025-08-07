@@ -29,7 +29,8 @@ class AppPublishModels extends Command
     protected $signature = 'app:publish-models 
                             {--module=* : 指定要发布的模块名称}
                             {--force : 强制覆盖已存在的文件}
-                            {--dry-run : 预览要发布的文件，不实际创建}';
+                            {--dry-run : 预览要发布的文件，不实际创建}
+                            {--prefix : 自动为冲突的模型添加 Luna 前缀}';
 
     /**
      * 命令描述
@@ -149,19 +150,36 @@ class AppPublishModels extends Command
      */
     private function publishModel(string $modelClass, bool $force, bool $dryRun): bool
     {
-        $modelName = class_basename($modelClass);
+        $originalModelName = class_basename($modelClass);
+        $modelName = $originalModelName;
         $targetPath = app_path("Models/{$modelName}.php");
 
-        $this->comment("  - 发布模型: {$modelName}");
+        $this->comment("  - 发布模型: {$originalModelName}");
 
         // 检查目标文件是否存在
         if (!$force && File::exists($targetPath)) {
-            $this->warn("    文件已存在，跳过: {$targetPath}");
-            return false;
+            // 处理文件名冲突
+            $resolution = $this->handleFileConflict($originalModelName, $dryRun);
+            
+            switch ($resolution) {
+                case 'skip':
+                    $this->warn("    跳过模型: {$originalModelName}");
+                    return false;
+                    
+                case 'prefix':
+                    $modelName = 'Luna' . $originalModelName;
+                    $targetPath = app_path("Models/{$modelName}.php");
+                    $this->info("    使用前缀名称: {$modelName}");
+                    break;
+                    
+                case 'overwrite':
+                    $this->warn("    覆盖现有文件: {$targetPath}");
+                    break;
+            }
         }
 
         // 生成模型内容
-        $content = $this->generateModelContent($modelClass);
+        $content = $this->generateModelContent($modelClass, $modelName);
 
         if ($dryRun) {
             $this->info("    将创建: {$targetPath}");
@@ -182,14 +200,50 @@ class AppPublishModels extends Command
     }
 
     /**
+     * 处理文件冲突
+     *
+     * @param string $modelName
+     * @param bool $dryRun
+     * @return string 'skip', 'prefix', 或 'overwrite'
+     */
+    private function handleFileConflict(string $modelName, bool $dryRun): string
+    {
+        // 检查命令行选项
+        if ($this->option('prefix')) {
+            return 'prefix';
+        }
+        
+        if ($this->option('no-interaction') || $dryRun) {
+            return 'skip';
+        }
+        
+        // 交互式选择
+        $this->warn("    模型 {$modelName} 已存在！");
+        
+        $choice = $this->choice(
+            '    请选择处理方式:',
+            [
+                'skip' => '跳过此模型',
+                'prefix' => '添加 Luna 前缀（创建 Luna' . $modelName . '）',
+                'overwrite' => '覆盖现有文件'
+            ],
+            'skip'
+        );
+        
+        return $choice;
+    }
+
+    /**
      * 生成模型内容
      *
      * @param string $modelClass
+     * @param string $targetModelName
      * @return string
      */
-    private function generateModelContent(string $modelClass): string
+    private function generateModelContent(string $modelClass, string $targetModelName = null): string
     {
-        $modelName = class_basename($modelClass);
+        $originalModelName = class_basename($modelClass);
+        $modelName = $targetModelName ?: $originalModelName;
         $reflection = new ReflectionClass($modelClass);
         
         // 获取模型的属性注释
@@ -197,11 +251,20 @@ class AppPublishModels extends Command
 
         $content = "<?php\n\n";
         $content .= "namespace App\\Models;\n\n";
-        $content .= "use {$modelClass} as Base{$modelName};\n\n";
+        
+        // 当目标名称与原始名称不同时（如添加了 Luna 前缀），需要特殊处理
+        if ($modelName !== $originalModelName) {
+            $content .= "use {$modelClass};\n\n";
+            $baseClass = $originalModelName;
+        } else {
+            $content .= "use {$modelClass} as Base{$modelName};\n\n";
+            $baseClass = "Base{$modelName}";
+        }
+        
         $content .= "/**\n";
         $content .= " * {$modelName} Model\n";
         $content .= " * \n";
-        $content .= " * 继承自 Luna 模块的 {$modelName} 模型\n";
+        $content .= " * 继承自 Luna 模块的 {$originalModelName} 模型\n";
         
         // 添加属性注释
         if (!empty($properties)) {
@@ -214,7 +277,7 @@ class AppPublishModels extends Command
         $content .= " * \n";
         $content .= " * @package App\\Models\n";
         $content .= " */\n";
-        $content .= "class {$modelName} extends Base{$modelName}\n";
+        $content .= "class {$modelName} extends {$baseClass}\n";
         $content .= "{\n";
         $content .= "    //\n";
         $content .= "}\n";

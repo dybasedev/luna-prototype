@@ -4,12 +4,18 @@ namespace Dybasedev\LunaPrototype\Content;
 
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
 use Dybasedev\LunaPrototype\Foundation\LunaModule;
+use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandlerConfigure;
 use Dybasedev\LunaPrototype\Content\Models\Content;
 use Dybasedev\LunaPrototype\Content\Models\ContentChannel;
 use Dybasedev\LunaPrototype\Content\Models\ContentCategory;
 use Dybasedev\LunaPrototype\Content\Models\ContentVersion;
 use Dybasedev\LunaPrototype\Content\Models\ContentMetadata;
 use Dybasedev\LunaPrototype\Content\Models\ContentAttachment;
+use Dybasedev\LunaPrototype\Content\Handlers\ArticleContentHandler;
+use Dybasedev\LunaPrototype\Content\Handlers\HtmlContentHandler;
+use Dybasedev\LunaPrototype\Content\Handlers\MarkdownContentHandler;
+use Dybasedev\LunaPrototype\Content\Handlers\DefaultChannelHandler;
+use Illuminate\Contracts\Container\BindingResolutionException;
 
 class LunaContentConfigure extends LunaModuleConfigure
 {
@@ -114,28 +120,32 @@ class LunaContentConfigure extends LunaModuleConfigure
      *
      * @param \Illuminate\Contracts\Container\Container $container
      * @return void
+     * @throws BindingResolutionException
      */
     public function boot(\Illuminate\Contracts\Container\Container $container): void
     {
-        // 注册内容处理器组
-        $container->make('luna.handler')->registerGroup(
-            hash_code($this->contentHandlerGroup),
-            $this->contentHandlerGroup,
-            '内容处理器'
-        );
+        // 使用 LunaHandlerConfigure 注册内容处理器组和默认处理器
+        $container->make(LunaHandlerConfigure::class)
+            ->group($this->contentHandlerGroup, '内容处理器', function ($register) {
+                // 注册默认的内容处理器
+                $register->handler(ArticleContentHandler::class);
+                $register->handler(HtmlContentHandler::class);
+                $register->handler(MarkdownContentHandler::class);
+            });
 
-        // 注册频道处理器组
-        $container->make('luna.handler')->registerGroup(
-            hash_code($this->channelHandlerGroup),
-            $this->channelHandlerGroup,
-            '频道处理器'
-        );
+        // 使用 LunaHandlerConfigure 注册频道处理器组和默认处理器
+        $container->make(LunaHandlerConfigure::class)
+            ->group($this->channelHandlerGroup, '频道处理器', function ($register) {
+                // 注册默认的频道处理器
+                $register->handler(DefaultChannelHandler::class);
+            });
     }
 
     /**
      * 获取模块实例
      *
      * @return LunaModule
+     * @throws BindingResolutionException
      */
     public function module(): LunaModule
     {

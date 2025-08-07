@@ -82,6 +82,106 @@ class AppPublishModelsCommandTest extends TestCase
             ->expectsOutput('没有找到指定的模块')
             ->assertExitCode(1);
     }
+    
+    /**
+     * 测试发布模型命令处理已存在的文件 - 跳过选项
+     */
+    public function test_publish_models_command_skips_existing_files()
+    {
+        // 先创建一个已存在的文件
+        File::makeDirectory(app_path('Models'), 0755, true);
+        File::put(app_path('Models/AssetsAccount.php'), '<?php // Existing file');
+        
+        $this->artisan('app:publish-models', [
+                '--module' => ['luna.assets-account'],
+                '--no-interaction' => true
+            ])
+            ->expectsOutput('=> 发布 Luna 模块模型到应用程序')
+            ->expectsOutputToContain('跳过模型: AssetsAccount')
+            ->assertSuccessful();
+            
+        // 验证文件内容没有变化
+        $content = File::get(app_path('Models/AssetsAccount.php'));
+        $this->assertEquals('<?php // Existing file', $content);
+    }
+    
+    /**
+     * 测试发布模型命令处理已存在的文件 - 添加前缀选项
+     */
+    public function test_publish_models_command_adds_prefix_to_conflicting_models()
+    {
+        // 先创建一个已存在的文件
+        File::makeDirectory(app_path('Models'), 0755, true);
+        File::put(app_path('Models/AssetsAccount.php'), '<?php // Existing file');
+        
+        $this->artisan('app:publish-models', [
+                '--module' => ['luna.assets-account'],
+                '--prefix' => true
+            ])
+            ->expectsOutput('=> 发布 Luna 模块模型到应用程序')
+            ->expectsOutputToContain('使用前缀名称: LunaAssetsAccount')
+            ->assertSuccessful();
+            
+        // 验证原文件没有变化
+        $originalContent = File::get(app_path('Models/AssetsAccount.php'));
+        $this->assertEquals('<?php // Existing file', $originalContent);
+        
+        // 验证新文件创建成功
+        $this->assertFileExists(app_path('Models/LunaAssetsAccount.php'));
+        $newContent = File::get(app_path('Models/LunaAssetsAccount.php'));
+        
+        // 验证继承关系正确
+        $this->assertStringContainsString('use Dybasedev\LunaPrototype\AssetsAccount\Models\AssetsAccount;', $newContent);
+        $this->assertStringContainsString('class LunaAssetsAccount extends AssetsAccount', $newContent);
+        $this->assertStringContainsString('继承自 Luna 模块的 AssetsAccount 模型', $newContent);
+    }
+    
+    /**
+     * 测试发布模型命令处理已存在的文件 - 强制覆盖选项
+     */
+    public function test_publish_models_command_overwrites_with_force_option()
+    {
+        // 先创建一个已存在的文件
+        File::makeDirectory(app_path('Models'), 0755, true);
+        File::put(app_path('Models/AssetsAccount.php'), '<?php // Existing file');
+        
+        $this->artisan('app:publish-models', [
+                '--module' => ['luna.assets-account'],
+                '--force' => true
+            ])
+            ->expectsOutput('=> 发布 Luna 模块模型到应用程序')
+            ->expectsOutputToContain('已创建: ' . app_path('Models/AssetsAccount.php'))
+            ->assertSuccessful();
+            
+        // 验证文件被覆盖
+        $content = File::get(app_path('Models/AssetsAccount.php'));
+        $this->assertStringContainsString('class AssetsAccount extends BaseAssetsAccount', $content);
+        $this->assertStringNotContainsString('// Existing file', $content);
+    }
+    
+    /**
+     * 测试发布模型命令的交互式选择功能
+     */
+    public function test_publish_models_command_interactive_choice_for_conflicts()
+    {
+        // 先创建一个已存在的文件
+        File::makeDirectory(app_path('Models'), 0755, true);
+        File::put(app_path('Models/AssetsAccount.php'), '<?php // Existing file');
+        
+        $this->artisan('app:publish-models', ['--module' => ['luna.assets-account']])
+            ->expectsOutput('=> 发布 Luna 模块模型到应用程序')
+            ->expectsOutputToContain('模型 AssetsAccount 已存在！')
+            ->expectsChoice('    请选择处理方式:', 'prefix', [
+                'skip' => '跳过此模型',
+                'prefix' => '添加 Luna 前缀（创建 LunaAssetsAccount）',
+                'overwrite' => '覆盖现有文件'
+            ])
+            ->expectsOutputToContain('使用前缀名称: LunaAssetsAccount')
+            ->assertSuccessful();
+            
+        // 验证创建了带前缀的文件
+        $this->assertFileExists(app_path('Models/LunaAssetsAccount.php'));
+    }
 }
 
 // 测试专用的服务提供者
