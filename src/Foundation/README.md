@@ -1032,34 +1032,328 @@ $record = $systemGroup->getConfigurationRecord('app');
 
 ### 4. Exception（异常处理）
 
-提供统一的异常处理机制，支持异常映射、自定义响应和错误报告。
+提供统一的异常处理机制，支持异常映射、自定义响应格式和灵活的异常报告。所有异常最终都会被转换为 LunaException，确保一致的错误响应格式。
 
 #### 核心类
 
-- **LunaException**: Luna Prototype 的基础异常类
-- **LunaExceptionConfigure**: 异常系统配置类
-- **LunaExceptionMapperBuilder**: 异常映射器构建器
+- **LunaException**: 统一的异常类，支持自定义显示消息、HTTP 状态码、行为控制和数据传递
+- **BusinessException**: 业务异常基类，继承自 LunaException，专门用于业务逻辑中的预期异常
+- **LunaExceptionConfigure**: 异常配置类，用于注册异常映射和配置异常处理行为
+- **LunaExceptionMapperBuilder**: 异常映射构建器，提供流畅的接口来配置异常映射规则
 
-#### 使用示例
+#### 快速开始
 
 ```php
-// 抛出业务异常
-throw (new LunaException('用户未找到'))
-    ->withDisplayMessage('该用户不存在')
-    ->withHttpStatus(404)
-    ->withData(['user_id' => 123])
-    ->withBehaviour(['redirect' => '/users']);
+use Dybasedev\LunaPrototype\Foundation\Exception\LunaExceptionConfigure;
+use Dybasedev\LunaPrototype\Foundation\Exception\Mappers\ExceptionMappers;
 
-// 配置异常映射
-$configure = LunaExceptionConfigure::create()
-    ->registerExceptionMapper(
-        luna_exception_mapper(ValidationException::class)
-            ->message('输入数据验证失败')
-            ->httpStatus(422)
-            ->data(fn($e) => ['errors' => $e->errors()])
-    )
-    ->build();
+// 在 AppServiceProvider 的 boot 方法中
+public function boot()
+{
+    /** @var LunaExceptionConfigure $configure */
+    $configure = $this->app->make(LunaExceptionConfigure::class);
+    
+    // 配置 API 应用总是返回 JSON
+    $configure->alwaysJsonRender();
+    
+    // 注册默认异常映射
+    foreach (ExceptionMappers::defaults() as $mapper) {
+        $configure->wrap($mapper);
+    }
+}
 ```
+
+#### 使用 BusinessException
+
+BusinessException 继承自 LunaException，提供了便捷的工厂方法来创建业务异常：
+
+```php
+use Dybasedev\LunaPrototype\Foundation\Exception\BusinessException;
+
+// 基本用法
+throw BusinessException::create('操作失败');
+
+// 带状态码
+throw BusinessException::make('资源不存在', 0, 404);
+
+// 带额外数据
+throw BusinessException::withInfo('验证失败', [
+    'field' => 'email',
+    'reason' => '邮箱格式不正确'
+], 422);
+
+// 使用预定义的工厂方法
+throw BusinessException::insufficientBalance(100.0, 50.0);
+throw BusinessException::insufficientStock(10, 3, ['name' => 'iPhone 15']);
+throw BusinessException::notFound('订单', 'ORDER123');
+throw BusinessException::forbidden('您没有权限执行此操作');
+throw BusinessException::duplicateOperation('提交', 60);
+```
+
+#### 预定义异常映射
+
+Foundation 提供了丰富的预定义异常映射模板，可以快速配置常见的 Laravel 异常：
+
+##### 1. 基础异常映射（ExceptionMappers）
+
+```php
+use Dybasedev\LunaPrototype\Foundation\Exception\Mappers\ExceptionMappers;
+
+// 应用所有默认映射
+foreach (ExceptionMappers::defaults() as $mapper) {
+    $configure->wrap($mapper);
+}
+
+// 或选择性地应用
+$configure->wrap(ExceptionMappers::validation());        // 验证异常 (422)
+$configure->wrap(ExceptionMappers::authentication());    // 认证异常 (401)
+$configure->wrap(ExceptionMappers::authorization());     // 授权异常 (403)
+$configure->wrap(ExceptionMappers::modelNotFound());     // 模型未找到 (404)
+$configure->wrap(ExceptionMappers::throttle());          // 请求频率限制 (429)
+```
+
+##### 2. API 异常映射（ApiExceptionMappers）
+
+```php
+use Dybasedev\LunaPrototype\Foundation\Exception\Mappers\ApiExceptionMappers;
+
+// 应用所有 API 映射
+foreach (ApiExceptionMappers::all() as $mapper) {
+    $configure->wrap($mapper);
+}
+
+// 包含：badRequest (400), conflict (409), unprocessableEntity (422) 等
+```
+
+##### 3. 业务异常映射（BusinessExceptionMappers）
+
+```php
+use Dybasedev\LunaPrototype\Foundation\Exception\Mappers\BusinessExceptionMappers;
+
+// 注册通用业务异常处理
+$configure->wrap(BusinessExceptionMappers::general());
+
+// 使用预定义的业务场景
+$scenarios = BusinessExceptionMappers::commonScenarios();
+$configure->wrap($scenarios['insufficient_balance']);
+$configure->wrap($scenarios['stock_shortage']);
+```
+
+#### 使用业务异常
+
+BusinessException 继承自 LunaException，提供了更便捷的业务异常处理：
+
+```php
+use Dybasedev\LunaPrototype\Foundation\Exception\BusinessException;
+
+// 基本用法
+throw BusinessException::make('操作失败', 0, 400);
+
+// 使用预定义的静态方法
+throw BusinessException::insufficientBalance(100.00, 50.00);
+throw BusinessException::insufficientStock(10, 5, ['name' => '商品A']);
+throw BusinessException::notFound('订单', 'ORD123');
+throw BusinessException::forbidden('您没有权限执行此操作');
+throw BusinessException::validationFailed('输入错误', ['email' => ['邮箱格式不正确']]);
+
+// 链式调用
+throw BusinessException::make('服务暂时不可用')
+    ->withHttpStatus(503)
+    ->withData(['service' => 'payment', 'retry_after' => 60])
+    ->withBehaviour(['action' => 'retry_later', 'delay' => 60]);
+```
+
+#### 自定义异常映射
+
+使用 LunaExceptionMapperBuilder 创建自定义映射：
+
+```php
+// 简单映射
+$configure->wrap(
+    OrderNotFoundException::class,
+    '订单不存在',
+    404
+);
+
+// 使用构建器
+$configure->wrap(
+    LunaExceptionMapperBuilder::for(PaymentFailedException::class)
+        ->message('支付失败，请重试')
+        ->httpStatus(402)
+        ->dontReport()
+        ->behaviour(['action' => 'retry_payment'])
+        ->data(fn($e) => [
+            'order_id' => $e->getOrderId(),
+            'amount' => $e->getAmount(),
+        ])
+);
+
+// 动态处理
+$configure->wrap(
+    LunaExceptionMapperBuilder::for(RateLimitException::class)
+        ->message(fn($e) => "请在 {$e->getRetryAfter()} 秒后重试")
+        ->httpStatus(fn($e) => $e->isCritical() ? 503 : 429)
+        ->data(fn($e) => ['retry_after' => $e->getRetryAfter()])
+);
+```
+
+#### 继承 ExceptionMapperServiceProvider
+
+创建自己的异常映射服务提供者：
+
+```php
+use Dybasedev\LunaPrototype\Foundation\Exception\Mappers\ExceptionMapperServiceProvider;
+
+class AppExceptionServiceProvider extends ExceptionMapperServiceProvider
+{
+    // 自动注册所有默认映射
+    protected bool $registerDefaults = true;
+    
+    // 排除某些默认映射
+    protected array $excludeDefaults = [
+        \Illuminate\Database\QueryException::class,
+    ];
+    
+    // 默认映射的选项
+    protected array $defaultOptions = [
+        'debug' => false,
+        'login_url' => '/auth/login',
+    ];
+    
+    // 添加额外的映射
+    protected function getMappers(): array
+    {
+        return [
+            ...ApiExceptionMappers::all(),
+            ExceptionMappers::queryException(true), // 开启调试模式
+        ];
+    }
+}
+```
+
+#### 配置全局行为
+
+```php
+// 总是返回 JSON 响应（适用于纯 API 应用）
+$configure->alwaysJsonRender();
+
+// 自定义异常报告器
+$configure->reporter(function (Throwable $e) {
+    // 发送到外部监控服务
+    Sentry::captureException($e);
+    
+    // 记录到特定通道
+    Log::channel('exceptions')->error($e->getMessage(), [
+        'exception' => get_class($e),
+        'trace' => $e->getTraceAsString(),
+    ]);
+});
+```
+
+#### 异常响应格式
+
+所有异常最终都会转换为统一的 JSON 响应格式：
+
+```json
+{
+    "success": false,
+    "message": "验证失败",
+    "data": {
+        "errors": {
+            "email": ["邮箱格式不正确"],
+            "password": ["密码长度至少8位"]
+        }
+    },
+    "behaviour": {
+        "action": "show_validation_errors"
+    }
+}
+```
+
+前端可以根据 `behaviour` 字段执行相应的操作，如跳转、刷新、显示特定提示等。
+
+#### 创建自定义异常映射
+
+使用 LunaExceptionMapperBuilder 创建自定义映射：
+
+```php
+use Dybasedev\LunaPrototype\Foundation\Exception\LunaExceptionMapperBuilder;
+
+// 基础映射
+$mapper = LunaExceptionMapperBuilder::for(CustomException::class)
+    ->message('自定义错误消息')
+    ->httpStatus(400)
+    ->dontReport();
+
+// 动态消息和数据
+$mapper = LunaExceptionMapperBuilder::for(OrderException::class)
+    ->message(fn($e) => "订单处理失败: {$e->getMessage()}")
+    ->httpStatus(fn($e) => $e->isCritical() ? 500 : 400)
+    ->data(fn($e) => [
+        'order_id' => $e->getOrderId(),
+        'error_code' => $e->getCode(),
+    ])
+    ->behaviour(fn($e) => [
+        'action' => 'refresh_order',
+        'order_id' => $e->getOrderId(),
+    ]);
+
+// 根据异常内容动态返回不同的值
+$mapper = LunaExceptionMapperBuilder::for(ApiException::class)
+    ->message(fn($e) => match(true) {
+        $e->isTimeout() => '请求超时',
+        $e->isRateLimited() => '请求频率过高',
+        default => '外部服务异常'
+    })
+    ->httpStatus(fn($e) => match(true) {
+        $e->isTimeout() => 504,
+        $e->isRateLimited() => 429,
+        default => 503
+    });
+```
+
+#### 高级配置
+
+##### 自定义异常报告器
+
+```php
+$configure->reporter(function (Throwable $e) {
+    // 集成第三方错误跟踪服务
+    if ($this->shouldReport($e)) {
+        Sentry::captureException($e);
+        
+        // 发送关键错误通知
+        if ($e instanceof CriticalException) {
+            Notification::route('slack', config('slack.alerts'))
+                ->notify(new CriticalErrorNotification($e));
+        }
+    }
+});
+```
+
+##### 环境特定配置
+
+```php
+if ($this->app->environment('production')) {
+    // 生产环境：隐藏敏感信息
+    $configure->wrap(
+        ExceptionMappers::queryException(false) // 不显示 SQL 详情
+    );
+} else {
+    // 开发环境：显示详细错误
+    $configure->wrap(
+        ExceptionMappers::queryException(true) // 显示 SQL 详情
+    );
+}
+```
+
+##### 完整配置示例
+
+查看 `examples/Exception/ExceptionConfigExample.php` 了解完整的配置示例，包括：
+- 如何组织异常映射
+- 如何创建自定义映射
+- 如何集成第三方服务
+- 如何根据环境调整配置
 
 ### 5. Installation（安装器）
 
