@@ -166,13 +166,10 @@ class LunaContent extends LunaModule
      */
     public function createOrUpdateChannel(string $name, array $attributes): ContentChannel
     {
-        $id = hash_code($name);
-        
         return $this->getChannelModel()::updateOrCreate(
-            ['id' => $id],
+            ['name' => $name],
             array_merge($attributes, [
                 'name' => $name,
-                'id' => $id,
             ])
         );
     }

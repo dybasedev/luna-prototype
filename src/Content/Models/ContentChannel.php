@@ -5,13 +5,14 @@ namespace Dybasedev\LunaPrototype\Content\Models;
 use Illuminate\Database\Eloquent\Model;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Dybasedev\LunaPrototype\Foundation\Handler\WithModelHandler;
+use Dybasedev\LunaPrototype\Foundation\NamedId;
 use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ContentChannel extends Model
 {
-    use WithModelHandler;
+    use NamedId, WithModelHandler;
 
     /**
      * 表名
@@ -21,19 +22,11 @@ class ContentChannel extends Model
     protected $table = 'luna_content_channels';
 
     /**
-     * 不自增主键
-     *
-     * @var bool
-     */
-    public $incrementing = false;
-
-    /**
      * 可填充字段
      *
      * @var array
      */
     protected $fillable = [
-        'id',
         'name',
         'display_name',
         'description',
@@ -116,13 +109,10 @@ class ContentChannel extends Model
      */
     public static function findOrCreateByName(string $name, array $attributes = []): static
     {
-        $id = hash_code($name);
-        
         return static::firstOrCreate(
-            ['id' => $id],
+            ['name' => $name],
             array_merge($attributes, [
                 'name' => $name,
-                'id' => $id,
             ])
         );
     }
