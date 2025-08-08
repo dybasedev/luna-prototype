@@ -25,22 +25,22 @@ class PolicyBuilder
     /**
      * 策略名称
      */
-    protected string $name;
+    protected(set) string $name;
 
     /**
      * 策略描述
      */
-    protected ?string $description = null;
+    protected(set) ?string $description = null;
 
     /**
      * 策略声明列表
      */
-    protected array $statements = [];
+    protected(set) array $statements = [];
 
     /**
      * 当前正在构建的声明
      */
-    protected array $currentStatement = [];
+    protected(set) array $currentStatement = [];
 
     /**
      * 创建策略构建器

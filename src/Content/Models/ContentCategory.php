@@ -8,6 +8,48 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * 内容分类模型
+ *
+ * @property int $id
+ * @property int $parent_id 父分类ID
+ * @property string $name 分类唯一标识符
+ * @property string $display_name 分类显示名称
+ * @property string|null $description 分类描述
+ * @property string|null $icon 图标
+ * @property array|null $payload 载荷数据
+ * @property int $sort 排序值
+ * @property bool $is_active 是否激活
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read ContentCategory|null $parent
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ContentCategory> $children
+ * @property-read int|null $children_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ContentCategory> $descendants
+ * @property-read int|null $descendants_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Content> $contents
+ * @property-read int|null $contents_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Content> $publishedContents
+ * @property-read int|null $published_contents_count
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory query()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory active()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory roots()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory ordered(string $direction = 'asc')
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereDisplayName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereIcon($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereParentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory wherePayload($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereSort($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentCategory whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class ContentCategory extends Model
 {
     /**

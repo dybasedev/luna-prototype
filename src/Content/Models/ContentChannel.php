@@ -10,6 +10,41 @@ use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * 内容频道模型
+ *
+ * @property int $id 频道ID（name的hash code）
+ * @property string $name 频道唯一标识符
+ * @property string $display_name 频道显示名称
+ * @property string|null $description 频道描述
+ * @property int|null $handler_id 处理器ID
+ * @property array $config 频道配置
+ * @property bool $is_active 是否激活
+ * @property int $sort 排序值
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read Handler|null $handler
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Content> $contents
+ * @property-read int|null $contents_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Content> $publishedContents
+ * @property-read int|null $published_contents_count
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel query()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel active()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel ordered(string $direction = 'asc')
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereConfig($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereDisplayName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereHandlerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereSort($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentChannel whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class ContentChannel extends Model
 {
     use NamedId, WithModelHandler;

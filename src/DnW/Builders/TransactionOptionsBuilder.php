@@ -15,7 +15,7 @@ class TransactionOptionsBuilder
     /**
      * 选项数组
      */
-    protected array $options = [];
+    protected(set) array $options = [];
 
     /**
      * 创建构造器实例

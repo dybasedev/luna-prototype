@@ -12,17 +12,20 @@ use Dybasedev\LunaPrototype\Content\Models\ContentVersion;
 use Dybasedev\LunaPrototype\Content\Models\ContentAttachment;
 use Dybasedev\LunaPrototype\Content\Handlers\BaseContentHandler;
 use Dybasedev\LunaPrototype\Content\Handlers\BaseChannelHandler;
-use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
+use Dybasedev\LunaPrototype\Content\Handlers\DefaultContentHandler;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Dybasedev\LunaPrototype\Content\Builders\ContentBuilder;
+use Dybasedev\LunaPrototype\Content\Builders\ContentUpdateBuilder;
+use Dybasedev\LunaPrototype\Content\Builders\ChannelBuilder;
 
 class LunaContent extends LunaModule
 {
-    protected LunaContentConfigure $configure;
-    protected LunaHandler $handler;
-    protected CacheRepository $cache;
+    protected(set) LunaContentConfigure $configure;
+    protected(set) LunaHandler $handler;
+    protected(set) CacheRepository $cache;
     
     /**
      * 构造函数
@@ -44,7 +47,7 @@ class LunaContent extends LunaModule
     /**
      * 创建内容
      *
-     * @param array $data
+     * @param array<string, mixed> $data
      * @param SessionHolder|null $owner
      * @return Content
      */
@@ -57,7 +60,7 @@ class LunaContent extends LunaModule
             ]);
 
             // 创建内容
-            $content = $this->getContentModel()::create($contentData);
+            $content = $this->configure->contentModel::create($contentData);
 
             // 如果启用版本控制且提供了内容，创建初始版本
             if ($this->configure->enableVersioning && isset($data['content'])) {
@@ -85,14 +88,14 @@ class LunaContent extends LunaModule
      * 更新内容
      *
      * @param int|Content $content
-     * @param array $data
+     * @param array<string, mixed> $data
      * @param SessionHolder|null $editor
      * @return Content
      */
-    public function updateContent($content, array $data, ?SessionHolder $editor = null): Content
+    public function updateContent(int|Content $content, array $data, ?SessionHolder $editor = null): Content
     {
         if (!$content instanceof Content) {
-            $content = $this->getContentModel()::findOrFail($content);
+            $content = $this->configure->contentModel::findOrFail($content);
         }
 
         return DB::transaction(function () use ($content, $data, $editor) {
@@ -130,10 +133,10 @@ class LunaContent extends LunaModule
      * @param int|Content $content
      * @return bool
      */
-    public function deleteContent($content): bool
+    public function deleteContent(int|Content $content): bool
     {
         if (!$content instanceof Content) {
-            $content = $this->getContentModel()::findOrFail($content);
+            $content = $this->configure->contentModel::findOrFail($content);
         }
 
         return DB::transaction(function () use ($content) {
@@ -161,12 +164,12 @@ class LunaContent extends LunaModule
      * 创建或更新频道
      *
      * @param string $name
-     * @param array $attributes
+     * @param array<string, mixed> $attributes
      * @return ContentChannel
      */
     public function createOrUpdateChannel(string $name, array $attributes): ContentChannel
     {
-        return $this->getChannelModel()::updateOrCreate(
+        return $this->configure->channelModel::updateOrCreate(
             ['name' => $name],
             array_merge($attributes, [
                 'name' => $name,
@@ -177,12 +180,12 @@ class LunaContent extends LunaModule
     /**
      * 创建分类
      *
-     * @param array $data
+     * @param array<string, mixed> $data
      * @return ContentCategory
      */
     public function createCategory(array $data): ContentCategory
     {
-        return $this->getCategoryModel()::create($data);
+        return $this->configure->categoryModel::create($data);
     }
 
     /**
@@ -190,11 +193,11 @@ class LunaContent extends LunaModule
      *
      * @param int $parentId
      * @param bool $activeOnly
-     * @return \Illuminate\Support\Collection
+     * @return \Illuminate\Support\Collection<int, ContentCategory>
      */
     public function getCategoryTree(int $parentId = 0, bool $activeOnly = true): \Illuminate\Support\Collection
     {
-        $query = $this->getCategoryModel()::query();
+        $query = $this->configure->categoryModel::query();
         
         if ($activeOnly) {
             $query->active();
@@ -208,11 +211,11 @@ class LunaContent extends LunaModule
     /**
      * 构建分类树
      *
-     * @param \Illuminate\Support\Collection $categories
+     * @param \Illuminate\Support\Collection<int, ContentCategory> $categories
      * @param int $parentId
-     * @return \Illuminate\Support\Collection
+     * @return \Illuminate\Support\Collection<int, ContentCategory>
      */
-    protected function buildCategoryTree($categories, int $parentId = 0): \Illuminate\Support\Collection
+    protected function buildCategoryTree(\Illuminate\Support\Collection $categories, int $parentId = 0): \Illuminate\Support\Collection
     {
         $branch = collect();
 
@@ -231,11 +234,11 @@ class LunaContent extends LunaModule
      * 上传附件
      *
      * @param \Illuminate\Http\UploadedFile $file
-     * @param array $attributes
+     * @param array<string, mixed> $attributes
      * @param SessionHolder|null $owner
      * @return ContentAttachment
      */
-    public function uploadAttachment($file, array $attributes = [], ?SessionHolder $owner = null): ContentAttachment
+    public function uploadAttachment(\Illuminate\Http\UploadedFile $file, array $attributes = [], ?SessionHolder $owner = null): ContentAttachment
     {
         if (!$this->configure->enableAttachments) {
             throw new \RuntimeException('附件功能未启用');
@@ -246,7 +249,7 @@ class LunaContent extends LunaModule
             'owner_id' => $owner ? $owner->getOperatorId() : null,
         ]);
 
-        return $this->getAttachmentModel()::createFromUploadedFile(
+        return $this->configure->attachmentModel::createFromUploadedFile(
             $file,
             $attachmentData,
             $attributes['disk'] ?? 'public',
@@ -258,7 +261,7 @@ class LunaContent extends LunaModule
      * 从URL创建附件
      *
      * @param string $url
-     * @param array $attributes
+     * @param array<string, mixed> $attributes
      * @param SessionHolder|null $owner
      * @return ContentAttachment
      */
@@ -273,7 +276,7 @@ class LunaContent extends LunaModule
             'owner_id' => $owner ? $owner->getOperatorId() : null,
         ]);
 
-        return $this->getAttachmentModel()::createFromUrl($url, $attachmentData);
+        return $this->configure->attachmentModel::createFromUrl($url, $attachmentData);
     }
 
     /**
@@ -281,9 +284,9 @@ class LunaContent extends LunaModule
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function contents()
+    public function contents(): \Illuminate\Database\Eloquent\Builder
     {
-        return $this->getContentModel()::query();
+        return $this->configure->contentModel::query();
     }
 
     /**
@@ -291,9 +294,9 @@ class LunaContent extends LunaModule
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function channels()
+    public function channels(): \Illuminate\Database\Eloquent\Builder
     {
-        return $this->getChannelModel()::query();
+        return $this->configure->channelModel::query();
     }
 
     /**
@@ -301,9 +304,9 @@ class LunaContent extends LunaModule
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function categories()
+    public function categories(): \Illuminate\Database\Eloquent\Builder
     {
-        return $this->getCategoryModel()::query();
+        return $this->configure->categoryModel::query();
     }
 
     /**
@@ -311,74 +314,15 @@ class LunaContent extends LunaModule
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function attachments()
+    public function attachments(): \Illuminate\Database\Eloquent\Builder
     {
         if (!$this->configure->enableAttachments) {
             throw new \RuntimeException('附件功能未启用');
         }
 
-        return $this->getAttachmentModel()::query();
+        return $this->configure->attachmentModel::query();
     }
 
-    /**
-     * 获取内容模型类
-     *
-     * @return string
-     */
-    public function getContentModel(): string
-    {
-        return $this->configure->contentModel;
-    }
-
-    /**
-     * 获取频道模型类
-     *
-     * @return string
-     */
-    public function getChannelModel(): string
-    {
-        return $this->configure->channelModel;
-    }
-
-    /**
-     * 获取分类模型类
-     *
-     * @return string
-     */
-    public function getCategoryModel(): string
-    {
-        return $this->configure->categoryModel;
-    }
-
-    /**
-     * 获取版本模型类
-     *
-     * @return string
-     */
-    public function getVersionModel(): string
-    {
-        return $this->configure->versionModel;
-    }
-
-    /**
-     * 获取元数据模型类
-     *
-     * @return string
-     */
-    public function getMetadataModel(): string
-    {
-        return $this->configure->metadataModel;
-    }
-
-    /**
-     * 获取附件模型类
-     *
-     * @return string
-     */
-    public function getAttachmentModel(): string
-    {
-        return $this->configure->attachmentModel;
-    }
 
     /**
      * 获取配置
@@ -389,31 +333,66 @@ class LunaContent extends LunaModule
     {
         return $this->configure;
     }
+    
+    /**
+     * 创建内容构建器
+     *
+     * @return ContentBuilder
+     */
+    public function newContent(): ContentBuilder
+    {
+        return ContentBuilder::create();
+    }
+    
+    /**
+     * 创建内容更新构建器
+     *
+     * @param Content|int $content
+     * @return ContentUpdateBuilder
+     */
+    public function editContent(Content|int $content): ContentUpdateBuilder
+    {
+        return ContentUpdateBuilder::for($content);
+    }
+    
+    /**
+     * 创建频道构建器
+     *
+     * @return ChannelBuilder
+     */
+    public function newChannel(): ChannelBuilder
+    {
+        return ChannelBuilder::create();
+    }
 
     /**
      * 发布内容到频道
      *
      * @param Content|int $content
      * @param ContentChannel|string $channel
-     * @param array $pivotData
+     * @param array<string, mixed> $pivotData
      * @param SessionHolder|null $publisher
      * @return bool
      */
-    public function publishToChannel($content, $channel, array $pivotData = [], ?SessionHolder $publisher = null): bool
+    public function publishToChannel(Content|int $content, ContentChannel|string $channel, array $pivotData = [], ?SessionHolder $publisher = null): bool
     {
         if (!$content instanceof Content) {
-            $content = $this->getContentModel()::findOrFail($content);
+            $content = $this->configure->contentModel::findOrFail($content);
         }
 
         if (!$channel instanceof ContentChannel) {
-            $channel = $this->getChannelModel()::findByName($channel);
+            $channel = $this->configure->channelModel::findByName($channel);
             if (!$channel) {
                 throw new \InvalidArgumentException("频道 {$channel} 不存在");
             }
         }
 
         // 获取频道处理器
-        $handler = $this->getChannelHandler($channel);
+        $handler = $this->handler->createHandlerInstance($channel->handler_id);
+        
+        if (!$handler instanceof BaseChannelHandler) {
+            throw new \RuntimeException('无效的频道处理器');
+        }
 
         // 检查是否可以发布
         if (!$handler->canPublish($content, $channel, $publisher)) {
@@ -441,21 +420,25 @@ class LunaContent extends LunaModule
      * @param ContentChannel|string $channel
      * @return bool
      */
-    public function removeFromChannel($content, $channel): bool
+    public function removeFromChannel(Content|int $content, ContentChannel|string $channel): bool
     {
         if (!$content instanceof Content) {
-            $content = $this->getContentModel()::findOrFail($content);
+            $content = $this->configure->contentModel::findOrFail($content);
         }
 
         if (!$channel instanceof ContentChannel) {
-            $channel = $this->getChannelModel()::findByName($channel);
+            $channel = $this->configure->channelModel::findByName($channel);
             if (!$channel) {
                 return false;
             }
         }
 
         // 获取频道处理器
-        $handler = $this->getChannelHandler($channel);
+        $handler = $this->handler->createHandlerInstance($channel->handler_id);
+        
+        if (!$handler instanceof BaseChannelHandler) {
+            throw new \RuntimeException('无效的频道处理器');
+        }
 
         // 检查是否可以移除
         if (!$handler->beforeRemoveFromChannel($content, $channel)) {
@@ -473,86 +456,42 @@ class LunaContent extends LunaModule
         });
     }
 
-    /**
-     * 获取内容处理器
-     *
-     * @param Content $content
-     * @return BaseContentHandler
-     */
-    public function getContentHandler(Content $content): BaseContentHandler
-    {
-        if (!$content->handler_id) {
-            throw new \RuntimeException('内容未配置处理器');
-        }
-
-        $handlerModel = Handler::find($content->handler_id);
-        if (!$handlerModel) {
-            throw new \RuntimeException('处理器不存在');
-        }
-
-        $handlerClass = $handlerModel->handler;
-        $handler = new $handlerClass();
-        
-        if (!$handler instanceof BaseContentHandler) {
-            throw new \RuntimeException('无效的内容处理器');
-        }
-
-        return $handler;
-    }
-
-    /**
-     * 获取频道处理器
-     *
-     * @param ContentChannel $channel
-     * @return BaseChannelHandler
-     */
-    public function getChannelHandler(ContentChannel $channel): BaseChannelHandler
-    {
-        $handlerModel = Handler::find($channel->handler_id);
-        if (!$handlerModel) {
-            throw new \RuntimeException('处理器不存在');
-        }
-
-        $handlerClass = $handlerModel->handler;
-        $handler = new $handlerClass();
-        
-        if (!$handler instanceof BaseChannelHandler) {
-            throw new \RuntimeException('无效的频道处理器');
-        }
-
-        return $handler;
-    }
 
     /**
      * 渲染内容
      *
      * @param Content|int $content
-     * @param array $options
-     * @return array
+     * @param array<string, mixed> $options
+     * @return \Dybasedev\LunaPrototype\Content\Results\ContentResult
      */
-    public function renderContent($content, array $options = []): array
+    public function renderContent(Content|int $content, array $options = []): \Dybasedev\LunaPrototype\Content\Results\ContentResult
     {
         if (!$content instanceof Content) {
-            $content = $this->getContentModel()::findOrFail($content);
+            $content = $this->configure->contentModel::findOrFail($content);
         }
 
         if (!$content->handler_id) {
-            // 如果没有处理器，返回基本信息
-            return $content->toArray();
+            // 如果没有处理器，使用默认处理器
+            $handler = $this->handler->getPureHandler(DefaultContentHandler::class);
+        } else {
+            $handler = $this->handler->createHandlerInstance($content->handler_id);
+        }
+        
+        if (!$handler instanceof BaseContentHandler) {
+            throw new \RuntimeException('无效的内容处理器');
         }
 
-        $handler = $this->getContentHandler($content);
         return $handler->render($content, $options);
     }
 
     /**
      * 批量渲染内容
      *
-     * @param \Illuminate\Support\Collection|array $contents
-     * @param array $options
+     * @param \Illuminate\Support\Collection|array<int, Content> $contents
+     * @param array<string, mixed> $options
      * @return \Illuminate\Support\Collection
      */
-    public function batchRenderContents($contents, array $options = []): \Illuminate\Support\Collection
+    public function batchRenderContents(\Illuminate\Support\Collection|array $contents, array $options = []): \Illuminate\Support\Collection
     {
         $contents = collect($contents);
         $grouped = $contents->groupBy('handler_id');
@@ -567,12 +506,17 @@ class LunaContent extends LunaModule
                 continue;
             }
 
-            $handler = $this->handler->getHandler($handlerId);
-            if ($handler instanceof BaseContentHandler) {
-                $rendered = $handler->batchProcess($group, $options);
-                foreach ($rendered as $item) {
-                    $results->push($item);
+            try {
+                $handler = $this->handler->createHandlerInstance($handlerId);
+                if ($handler instanceof BaseContentHandler) {
+                    $rendered = $handler->batchProcess($group, $options);
+                    foreach ($rendered as $item) {
+                        $results->push($item);
+                    }
                 }
+            } catch (\Exception $e) {
+                // 如果处理器不存在或创建失败，跳过该组
+                continue;
             }
         }
 
@@ -582,7 +526,7 @@ class LunaContent extends LunaModule
     /**
      * 验证内容数据
      *
-     * @param array $data
+     * @param array<string, mixed> $data
      * @param Content|null $content
      * @return \Illuminate\Contracts\Validation\Validator
      */
@@ -604,9 +548,13 @@ class LunaContent extends LunaModule
 
         // 如果指定了处理器，使用处理器的验证规则
         if (isset($data['handler_id'])) {
-            $handler = $this->handler->getHandler($data['handler_id']);
-            if ($handler instanceof BaseContentHandler) {
-                $rules = array_merge($rules, $handler->validationRules());
+            try {
+                $handler = $this->handler->createHandlerInstance($data['handler_id']);
+                if ($handler instanceof BaseContentHandler) {
+                    $rules = array_merge($rules, $handler->validationRules());
+                }
+            } catch (\Exception $e) {
+                // 如果处理器不存在或创建失败，使用默认规则
             }
         }
 
@@ -617,10 +565,10 @@ class LunaContent extends LunaModule
      * 搜索内容
      *
      * @param string $keyword
-     * @param array $filters
+     * @param array<string, mixed> $filters
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function searchContents(string $keyword, array $filters = [])
+    public function searchContents(string $keyword, array $filters = []): \Illuminate\Database\Eloquent\Builder
     {
         $query = $this->contents();
 
@@ -659,8 +607,8 @@ class LunaContent extends LunaModule
     /**
      * 获取内容统计信息
      *
-     * @param array $filters
-     * @return array
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>
      */
     public function getContentStatistics(array $filters = []): array
     {
@@ -689,8 +637,8 @@ class LunaContent extends LunaModule
     /**
      * 获取频道统计
      *
-     * @param array $filters
-     * @return array
+     * @param array<string, mixed> $filters
+     * @return array<string, array<string, int>>
      */
     protected function getChannelStatistics(array $filters = []): array
     {
@@ -720,8 +668,8 @@ class LunaContent extends LunaModule
     /**
      * 获取分类统计
      *
-     * @param array $filters
-     * @return array
+     * @param array<string, mixed> $filters
+     * @return array<string, array<string, int>>
      */
     protected function getCategoryStatistics(array $filters = []): array
     {

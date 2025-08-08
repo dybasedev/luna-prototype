@@ -11,9 +11,7 @@ use Dybasedev\LunaPrototype\Content\Models\ContentCategory;
 use Dybasedev\LunaPrototype\Content\Models\ContentVersion;
 use Dybasedev\LunaPrototype\Content\Models\ContentMetadata;
 use Dybasedev\LunaPrototype\Content\Models\ContentAttachment;
-use Dybasedev\LunaPrototype\Content\Handlers\ArticleContentHandler;
-use Dybasedev\LunaPrototype\Content\Handlers\HtmlContentHandler;
-use Dybasedev\LunaPrototype\Content\Handlers\MarkdownContentHandler;
+use Dybasedev\LunaPrototype\Content\Handlers\DefaultContentHandler;
 use Dybasedev\LunaPrototype\Content\Handlers\DefaultChannelHandler;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
@@ -127,17 +125,15 @@ class LunaContentConfigure extends LunaModuleConfigure
         // 使用 LunaHandlerConfigure 注册内容处理器组和默认处理器
         $container->make(LunaHandlerConfigure::class)
             ->group($this->contentHandlerGroup, '内容处理器', function ($register) {
-                // 注册默认的内容处理器
-                $register->handler(ArticleContentHandler::class);
-                $register->handler(HtmlContentHandler::class);
-                $register->handler(MarkdownContentHandler::class);
+                // 注册默认的内容处理器，使用 content. 前缀
+                $register->handler(DefaultContentHandler::class, 'content.default');
             });
 
         // 使用 LunaHandlerConfigure 注册频道处理器组和默认处理器
         $container->make(LunaHandlerConfigure::class)
             ->group($this->channelHandlerGroup, '频道处理器', function ($register) {
-                // 注册默认的频道处理器
-                $register->handler(DefaultChannelHandler::class);
+                // 注册默认的频道处理器，使用 channel. 前缀
+                $register->handler(DefaultChannelHandler::class, 'channel.default');
             });
     }
 

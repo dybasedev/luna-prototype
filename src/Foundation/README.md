@@ -307,6 +307,47 @@ $handlerClass = luna_handler()->getHandlerClassByAlias('permission.default');
 // 返回: Dybasedev\LunaPrototype\Permission\Handlers\PermissionHandler
 ```
 
+#### 处理器名称冲突管理
+
+为了避免名称冲突并优化性能，系统采用以下策略：
+
+1. **Pure Handler 的 ID 规则**：
+   - Pure handler 的 ID 是其类名的 hash code
+   - 注册时的别名也会被保护，不允许 entity handler 使用相同名称
+
+2. **名称冲突检查**：
+   - 创建 entity handler 时，系统会检查名称是否与已注册的 pure handler 别名或类名冲突
+   - 如果发生冲突，会抛出异常并提示具体的冲突信息
+
+3. **性能优化**：
+   - `createHandlerInstance()` 方法会优先尝试获取 pure handler（更快）
+   - 只有在不是 pure handler 的情况下才查询数据库
+
+```php
+// 示例：名称冲突的情况
+luna_handler_configure()->group('content', '内容', function ($register) {
+    $register->handler(ArticleHandler::class, 'article'); // 注册别名 'article'
+});
+
+// 以下操作会失败，因为 'article' 已被用作 pure handler 的别名
+try {
+    luna_handler()->createEntityHandler(
+        group: 'content',
+        name: 'article', // 冲突！
+        handler: CustomHandler::class
+    );
+} catch (RuntimeException $e) {
+    // Handler name "article" conflicts with registered pure handler alias
+}
+
+// 正确的做法：使用不同的名称
+$entity = luna_handler()->createEntityHandler(
+    group: 'content',
+    name: 'custom-article-handler', // 唯一的名称
+    handler: CustomHandler::class
+);
+```
+
 #### 处理器管理 API
 
 ```php

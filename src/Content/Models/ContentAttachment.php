@@ -7,6 +7,45 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+/**
+ * 内容附件模型
+ *
+ * @property int $id
+ * @property int|null $owner_type 所有者类型
+ * @property int|null $owner_id 所有者ID
+ * @property string $name 文件名称
+ * @property string $original_name 原始文件名
+ * @property string $path 文件路径或URL
+ * @property string $disk 存储磁盘
+ * @property string|null $mime_type MIME类型
+ * @property int $size 文件大小（字节）
+ * @property array|null $metadata 元数据
+ * @property string|null $hash 文件哈希值
+ * @property int $downloads 下载次数
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read Model|\Eloquent|null $owner
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment query()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment byType(string $type)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment byDisk(string $disk)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereDisk($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereDownloads($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereHash($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereMetadata($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereMimeType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereOriginalName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereOwnerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereOwnerType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment wherePath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereSize($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentAttachment whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class ContentAttachment extends Model
 {
     /**

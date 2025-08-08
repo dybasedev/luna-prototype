@@ -6,6 +6,42 @@ use Illuminate\Database\Eloquent\Model;
 use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * 内容元数据模型
+ *
+ * @property int $id
+ * @property int $content_id 内容ID
+ * @property string $key 元数据键
+ * @property int $type 数据类型
+ * @property string|null $string_value 字符串值
+ * @property int|null $integer_value 整数值
+ * @property string|null $float_value 浮点数值
+ * @property bool|null $boolean_value 布尔值
+ * @property array|null $json_value JSON值
+ * @property \Illuminate\Support\Carbon|null $datetime_value 日期时间值
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read mixed $value 类型化的值
+ * @property-read Content|null $content
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata query()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata byKey(string|array $keys)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata byType(int $type)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereBooleanValue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereContentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereDatetimeValue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereFloatValue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereIntegerValue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereJsonValue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereStringValue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentMetadata whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class ContentMetadata extends Model
 {
     /**

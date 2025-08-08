@@ -2,6 +2,7 @@
 
 namespace Dybasedev\LunaPrototype\Content\Models;
 
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Dybasedev\LunaPrototype\Foundation\SessionHolder;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
@@ -14,6 +15,60 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Str;
 
+/**
+ * 内容模型
+ *
+ * @property int $id
+ * @property int|null $owner_type 所有者类型
+ * @property int|null $owner_id 所有者ID
+ * @property string $name 内容唯一标识符
+ * @property string $title 标题
+ * @property string|null $keywords 关键词
+ * @property string|null $description 描述
+ * @property int|null $handler_id 处理器ID
+ * @property array|null $handler_config 处理器配置
+ * @property string|null $current_version_id 当前版本ID
+ * @property array $payload 载荷数据
+ * @property \Illuminate\Support\Carbon|null $published_at 发布时间
+ * @property int $views_count 浏览次数
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read string|null $content 内容正文（从当前版本获取）
+ * @property-read Model|\Eloquent|null $owner
+ * @property-read Handler|null $handler
+ * @property-read ContentVersion|null $currentVersion
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ContentVersion> $versions
+ * @property-read int|null $versions_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ContentChannel> $channels
+ * @property-read int|null $channels_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ContentCategory> $categories
+ * @property-read int|null $categories_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ContentMetadata> $metadata
+ * @property-read int|null $metadata_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ContentAttachment> $attachments
+ * @property-read int|null $attachments_count
+ * @method static \Illuminate\Database\Eloquent\Builder|Content newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|Content newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|Content query()
+ * @method static \Illuminate\Database\Eloquent\Builder|Content published()
+ * @method static \Illuminate\Database\Eloquent\Builder|Content unpublished()
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereCurrentVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereHandlerConfig($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereHandlerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereKeywords($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereOwnerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereOwnerType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content wherePayload($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content wherePublishedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Content whereViewsCount($value)
+ * @mixin \Eloquent
+ */
 class Content extends Model
 {
     use WithModelHandler;
@@ -94,6 +149,7 @@ class Content extends Model
      * 获取当前版本
      *
      * @return HasOne
+     * @throws BindingResolutionException
      */
     public function currentVersion(): HasOne
     {
@@ -108,6 +164,7 @@ class Content extends Model
      * 获取所有版本
      *
      * @return HasMany
+     * @throws BindingResolutionException
      */
     public function versions(): HasMany
     {
@@ -121,6 +178,7 @@ class Content extends Model
      * 获取频道
      *
      * @return BelongsToMany
+     * @throws BindingResolutionException
      */
     public function channels(): BelongsToMany
     {
@@ -138,6 +196,7 @@ class Content extends Model
      * 获取分类
      *
      * @return BelongsToMany
+     * @throws BindingResolutionException
      */
     public function categories(): BelongsToMany
     {
@@ -156,6 +215,7 @@ class Content extends Model
      * 获取元数据
      *
      * @return HasMany
+     * @throws BindingResolutionException
      */
     public function metadata(): HasMany
     {
@@ -215,6 +275,7 @@ class Content extends Model
      *
      * @param string $versionId
      * @return bool
+     * @throws BindingResolutionException
      */
     public function applyVersion(string $versionId): bool
     {
@@ -262,6 +323,7 @@ class Content extends Model
      * @param mixed $value
      * @param int|null $type
      * @return ContentMetadata
+     * @throws BindingResolutionException
      */
     public function setMetadata(string $key, $value, ?int $type = null): ContentMetadata
     {

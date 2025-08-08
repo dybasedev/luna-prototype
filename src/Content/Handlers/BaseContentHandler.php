@@ -5,18 +5,29 @@ namespace Dybasedev\LunaPrototype\Content\Handlers;
 use Dybasedev\LunaPrototype\Foundation\Handler\BaseHandler;
 use Dybasedev\LunaPrototype\Content\Models\Content;
 use Dybasedev\LunaPrototype\Content\Models\ContentVersion;
+use Dybasedev\LunaPrototype\Content\Results\ContentResult;
 use Illuminate\Support\Collection;
 
 abstract class BaseContentHandler extends BaseHandler
 {
     /**
+     * 内容处理器不需要实体
+     * 
+     * @return bool
+     */
+    public static function requiresEntity(): bool
+    {
+        return false;
+    }
+    
+    /**
      * 内容渲染
      *
      * @param Content $content
      * @param array $options
-     * @return array
+     * @return ContentResult
      */
-    abstract public function render(Content $content, array $options = []): array;
+    abstract public function render(Content $content, array $options = []): ContentResult;
 
     /**
      * 内容验证规则
@@ -24,6 +35,28 @@ abstract class BaseContentHandler extends BaseHandler
      * @return array
      */
     abstract public function validationRules(): array;
+    
+    /**
+     * 验证内容数据
+     * 
+     * @param array $data
+     * @return array 验证错误信息，如果为空则表示验证通过
+     */
+    public function validateContent(array $data): array
+    {
+        return [];
+    }
+    
+    /**
+     * 验证载荷数据
+     * 
+     * @param array $payload
+     * @return array 验证错误信息
+     */
+    public function validatePayload(array $payload): array
+    {
+        return [];
+    }
 
     /**
      * 内容发布前处理
@@ -136,21 +169,11 @@ abstract class BaseContentHandler extends BaseHandler
      * 默认格式化
      *
      * @param Content $content
-     * @return array
+     * @return ContentResult
      */
-    protected function formatDefault(Content $content): array
+    protected function formatDefault(Content $content): ContentResult
     {
-        return [
-            'id' => $content->id,
-            'name' => $content->name,
-            'title' => $content->title,
-            'description' => $content->description,
-            'content' => $content->content,
-            'published_at' => $content->published_at?->toDateTimeString(),
-            'views_count' => $content->views_count,
-            'created_at' => $content->created_at->toDateTimeString(),
-            'updated_at' => $content->updated_at->toDateTimeString(),
-        ];
+        return $this->render($content);
     }
 
     /**

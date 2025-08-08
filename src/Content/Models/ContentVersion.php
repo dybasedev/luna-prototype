@@ -7,6 +7,37 @@ use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * 内容版本模型
+ *
+ * @property string $version_id 版本ID（UUID）
+ * @property int $content_id 内容ID
+ * @property string|null $content 内容正文
+ * @property array|null $payload 载荷数据
+ * @property string|null $version_name 版本名称
+ * @property string|null $version_note 版本说明
+ * @property int|null $editor_type 编辑者类型
+ * @property int|null $editor_id 编辑者ID
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read string $display_name 显示名称
+ * @property-read Content|null $content
+ * @property-read Model|\Eloquent|null $editor
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion query()
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion whereContent($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion whereContentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion whereEditorId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion whereEditorType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion wherePayload($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion whereVersionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion whereVersionName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|ContentVersion whereVersionNote($value)
+ * @mixin \Eloquent
+ */
 class ContentVersion extends Model
 {
     /**

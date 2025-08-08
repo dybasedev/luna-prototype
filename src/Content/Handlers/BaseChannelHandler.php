@@ -10,6 +10,16 @@ use Dybasedev\LunaPrototype\Content\Models\ContentChannel;
 abstract class BaseChannelHandler extends BaseHandler
 {
     /**
+     * 频道处理器不需要实体
+     * 
+     * @return bool
+     */
+    public static function requiresEntity(): bool
+    {
+        return false;
+    }
+    
+    /**
      * 内容发布到频道前的检查
      *
      * @param Content $content

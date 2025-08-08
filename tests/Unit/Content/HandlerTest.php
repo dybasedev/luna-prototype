@@ -4,9 +4,9 @@ use Dybasedev\LunaPrototype\Content\Models\Content;
 use Dybasedev\LunaPrototype\Content\Models\ContentChannel;
 use Dybasedev\LunaPrototype\Content\Handlers\BaseContentHandler;
 use Dybasedev\LunaPrototype\Content\Handlers\BaseChannelHandler;
-use Dybasedev\LunaPrototype\Content\Handlers\HtmlContentHandler;
-use Dybasedev\LunaPrototype\Content\Handlers\MarkdownContentHandler;
+use Dybasedev\LunaPrototype\Content\Handlers\DefaultContentHandler;
 use Dybasedev\LunaPrototype\Content\Handlers\DefaultChannelHandler;
+use Dybasedev\LunaPrototype\Content\Results\ContentResult;
 use Dybasedev\LunaPrototype\Foundation\SessionHolder;
 use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -56,14 +56,17 @@ class TestContentHandler extends BaseContentHandler
         return '用于测试的内容处理器';
     }
 
-    public function render(Content $content, array $options = []): array
+    public function render(Content $content, array $options = []): ContentResult
     {
-        return [
-            'id' => $content->id,
-            'title' => strtoupper($content->title), // 转换为大写
-            'content' => 'TEST: ' . $content->content,
-            'custom' => 'test-rendered',
-        ];
+        $result = new ContentResult();
+        $result->setId($content->id)
+            ->setTitle(strtoupper($content->title)) // 转换为大写
+            ->setContent('TEST: ' . $content->content)
+            ->setCustomField('custom', 'test-rendered')
+            ->setCreatedAt($content->created_at)
+            ->setUpdatedAt($content->updated_at);
+        
+        return $result;
     }
 
     public function validationRules(): array
@@ -117,47 +120,39 @@ beforeEach(function () {
     $this->lunaHandler = app(LunaHandler::class);
 });
 
-test('HTML内容处理器可以正确渲染', function () {
-    $handler = new HtmlContentHandler();
+test('默认内容处理器可以正确渲染', function () {
+    $handler = new DefaultContentHandler();
     
     $content = Content::create([
-        'name' => 'html-content',
-        'title' => 'HTML内容',
-        'payload' => [],
+        'name' => 'default-content',
+        'title' => '默认内容',
+        'description' => '测试描述',
+        'keywords' => '测试,关键词',
+        'payload' => ['key' => 'value'],
     ]);
     
-    $content->createVersion('<h1>标题</h1><p>段落内容</p><script>alert("xss")</script>');
+    $content->createVersion('<p>这是内容</p>');
     
-    $rendered = $handler->render($content->fresh());
+    $result = $handler->render($content->fresh());
     
-    expect($rendered)->toHaveKey('content');
-    expect($rendered['content'])->toContain('<h1>标题</h1>');
-    expect($rendered['content'])->toContain('<p>段落内容</p>');
-    expect($rendered['content'])->not->toContain('<script>'); // XSS应该被过滤
-});
-
-test('Markdown内容处理器可以正确渲染', function () {
-    $handler = new MarkdownContentHandler();
+    expect($result)->toBeInstanceOf(ContentResult::class);
+    expect($result->getTitle())->toBe('默认内容');
+    expect($result->getDescription())->toBe('测试描述');
+    expect($result->getKeywords())->toBe('测试,关键词');
+    expect($result->getContent())->toBe('<p>这是内容</p>');
+    expect($result->getPayload())->toBe(['key' => 'value']);
     
-    $content = Content::create([
-        'name' => 'markdown-content',
-        'title' => 'Markdown内容',
-        'payload' => [],
+    // 测试带选项的渲染
+    $result2 = $handler->render($content->fresh(), [
+        'strip_tags' => true,
+        'max_length' => 5,
     ]);
     
-    $content->createVersion("# 标题\n\n这是一个**粗体**文本和*斜体*文本。");
-    
-    $rendered = $handler->render($content->fresh());
-    
-    expect($rendered)->toHaveKey('content');
-    expect($rendered['content'])->toContain('<h1>标题</h1>');
-    expect($rendered['content'])->toContain('<strong>粗体</strong>');
-    expect($rendered['content'])->toContain('<em>斜体</em>');
-    expect($rendered)->toHaveKey('raw_content');
+    expect($result2->getContent())->toBe('这是内容');
 });
 
 test('内容处理器的批量处理', function () {
-    $handler = new HtmlContentHandler();
+    $handler = new DefaultContentHandler();
     
     $contents = Collection::make();
     
@@ -174,9 +169,10 @@ test('内容处理器的批量处理', function () {
     $results = $handler->batchProcess($contents);
     
     expect($results)->toHaveCount(3);
-    expect($results[0]['title'])->toBe('批量内容1');
-    expect($results[1]['title'])->toBe('批量内容2');
-    expect($results[2]['title'])->toBe('批量内容3');
+    expect($results[0])->toBeInstanceOf(ContentResult::class);
+    expect($results[0]->getTitle())->toBe('批量内容1');
+    expect($results[1]->getTitle())->toBe('批量内容2');
+    expect($results[2]->getTitle())->toBe('批量内容3');
 });
 
 test('自定义内容处理器的渲染和生命周期', function () {
@@ -192,11 +188,12 @@ test('自定义内容处理器的渲染和生命周期', function () {
     $content->createVersion('原始内容');
     
     // 测试渲染
-    $rendered = $handler->render($content->fresh());
+    $result = $handler->render($content->fresh());
     
-    expect($rendered['title'])->toBe('CUSTOM CONTENT'); // 应该被转换为大写
-    expect($rendered['content'])->toBe('TEST: 原始内容');
-    expect($rendered['custom'])->toBe('test-rendered');
+    expect($result)->toBeInstanceOf(ContentResult::class);
+    expect($result->getTitle())->toBe('CUSTOM CONTENT'); // 应该被转换为大写
+    expect($result->getContent())->toBe('TEST: 原始内容');
+    expect($result->getCustomField('custom'))->toBe('test-rendered');
     
     // 测试生命周期钩子
     $data = ['title' => '更新的内容', 'payload' => []];
@@ -371,7 +368,9 @@ test('内容处理器的验证规则', function () {
     expect($rules)->toHaveKey('test_field');
     expect($rules['test_field'])->toBe('required|string');
     
-    // 默认处理器没有额外验证规则
-    $defaultHandler = new HtmlContentHandler();
-    expect($defaultHandler->validationRules())->toBeEmpty();
+    // 默认处理器有基础验证规则
+    $defaultHandler = new DefaultContentHandler();
+    $defaultRules = $defaultHandler->validationRules();
+    expect($defaultRules)->toHaveKey('content');
+    expect($defaultRules)->toHaveKey('payload');
 });

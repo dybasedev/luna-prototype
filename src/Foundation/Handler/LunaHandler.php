@@ -108,6 +108,27 @@ class LunaHandler
         if (!isset($this->configure->groups[$group])) {
             throw new RuntimeException('Handler group not exists');
         }
+        
+        // 检查名称是否与 pure handler 别名冲突
+        $nameHash = hash_code($name);
+        if (isset($this->configure->handlerAliases[$nameHash])) {
+            throw new RuntimeException(sprintf(
+                'Handler name "%s" conflicts with registered pure handler alias for class "%s"',
+                $name,
+                $this->configure->handlerAliases[$nameHash]
+            ));
+        }
+        
+        // 检查名称是否与 pure handler 类名冲突
+        foreach ($this->configure->handlers as $handlerClass) {
+            if (!$handlerClass::requiresEntity() && hash_code($handlerClass) === $nameHash) {
+                throw new RuntimeException(sprintf(
+                    'Handler name "%s" conflicts with pure handler class "%s"',
+                    $name,
+                    $handlerClass
+                ));
+            }
+        }
 
         // 尝试通过别名解析处理器类名
         $handler = $this->resolveHandlerClass($handler);
@@ -218,11 +239,18 @@ class LunaHandler
      */
     public function createHandlerInstance(string|int $name): BaseHandler
     {
-        // 获取实体处理器
+        // 性能优化：首先尝试作为 pure handler 获取
+        try {
+            return $this->getPureHandlerById($name);
+        } catch (RuntimeException $e) {
+            // 不是 pure handler，继续尝试 entity handler
+        }
+        
+        // 尝试获取实体处理器
         $entity = $this->entityHandler($name);
         
         if (!$entity) {
-            throw new RuntimeException(sprintf('Handler entity "%s" not found', $name));
+            throw new RuntimeException(sprintf('Handler "%s" not found as pure handler or entity handler', $name));
         }
         
         // 验证处理器类是否存在并且已注册
@@ -346,5 +374,68 @@ class LunaHandler
     {
         $aliasHash = hash_code($alias);
         return $this->configure->handlerAliases[$aliasHash] ?? null;
+    }
+    
+    /**
+     * 通过ID获取纯处理器实例
+     * 
+     * Pure handler 的 ID 是其 class name 的 hash code
+     * 
+     * @param string|int $id 处理器ID、类名或别名
+     * @param array|Repository|null $config 可选的配置
+     * @return BaseHandler 处理器实例
+     * @throws RuntimeException 处理器不存在或不是纯处理器时抛出异常
+     */
+    public function getPureHandlerById(string|int $id, array|Repository|null $config = null): BaseHandler
+    {
+        // 如果是字符串，首先尝试作为别名查找（最快）
+        if (is_string($id)) {
+            $aliasHash = hash_code($id);
+            if (isset($this->configure->handlerAliases[$aliasHash])) {
+                $handlerClass = $this->configure->handlerAliases[$aliasHash];
+                // 确保是 pure handler
+                if (!$handlerClass::requiresEntity()) {
+                    return $this->getPureHandler($handlerClass, $config);
+                }
+            }
+            
+            // 如果是类名，直接使用
+            if (class_exists($id)) {
+                return $this->getPureHandler($id, $config);
+            }
+            
+            // 否则计算其 hash code
+            $id = hash_code($id);
+        }
+        
+        // 查找对应的纯处理器类
+        foreach ($this->configure->handlers as $handlerClass) {
+            // 检查类的 hash code 是否匹配
+            if (hash_code($handlerClass) === $id && !$handlerClass::requiresEntity()) {
+                return $this->getPureHandler($handlerClass, $config);
+            }
+        }
+        
+        throw new RuntimeException(sprintf('Pure handler with ID "%s" not found', $id));
+    }
+    
+    /**
+     * 获取所有纯处理器的映射
+     * 
+     * 返回 ID => 处理器类名 的映射
+     * 
+     * @return array<int, class-string<BaseHandler>>
+     */
+    public function getPureHandlerIdMap(): array
+    {
+        $map = [];
+        
+        foreach ($this->configure->handlers as $handlerClass) {
+            if (!$handlerClass::requiresEntity()) {
+                $map[hash_code($handlerClass)] = $handlerClass;
+            }
+        }
+        
+        return $map;
     }
 }
