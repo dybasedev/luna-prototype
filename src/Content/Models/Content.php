@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Dybasedev\LunaPrototype\Foundation\SessionHolder;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Dybasedev\LunaPrototype\Foundation\Handler\WithModelHandler;
+use Dybasedev\LunaPrototype\Foundation\VersionControlModel\VersionControl;
 use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -72,6 +73,7 @@ use Illuminate\Support\Str;
 class Content extends Model
 {
     use WithModelHandler;
+    use VersionControl;
 
     /**
      * 表名
@@ -143,32 +145,79 @@ class Content extends Model
     }
 
     /**
-     * 获取当前版本
+     * 版本数据模型
      *
-     * @return HasOne
+     * @return string
      * @throws BindingResolutionException
      */
-    public function currentVersion(): HasOne
+    public function versionValueModel(): string
     {
-        return $this->hasOne(
-            luna_module_configure(LunaContentConfigure::class)->versionModel,
-            'version_id',
-            'current_version_id'
-        );
+        return luna_module_configure(LunaContentConfigure::class)->versionModel;
     }
 
     /**
-     * 获取所有版本
+     * 关联版本数据外键
      *
-     * @return HasMany
+     * @return string
+     */
+    public function relationVersionValueForeignKey(): string
+    {
+        return 'content_id';
+    }
+
+    /**
+     * 生成版本哈希值
+     * 对于内容来说，需要基于 content 和 payload 生成哈希
+     *
+     * @param array $data 版本数据
+     * @return string
+     */
+    protected function generateVersionHash(array $data): string
+    {
+        // 提取用于生成哈希的关键数据
+        $hashData = [
+            'content' => $data['content'] ?? '',
+            'payload' => $data['payload'] ?? [],
+        ];
+        
+        // 对数据进行排序，保证顺序一致
+        ksort($hashData);
+        if (is_array($hashData['payload'])) {
+            ksort($hashData['payload']);
+        }
+        
+        // 生成哈希值
+        return sha1(json_encode([
+            'id' => $this->id,
+            'hash' => sha1(json_encode($hashData))
+        ]));
+    }
+
+    /**
+     * 准备版本数据
+     *
+     * @param array $data 原始数据
+     * @return array 准备好的版本数据
+     */
+    protected function prepareVersionData(array $data): array
+    {
+        // 确保 payload 字段存在
+        if (!isset($data['payload'])) {
+            $data['payload'] = [];
+        }
+        
+        return $data;
+    }
+
+    /**
+     * 获取当前版本关系（重命名以避免与 VersionControl trait 的 current() 方法冲突）
+     *
+     * @return BelongsTo
      * @throws BindingResolutionException
      */
-    public function versions(): HasMany
+    public function currentVersion(): BelongsTo
     {
-        return $this->hasMany(
-            luna_module_configure(LunaContentConfigure::class)->versionModel,
-            'content_id'
-        )->orderBy('created_at', 'desc');
+        return $this->current();
     }
 
     /**
@@ -243,33 +292,29 @@ class Content extends Model
      * @param array $attributes
      * @param SessionHolder|null $editor
      * @return ContentVersion
+     * @throws \Throwable
      */
     public function createVersion(string $content, array $attributes = [], ?SessionHolder $editor = null): ContentVersion
     {
-        $versionId = Str::uuid()->toString();
-        
-        // 如果没有提供 payload，使用当前内容的 payload
-        if (!isset($attributes['payload'])) {
-            $attributes['payload'] = $this->payload;
-        }
-        
-        $versionData = array_merge($attributes, [
-            'version_id' => $versionId,
-            'content_id' => $this->id,
+        // 准备版本数据
+        $versionData = [
             'content' => $content,
+            'payload' => $attributes['payload'] ?? $this->payload,
+        ];
+        
+        // 准备元数据
+        $metadata = [
+            'version_name' => $attributes['version_name'] ?? null,
+            'version_note' => $attributes['version_note'] ?? null,
             'editor_type' => $editor ? hash_code(get_class($editor)) : null,
             'editor_id' => $editor ? $editor->getOperatorId() : null,
-        ]);
-
-        $versionModel = luna_module_configure(LunaContentConfigure::class)->versionModel;
-        $version = $versionModel::create($versionData);
-
-        // 如果没有当前版本，设置为当前版本
-        if (!$this->current_version_id) {
-            $this->update(['current_version_id' => $versionId]);
-        }
-
-        return $version;
+        ];
+        
+        // 使用 VersionControl trait 的方法创建版本
+        $versionId = $this->createVersionValue($versionData, $metadata);
+        
+        // 返回创建的版本
+        return $this->versions()->where('version_id', $versionId)->first();
     }
 
     /**
@@ -277,18 +322,14 @@ class Content extends Model
      *
      * @param string $versionId
      * @return bool
-     * @throws BindingResolutionException
      */
     public function applyVersion(string $versionId): bool
     {
-        $version = $this->versions()->where('version_id', $versionId)->first();
-        
-        if (!$version) {
+        try {
+            return $this->switchTo($versionId, true);
+        } catch (\InvalidArgumentException $e) {
             return false;
         }
-
-        // 更新当前版本ID
-        return $this->update(['current_version_id' => $versionId]);
     }
 
     /**
@@ -298,7 +339,7 @@ class Content extends Model
      */
     public function getContentAttribute(): ?string
     {
-        return $this->currentVersion?->content;
+        return $this->current?->content;
     }
     
     /**
@@ -309,7 +350,7 @@ class Content extends Model
     public function getPayloadAttribute(): array
     {
         // payload 应该始终从版本获取，就像 content 一样
-        return $this->currentVersion?->payload ?? [];
+        return $this->current?->payload ?? [];
     }
 
     /**

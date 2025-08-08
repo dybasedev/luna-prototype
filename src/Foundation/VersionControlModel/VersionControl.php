@@ -93,28 +93,64 @@ trait VersionControl
     }
 
     /**
+     * 生成版本哈希值
+     * 子类可以重写此方法来自定义哈希生成逻辑
+     *
+     * @param array $data 版本数据
+     * @return string
+     */
+    protected function generateVersionHash(array $data): string
+    {
+        // 对数据进行排序，保证顺序一致
+        ksort($data);
+        
+        // 生成 hash 值
+        return sha1(json_encode(['id' => $this->{$this->relationLocalKey()}, 'hash' => sha1(json_encode($data))]));
+    }
+
+    /**
+     * 准备版本数据
+     * 子类可以重写此方法来自定义版本数据的准备逻辑
+     *
+     * @param array $data 原始数据
+     * @return array 准备好的版本数据
+     */
+    protected function prepareVersionData(array $data): array
+    {
+        return $data;
+    }
+
+    /**
      * 创建新的版本数据
      *
      * @param array $data
-     * @return void
+     * @param array $metadata 额外的元数据（如编辑者信息等）
+     * @return string 返回生成的版本ID
      * @throws Throwable
      */
-    public function createVersionValue(array $data): void
+    public function createVersionValue(array $data, array $metadata = []): string
     {
-        $process = function () use ($data) {
-            // 对数据进行排序，保证顺序一致
-            ksort($data);
-
-            // 生成 hash 值
-            $hash = sha1(json_encode(['id' => $this->{$this->relationLocalKey()}, 'hash' => sha1(json_encode($data))]));
-
-            $versionId = $hash;
+        $versionId = null;
+        
+        $process = function () use ($data, $metadata, &$versionId) {
+            // 准备版本数据
+            $versionData = $this->prepareVersionData($data);
+            
+            // 生成版本哈希
+            $versionId = $this->generateVersionHash($versionData);
             
             try {
                 /** @var Model $model */
                 $model = new ($this->versionValueModel());
-                $model->{$this->relationVersionValueLocalKey()} = $hash;
-                foreach ($data as $key => $value) {
+                $model->{$this->relationVersionValueLocalKey()} = $versionId;
+                
+                // 设置版本数据
+                foreach ($versionData as $key => $value) {
+                    $model->{$key} = $value;
+                }
+                
+                // 设置元数据（如编辑者信息等）
+                foreach ($metadata as $key => $value) {
                     $model->{$key} = $value;
                 }
 
@@ -141,6 +177,8 @@ trait VersionControl
         } else {
             $process();
         }
+        
+        return $versionId;
     }
 
     /**
