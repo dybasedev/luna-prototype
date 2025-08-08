@@ -33,9 +33,9 @@ class LunaPermissionServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             // 发布迁移文件
-            $this->publishes([
+            $this->publishesMigrations([
                 __DIR__ . '/migrations' => database_path('migrations'),
-            ], 'luna-permission-migrations');
+            ]);
             
             // 注册命令
             $this->commands([

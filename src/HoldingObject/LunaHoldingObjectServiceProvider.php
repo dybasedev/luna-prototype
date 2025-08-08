@@ -12,7 +12,7 @@ class LunaHoldingObjectServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->publishes([
+            $this->publishesMigrations([
                 __DIR__ . '/migrations' => database_path('migrations'),
             ]);
         }

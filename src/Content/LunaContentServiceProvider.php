@@ -15,9 +15,9 @@ class LunaContentServiceProvider extends ServiceProvider
     {
         // 发布迁移文件
         if ($this->app->runningInConsole()) {
-            $this->publishes([
+            $this->publishesMigrations([
                 __DIR__ . '/migrations' => database_path('migrations'),
-            ], 'luna-content-migrations');
+            ]);
         }
     }
 }

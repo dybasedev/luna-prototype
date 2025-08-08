@@ -34,12 +34,9 @@ class LunaTradeServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             // 发布迁移文件
-            $this->publishes([
+            $this->publishesMigrations([
                 __DIR__ . '/migrations' => database_path('migrations'),
-            ], 'luna-trade-migrations');
-            
-            // 加载迁移文件
-            $this->loadMigrationsFrom(__DIR__ . '/migrations');
+            ]);
         }
     }
 }
