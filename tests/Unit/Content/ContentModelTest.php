@@ -42,10 +42,6 @@ class TestContentUser implements SessionHolder
 
 beforeEach(function () {
     $this->user = new TestContentUser();
-    
-    // 运行迁移
-    $migration = include __DIR__ . '/../../../src/Content/migrations/0001_01_01_000000_create_luna_prototype_content_tables.php';
-    $migration->up();
 });
 
 test('内容表结构正确创建', function () {

@@ -113,10 +113,6 @@ class TestChannelHandler extends BaseChannelHandler
 }
 
 beforeEach(function () {
-    // 运行迁移
-    $migration = include __DIR__ . '/../../../src/Content/migrations/0001_01_01_000000_create_luna_prototype_content_tables.php';
-    $migration->up();
-
     $this->lunaHandler = app(LunaHandler::class);
 });
 

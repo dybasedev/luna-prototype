@@ -8,17 +8,15 @@ use Illuminate\Support\Carbon;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    // 运行迁移
-    $migration = include __DIR__ . '/../../../src/Content/migrations/0001_01_01_000000_create_luna_prototype_content_tables.php';
-    $migration->up();
-    
+    // 创建测试用的内容
     $this->content = Content::create([
-        'name' => 'metadata-test-content',
-        'title' => '元数据测试内容',
+        'name' => 'test-content',
+        'title' => '测试内容',
         'payload' => [],
     ]);
 });
 
+// 使用 RefreshDatabase trait，不需要手动运行迁移
 test('可以创建不同类型的元数据', function () {
     // 字符串类型
     $stringMeta = ContentMetadata::createFor($this->content->id, 'author', '张三');

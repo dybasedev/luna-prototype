@@ -8,7 +8,7 @@ use Dybasedev\LunaPrototype\Content\Models\ContentCategory;
 use Dybasedev\LunaPrototype\Content\Models\ContentVersion;
 use Dybasedev\LunaPrototype\Content\Models\ContentMetadata;
 use Dybasedev\LunaPrototype\Content\Handlers\DefaultChannelHandler;
-use Dybasedev\LunaPrototype\Content\Handlers\HtmlContentHandler;
+use Dybasedev\LunaPrototype\Content\Handlers\DefaultContentHandler;
 use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Dybasedev\LunaPrototype\Foundation\Handler\Models\Handler;
 use Dybasedev\LunaPrototype\Foundation\SessionHolder;
@@ -47,28 +47,15 @@ class TestContentOwner implements SessionHolder
 }
 
 beforeEach(function () {
-    // 创建Handler表（如果不存在）
-    if (!\Schema::hasTable('luna_handlers')) {
-        \Schema::create('luna_handlers', function ($table) {
-            $table->unsignedBigInteger('id')->primary();
-            $table->string('name');
-            $table->unsignedBigInteger('group_id');
-            $table->string('display_name');
-            $table->text('description')->nullable();
-            $table->string('handler');
-            $table->json('config')->nullable();
-            $table->boolean('enabled')->default(true);
-            $table->timestamps();
-        });
-    }
-    
-    // 运行迁移
-    $migration = include __DIR__ . '/../../../src/Content/migrations/0001_01_01_000000_create_luna_prototype_content_tables.php';
-    $migration->up();
+    // Handler表应该由Foundation迁移创建，这里不需要手动创建
 
     // 设置测试环境
     $this->configure = LunaContentConfigure::create()->build();
     $this->lunaHandler = app(LunaHandler::class);
+    
+    // 注册 Content 组件的处理器
+    $this->configure->boot(app());
+    
     $this->lunaContent = new LunaContent(
         $this->configure,
         $this->lunaHandler,
@@ -90,11 +77,11 @@ beforeEach(function () {
         'enabled' => true,
     ]);
     
-    $this->htmlContentHandler = Handler::create([
-        'name' => 'html-content-handler',
+    $this->defaultContentHandler = Handler::create([
+        'name' => 'default-content-handler',
         'group_id' => hash_code('content-handlers'),
-        'display_name' => 'HTML内容处理器',
-        'handler' => HtmlContentHandler::class,
+        'display_name' => '默认内容处理器',
+        'handler' => DefaultContentHandler::class,
         'config' => [],
         'enabled' => true,
     ]);
@@ -413,17 +400,21 @@ test('可以渲染内容', function () {
     $content = $this->lunaContent->createContent([
         'name' => 'renderable',
         'title' => '可渲染内容',
-        'handler_id' => $this->htmlContentHandler->id,
+        'handler_id' => $this->defaultContentHandler->id,
         'payload' => [],
         'content' => '<p>HTML内容</p>',
     ], $this->owner);
 
     $rendered = $this->lunaContent->renderContent($content);
     
-    expect($rendered)->toBeArray();
-    expect($rendered)->toHaveKey('id');
-    expect($rendered)->toHaveKey('title');
-    expect($rendered)->toHaveKey('content');
+    expect($rendered)->toBeInstanceOf(\Dybasedev\LunaPrototype\Content\Results\ContentResult::class);
+    
+    $renderedArray = $rendered->toArray();
+    expect($renderedArray)->toBeArray();
+    expect($renderedArray)->toHaveKey('id');
+    expect($renderedArray)->toHaveKey('title');
+    expect($renderedArray)->toHaveKey('content');
+    expect($renderedArray['content'])->toBe('<p>HTML内容</p>');
 });
 
 test('启用分类时可以管理内容分类', function () {

@@ -6,11 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    // 运行迁移
-    $migration = include __DIR__ . '/../../../src/Content/migrations/0001_01_01_000000_create_luna_prototype_content_tables.php';
-    $migration->up();
-});
+// 使用 RefreshDatabase trait，不需要手动运行迁移
 
 test('可以创建分类', function () {
     $category = ContentCategory::create([
