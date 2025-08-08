@@ -124,10 +124,11 @@ test('默认内容处理器可以正确渲染', function () {
         'title' => '默认内容',
         'description' => '测试描述',
         'keywords' => '测试,关键词',
-        'payload' => ['key' => 'value'],
     ]);
     
-    $content->createVersion('<p>这是内容</p>');
+    $content->createVersion('<p>这是内容</p>', [
+        'payload' => ['key' => 'value'],
+    ]);
     
     $result = $handler->render($content->fresh());
     
@@ -156,7 +157,6 @@ test('内容处理器的批量处理', function () {
         $content = Content::create([
             'name' => "batch-content-{$i}",
             'title' => "批量内容{$i}",
-            'payload' => [],
         ]);
         $content->createVersion("<p>内容{$i}</p>");
         $contents->push($content->fresh());
@@ -178,7 +178,6 @@ test('自定义内容处理器的渲染和生命周期', function () {
         'name' => 'custom-content',
         'title' => 'Custom Content',
         'handler_id' => 1,
-        'payload' => [],
     ]);
     
     $content->createVersion('原始内容');
@@ -205,7 +204,6 @@ test('默认频道处理器的权限检查', function () {
     $content = Content::create([
         'name' => 'permission-content',
         'title' => '权限测试内容',
-        'payload' => [],
     ]);
     
     $channel = ContentChannel::create([
@@ -231,7 +229,6 @@ test('自定义频道处理器的权限和发布流程', function () {
     $content = Content::create([
         'name' => 'custom-channel-content',
         'title' => '自定义频道内容',
-        'payload' => [],
     ]);
     
     $channel = ContentChannel::create([
@@ -273,7 +270,6 @@ test('频道处理器的批量发布', function () {
         $content = Content::create([
             'name' => "batch-pub-{$i}",
             'title' => "批量发布{$i}",
-            'payload' => [],
         ]);
         $contentIds[] = $content->id;
     }
@@ -305,7 +301,6 @@ test('频道处理器的统计信息', function () {
         $content = Content::create([
             'name' => "stats-content-{$i}",
             'title' => "统计内容{$i}",
-            'payload' => [],
             'published_at' => $i <= 3 ? now() : null, // 前3个已发布
             'views_count' => $i * 10,
         ]);
@@ -336,7 +331,6 @@ test('频道容量限制检查', function () {
         $content = Content::create([
             'name' => "limited-content-{$i}",
             'title' => "限制内容{$i}",
-            'payload' => [],
         ]);
         $channel->contents()->attach($content->id);
     }

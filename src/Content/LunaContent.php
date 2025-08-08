@@ -53,21 +53,31 @@ class LunaContent extends LunaModule
      */
     public function createContent(array $data, ?SessionHolder $owner = null): Content
     {
+        // 内容和 payload 必须通过版本管理
+        if (!$this->configure->enableVersioning && (isset($data['content']) || isset($data['payload']))) {
+            throw new \LogicException('Content and payload require versioning to be enabled');
+        }
+        
         return DB::transaction(function () use ($data, $owner) {
-            $contentData = array_merge($data, [
+            // 排除 payload，它应该存储在版本中
+            $contentData = array_merge(\Illuminate\Support\Arr::except($data, ['content', 'payload', 'categories', 'channels']), [
                 'owner_type' => $owner ? hash_code(get_class($owner)) : null,
                 'owner_id' => $owner ? $owner->getOperatorId() : null,
             ]);
 
             // 创建内容
             $content = $this->configure->contentModel::create($contentData);
-
-            // 如果启用版本控制且提供了内容，创建初始版本
-            if ($this->configure->enableVersioning && isset($data['content'])) {
-                $content->createVersion($data['content'], [
+            
+            // 如果启用版本控制，创建初始版本
+            if ($this->configure->enableVersioning) {
+                $versionAttributes = [
                     'version_name' => $data['version_name'] ?? '初始版本',
                     'version_note' => $data['version_note'] ?? null,
-                ], $owner);
+                    'payload' => $data['payload'] ?? [],
+                ];
+                
+                // 即使没有提供 content，也创建一个空版本来存储 payload
+                $content->createVersion($data['content'] ?? '', $versionAttributes, $owner);
             }
 
             // 处理分类
@@ -99,15 +109,22 @@ class LunaContent extends LunaModule
         }
 
         return DB::transaction(function () use ($content, $data, $editor) {
-            // 更新基本信息
-            $content->update(\Illuminate\Support\Arr::except($data, ['content', 'categories', 'channels']));
+            // 更新基本信息（排除 payload，它应该在版本中）
+            $content->update(\Illuminate\Support\Arr::except($data, ['content', 'payload', 'categories', 'channels']));
 
             // 如果启用版本控制且提供了新内容，创建新版本
             if ($this->configure->enableVersioning && isset($data['content'])) {
-                $version = $content->createVersion($data['content'], [
+                // 如果提供了 payload，将其传递给版本
+                $versionAttributes = [
                     'version_name' => $data['version_name'] ?? null,
                     'version_note' => $data['version_note'] ?? null,
-                ], $editor);
+                ];
+                
+                if (isset($data['payload'])) {
+                    $versionAttributes['payload'] = $data['payload'];
+                }
+                
+                $version = $content->createVersion($data['content'], $versionAttributes, $editor);
 
                 // 自动应用新版本
                 $content->applyVersion($version->version_id);

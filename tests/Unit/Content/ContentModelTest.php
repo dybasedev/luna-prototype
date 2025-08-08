@@ -49,8 +49,10 @@ test('内容表结构正确创建', function () {
     expect(Schema::hasColumns('luna_contents', [
         'id', 'owner_type', 'owner_id', 'name', 'title', 
         'keywords', 'description', 'handler_id', 'handler_config',
-        'current_version_id', 'payload', 'published_at', 'views_count'
+        'current_version_id', 'published_at', 'views_count'
     ]))->toBeTrue();
+    // payload 字段已移除，数据存储在版本表中
+    expect(Schema::hasColumn('luna_contents', 'payload'))->toBeFalse();
 });
 
 test('可以创建内容', function () {
@@ -61,7 +63,6 @@ test('可以创建内容', function () {
         'title' => '测试内容',
         'keywords' => '测试,内容',
         'description' => '这是一个测试内容',
-        'payload' => ['extra' => 'data'],
     ]);
 
     expect($content)->toBeInstanceOf(Content::class);
@@ -69,7 +70,7 @@ test('可以创建内容', function () {
     expect($content->title)->toBe('测试内容');
     expect($content->owner_type)->toBe(hash_code(get_class($this->user)));
     expect($content->owner_id)->toBe(1);
-    expect($content->payload)->toBe(['extra' => 'data']);
+    expect($content->payload)->toBe([]); // payload 默认为空数组（从版本读取）
     expect($content->views_count)->toBe(0);
 });
 
@@ -77,7 +78,6 @@ test('可以创建内容版本', function () {
     $content = Content::create([
         'name' => 'versioned-content',
         'title' => '有版本的内容',
-        'payload' => [],
     ]);
 
     $version = $content->createVersion('这是内容的第一个版本', [
@@ -101,7 +101,6 @@ test('可以切换内容版本', function () {
     $content = Content::create([
         'name' => 'multi-version-content',
         'title' => '多版本内容',
-        'payload' => [],
     ]);
 
     $version1 = $content->createVersion('版本1的内容');
@@ -121,7 +120,6 @@ test('可以管理内容元数据', function () {
     $content = Content::create([
         'name' => 'metadata-content',
         'title' => '有元数据的内容',
-        'payload' => [],
     ]);
 
     // 设置各种类型的元数据
@@ -145,7 +143,6 @@ test('可以管理内容的发布状态', function () {
     $content = Content::create([
         'name' => 'publishable-content',
         'title' => '可发布的内容',
-        'payload' => [],
     ]);
 
     // 初始状态未发布
@@ -168,7 +165,6 @@ test('可以增加浏览次数', function () {
     $content = Content::create([
         'name' => 'viewable-content',
         'title' => '可浏览的内容',
-        'payload' => [],
     ]);
 
     expect($content->views_count)->toBe(0);
@@ -184,7 +180,6 @@ test('可以管理内容与频道的关系', function () {
     $content = Content::create([
         'name' => 'channel-content',
         'title' => '频道内容',
-        'payload' => [],
     ]);
 
     $channel = ContentChannel::create([
@@ -214,7 +209,6 @@ test('可以管理内容与分类的关系', function () {
     $content = Content::create([
         'name' => 'categorized-content',
         'title' => '分类内容',
-        'payload' => [],
     ]);
 
     $category1 = ContentCategory::create([
@@ -247,7 +241,6 @@ test('可以按名称查找内容', function () {
     Content::create([
         'name' => 'unique-content-name',
         'title' => '唯一内容',
-        'payload' => [],
     ]);
 
     $found = Content::findByName('unique-content-name');
@@ -263,14 +256,12 @@ test('已发布和未发布的查询作用域', function () {
     $published1 = Content::create([
         'name' => 'published-1',
         'title' => '已发布1',
-        'payload' => [],
         'published_at' => now()->subDays(1),
     ]);
 
     $published2 = Content::create([
         'name' => 'published-2',
         'title' => '已发布2',
-        'payload' => [],
         'published_at' => now()->subHours(1),
     ]);
 
@@ -278,14 +269,12 @@ test('已发布和未发布的查询作用域', function () {
     $unpublished1 = Content::create([
         'name' => 'unpublished-1',
         'title' => '未发布1',
-        'payload' => [],
         'published_at' => null,
     ]);
 
     $unpublished2 = Content::create([
         'name' => 'unpublished-2',
         'title' => '未发布2',
-        'payload' => [],
         'published_at' => now()->addDays(1), // 未来时间
     ]);
 
@@ -306,7 +295,6 @@ test('内容的关联关系正确加载', function () {
         'owner_id' => $this->user->getOperatorId(),
         'name' => 'related-content',
         'title' => '关联内容',
-        'payload' => [],
     ]);
 
     // 创建版本
@@ -314,6 +302,9 @@ test('内容的关联关系正确加载', function () {
 
     // 创建元数据
     $metadata = $content->setMetadata('key1', 'value1');
+
+    // 刷新内容以获取最新的关联关系
+    $content->refresh();
 
     // 测试关联关系
     expect($content->versions)->toHaveCount(1);

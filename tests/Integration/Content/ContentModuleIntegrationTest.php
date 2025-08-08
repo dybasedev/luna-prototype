@@ -2,17 +2,17 @@
 
 namespace Dybasedev\LunaPrototype\Tests\Integration\Content;
 
-use Dybasedev\LunaPrototype\Content\Handlers\ArticleContentHandler;
+use Dybasedev\LunaPrototype\Content\Handlers\DefaultContentHandler;
 use Dybasedev\LunaPrototype\Content\Handlers\DefaultChannelHandler;
-use Dybasedev\LunaPrototype\Content\Handlers\HtmlContentHandler;
-use Dybasedev\LunaPrototype\Content\Handlers\MarkdownContentHandler;
 use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
 use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Dybasedev\LunaPrototype\Foundation\LunaServiceProvider;
 use Dybasedev\LunaPrototype\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class ContentModuleIntegrationTest extends TestCase
 {
+    use RefreshDatabase;
     protected function getPackageProviders($app): array
     {
         return [
@@ -24,8 +24,7 @@ class ContentModuleIntegrationTest extends TestCase
     {
         parent::setUp();
         
-        // 加载 Content 模块的迁移
-        $this->loadMigrationsFrom(__DIR__ . '/../../../src/Content/migrations');
+        // 迁移已经在 TestCase 中加载，无需重复加载
     }
 
     public function test_content_module_registers_default_handlers(): void
@@ -61,9 +60,7 @@ class ContentModuleIntegrationTest extends TestCase
         $registeredHandlers = $handlerManager->handlers($contentHandlerGroup['id']);
         $handlerClasses = array_column($registeredHandlers, 'handler');
         
-        $this->assertContains(ArticleContentHandler::class, $handlerClasses);
-        $this->assertContains(HtmlContentHandler::class, $handlerClasses);
-        $this->assertContains(MarkdownContentHandler::class, $handlerClasses);
+        $this->assertContains(DefaultContentHandler::class, $handlerClasses);
         
         // 检查默认的频道处理器是否已注册
         $channelHandlers = $handlerManager->handlers($channelHandlerGroup['id']);

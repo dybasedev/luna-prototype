@@ -95,7 +95,6 @@ class Content extends Model
         'handler_id',
         'handler_config',
         'current_version_id',
-        'payload',
         'published_at',
         'views_count',
     ];
@@ -110,7 +109,6 @@ class Content extends Model
         'owner_id' => 'integer',
         'handler_id' => 'integer',
         'handler_config' => 'array',
-        'payload' => 'array',
         'published_at' => 'datetime',
         'views_count' => 'integer',
     ];
@@ -122,7 +120,6 @@ class Content extends Model
      */
     protected $attributes = [
         'views_count' => 0,
-        'payload' => '[]',
     ];
 
     /**
@@ -251,6 +248,11 @@ class Content extends Model
     {
         $versionId = Str::uuid()->toString();
         
+        // 如果没有提供 payload，使用当前内容的 payload
+        if (!isset($attributes['payload'])) {
+            $attributes['payload'] = $this->payload;
+        }
+        
         $versionData = array_merge($attributes, [
             'version_id' => $versionId,
             'content_id' => $this->id,
@@ -285,6 +287,7 @@ class Content extends Model
             return false;
         }
 
+        // 更新当前版本ID
         return $this->update(['current_version_id' => $versionId]);
     }
 
@@ -296,6 +299,17 @@ class Content extends Model
     public function getContentAttribute(): ?string
     {
         return $this->currentVersion?->content;
+    }
+    
+    /**
+     * 获取 payload（从当前版本）
+     *
+     * @return array
+     */
+    public function getPayloadAttribute(): array
+    {
+        // payload 应该始终从版本获取，就像 content 一样
+        return $this->currentVersion?->payload ?? [];
     }
 
     /**
