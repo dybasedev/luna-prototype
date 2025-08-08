@@ -4,6 +4,7 @@ namespace Dybasedev\LunaPrototype\Content\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Dybasedev\LunaPrototype\Content\LunaContentConfigure;
+use Dybasedev\LunaPrototype\Foundation\NamedId;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -52,6 +53,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class ContentCategory extends Model
 {
+    use NamedId;
     /**
      * 表名
      *

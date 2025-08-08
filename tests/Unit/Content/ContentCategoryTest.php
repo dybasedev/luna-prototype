@@ -62,7 +62,7 @@ test('可以创建分类层级结构', function () {
     expect($grandchild->parent->id)->toBe($child1->id);
 });
 
-test('同一父级下分类名称必须唯一', function () {
+test('分类名称必须全局唯一', function () {
     $parent = ContentCategory::create([
         'name' => 'unique-parent',
         'display_name' => '唯一父级',
@@ -74,26 +74,27 @@ test('同一父级下分类名称必须唯一', function () {
         'display_name' => '重复名称1',
     ]);
 
-    // 尝试创建同名分类应该失败
+    // 尝试创建同名分类应该失败（即使在不同父级下）
     expect(fn() => ContentCategory::create([
         'parent_id' => $parent->id,
         'name' => 'duplicate-name',
         'display_name' => '重复名称2',
     ]))->toThrow(\Illuminate\Database\QueryException::class);
 
-    // 但在不同父级下可以有同名分类
+    // 在不同父级下也不能有同名分类
     $anotherParent = ContentCategory::create([
         'name' => 'another-parent',
         'display_name' => '另一个父级',
     ]);
 
-    $differentParent = ContentCategory::create([
+    expect(fn() => ContentCategory::create([
         'parent_id' => $anotherParent->id,
         'name' => 'duplicate-name',
         'display_name' => '不同父级下的同名分类',
-    ]);
+    ]))->toThrow(\Illuminate\Database\QueryException::class);
 
-    expect($differentParent)->toBeInstanceOf(ContentCategory::class);
+    // 验证 NamedId trait 的功能
+    expect($parent->id)->toBe(hash_code('unique-parent'));
 });
 
 test('可以管理分类的内容', function () {

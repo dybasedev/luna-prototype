@@ -85,9 +85,9 @@ return new class extends Migration
 
         // 内容分类表
         Schema::create('luna_content_categories', function (Blueprint $table) {
-            $table->id();
+            $table->unsignedBigInteger('id')->primary()->comment('分类ID（name的hash code）');
             $table->unsignedBigInteger('parent_id')->default(0)->comment('父级分类ID');
-            $table->string('name')->comment('分类名称标识');
+            $table->string('name')->unique()->comment('分类名称标识（全局唯一）');
             $table->string('display_name')->comment('显示名称');
             $table->string('description', 1000)->default('')->comment('分类描述');
             $table->string('icon')->nullable()->comment('分类图标');
@@ -97,7 +97,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index('parent_id');
-            $table->unique(['parent_id', 'name'], 'parent_name_unique');
 
             $table->comment('内容分类表');
         });
