@@ -270,14 +270,21 @@ class AppInstall extends Command
             $selectedObjects = [];
             if ($this->input->isInteractive()) {
                 $this->info('发现以下可备份对象：');
-                foreach ($backupableObjects as $class => $object) {
-                    if ($this->confirm("是否备份 " . class_basename($class) . "？", true)) {
-                        $selectedObjects[] = $class;
+                
+                // 先询问是否要备份全部
+                if ($this->confirm('是否跳过所有备份？', false)) {
+                    $this->comment('已选择跳过所有备份。');
+                } else {
+                    // 逐个询问是否备份
+                    foreach ($backupableObjects as $class) {
+                        if ($this->confirm("是否备份 " . class_basename($class) . "？", true)) {
+                            $selectedObjects[] = $class;
+                        }
                     }
                 }
             } else {
                 // 非交互模式下备份所有对象
-                $selectedObjects = array_keys($backupableObjects);
+                $selectedObjects = $backupableObjects;
             }
             
             if (empty($selectedObjects)) {
