@@ -392,6 +392,7 @@ class SecureDataTableController extends Controller
 
     // 其他方法类似...
 }
+```
 
 ## DataTable 详解
 
