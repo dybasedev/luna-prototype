@@ -944,396 +944,254 @@ public function create(Request $request): mixed
 
 ## 前端集成
 
-### Ant Design Pro Components
+### Ant Design Pro Components 接口响应结构
 
-基于 Pro Components 的最佳实践：
+Showcase 组件生成的 API 响应结构直接对应 Ant Design Pro Components 的数据格式要求，特别是 ProTable 的 columns 配置和 SchemaForm 的字段结构。
 
-#### 1. 封装通用 DataTable 组件
+#### 1. DataTable 列表响应结构
 
-```typescript
-import {
-  ProTable,
-  type ProColumns,
-  type ProTableProps,
-} from '@ant-design/pro-components';
-import { useRequest } from 'alova/client';
-import type { SortOrder } from 'antd/es/table/interface';
-import { useCallback, useEffect } from 'react';
+后端 DataTable 的 `list` 操作返回的数据结构：
 
-export type DataTableProps<
-  DataType extends Record<string, any>,
-  Params extends Record<string, any> = Record<string, any>
-> = ProTableProps<DataType, Params> & {
-  name: string;
-  operation?: OperationBuilder;
-  columnMapper?: ColumnMapperBuilder;
-  onColumnUpdated?: (columns: ProColumns[]) => void;
-};
-
-const DataTable: React.FC<DataTableProps<any>> = ({
-  name,
-  columns,
-  operation,
-  columnMapper,
-  onColumnUpdated,
-  ...props
-}) => {
-  // 从后端获取列配置
-  const { data: remoteColumns, send: fetchRemoteColumns } = useRequest(
-    () => api.get(`/api/data-tables/${name}/meta`),
-    { immediate: !columns }
-  );
-
-  // 请求数据
-  const request = useCallback(
-    async (params, sort, filter) => {
-      const { current: page = 1, pageSize, keyword, ...query } = params;
-      
-      const response = await api.get(`/api/data-tables/${name}`, {
-        params: {
-          page,
-          pageSize,
-          keyword,
-          sort,
-          filters: filter,
-          ...query,
-        },
-      });
-
-      return {
-        data: response.data.list,
-        total: response.data.total,
-        success: true,
-      };
-    },
-    [name]
-  );
-
-  // 合并列配置
-  let tableColumns = columns || remoteColumns?.columns;
-  
-  // 添加操作列
-  if (operation && tableColumns) {
-    tableColumns = [...tableColumns, operation.build()];
-  }
-
-  return (
-    <ProTable
-      rowKey="id"
-      size="small"
-      search={{
-        defaultCollapsed: false,
-      }}
-      pagination={{
-        showSizeChanger: true,
-      }}
-      {...props}
-      request={request}
-      columns={tableColumns || []}
-    />
-  );
-};
-```
-
-#### 2. 操作列构建器
-
-```typescript
-export class OperationBuilder {
-  private actions: Array<(record: any, index: number) => React.ReactNode> = [];
-  private width?: number;
-  private title = '操作';
-
-  action(builder: (record: any, index: number) => React.ReactNode) {
-    this.actions.push(builder);
-    return this;
-  }
-
-  setWidth(width: number) {
-    this.width = width;
-    return this;
-  }
-
-  setTitle(title: string) {
-    this.title = title;
-    return this;
-  }
-
-  build(): ProColumns {
-    return {
-      key: 'operation',
-      title: this.title,
-      search: false,
-      fixed: 'right',
-      valueType: 'option',
-      width: this.width,
-      render: (_, record, index) => {
-        return this.actions.map(action => action(record, index));
-      },
-    };
-  }
-}
-
-// 使用示例
-const operation = new OperationBuilder()
-  .setWidth(180)
-  .action((record) => (
-    <a key="edit" onClick={() => handleEdit(record)}>
-      编辑
-    </a>
-  ))
-  .action((record) => (
-    <Popconfirm
-      key="delete"
-      title="确定删除吗？"
-      onConfirm={() => handleDelete(record)}
-    >
-      <a>删除</a>
-    </Popconfirm>
-  ));
-```
-
-#### 3. RemoteSchema 表单组件
-
-```typescript
-import { BetaSchemaForm, ModalForm } from '@ant-design/pro-components';
-import { useRequest } from 'alova/client';
-
-export type RemoteSchemaProps = {
-  name: string;
-  embed?: boolean;
-  params?: Record<string, any>;
-};
-
-const RemoteSchema: React.FC<RemoteSchemaProps> = ({
-  name,
-  embed = true,
-  params,
-}) => {
-  const layoutType = embed ? 'Embed' : 'Form';
-
-  const { data: columns } = useRequest(
-    () => api.get(`/api/remote-schema/${name}/fields`, { params }),
-    { immediate: true }
-  );
-
-  return columns && (
-    <BetaSchemaForm 
-      layoutType={layoutType} 
-      columns={columns}
-    />
-  );
-};
-
-// 在 ModalForm 中使用
-const UserEditModal = ({ open, onOpenChange, record, onSuccess }) => {
-  return (
-    <ModalForm
-      title={record ? '编辑用户' : '新建用户'}
-      open={open}
-      onOpenChange={onOpenChange}
-      modalProps={{ destroyOnClose: true }}
-      request={async () => {
-        if (record?.id) {
-          // 编辑模式，获取详情
-          const res = await api.get(`/api/data-tables/users`, {
-            params: { id: record.id }
-          });
-          return res.data;
-        }
-        return {};
-      }}
-      onFinish={async (values) => {
-        if (record?.id) {
-          await api.put(`/api/data-tables/users`, values, {
-            params: { id: record.id }
-          });
-        } else {
-          await api.post('/api/data-tables/users', values);
-        }
-        onSuccess?.();
-        return true;
-      }}
-    >
-      <RemoteSchema 
-        name="user_form" 
-        params={{ mode: record ? 'edit' : 'create' }}
-      />
-    </ModalForm>
-  );
-};
-```
-
-#### 4. 完整页面示例
-
-```typescript
-import { PageContainer } from '@ant-design/pro-components';
-import { Button } from 'antd';
-import { useState } from 'react';
-
-const UserManagement = () => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [currentRecord, setCurrentRecord] = useState(null);
-  const tableRef = useRef();
-
-  const handleEdit = (record) => {
-    setCurrentRecord(record);
-    setModalVisible(true);
-  };
-
-  const handleDelete = async (record) => {
-    await api.delete(`/api/data-tables/users`, {
-      params: { id: record.id }
-    });
-    tableRef.current?.reload();
-  };
-
-  const operation = new OperationBuilder()
-    .action((record) => (
-      <a key="edit" onClick={() => handleEdit(record)}>
-        编辑
-      </a>
-    ))
-    .action((record) => (
-      <Popconfirm
-        key="delete"
-        title="确定删除吗？"
-        onConfirm={() => handleDelete(record)}
-      >
-        <a>删除</a>
-      </Popconfirm>
-    ));
-
-  return (
-    <PageContainer>
-      <DataTable
-        name="users"
-        actionRef={tableRef}
-        operation={operation}
-        toolBarRender={() => [
-          <Button
-            key="create"
-            type="primary"
-            onClick={() => {
-              setCurrentRecord(null);
-              setModalVisible(true);
-            }}
-          >
-            新建用户
-          </Button>,
-        ]}
-      />
-
-      <UserEditModal
-        open={modalVisible}
-        onOpenChange={setModalVisible}
-        record={currentRecord}
-        onSuccess={() => {
-          setModalVisible(false);
-          tableRef.current?.reload();
-        }}
-      />
-    </PageContainer>
-  );
-};
-```
-
-#### 5. 高级用法：自定义列映射
-
-```typescript
-// 处理特殊的列类型
-const columnMapper = new ColumnMapperBuilder()
-  // 处理日期时间
-  .type('dateTime', (column) => ({
-    ...column,
-    render: (text) => text && dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
-    search: {
-      transform: (value) => ({
-        [column.dataIndex]: value && dayjs(value).format(),
-      }),
-    },
-  }))
-  // 处理特定列
-  .column('status', (column) => ({
-    ...column,
-    valueEnum: {
-      active: { text: '启用', status: 'Success' },
-      inactive: { text: '禁用', status: 'Default' },
-    },
-  }));
-
-// 使用
-<DataTable 
-  name="users" 
-  columnMapper={columnMapper}
-/>
-```
-
-#### 6. 使用 Hook 管理编辑器
-
-```typescript
-export function useDataTableEditor({
-  recordKey,
-  schema,
-  onSubmit,
-}) {
-  const [editor, setEditor] = useState({
-    open: false,
-    record: undefined,
-    mode: 'create',
-  });
-
-  const open = useCallback((option) => {
-    setEditor({
-      open: true,
-      record: option?.record,
-      mode: option?.mode ?? 'create',
-    });
-  }, []);
-
-  const modal = (
-    <ModalForm
-      title={editor.mode === 'edit' ? '编辑' : '新建'}
-      open={editor.open}
-      onOpenChange={(open) => setEditor(prev => ({ ...prev, open }))}
-      modalProps={{ destroyOnClose: true }}
-      request={async () => {
-        if (editor.mode === 'edit' && editor.record) {
-          return await api.get(`/api/data-tables/${recordKey}`, {
-            params: { id: editor.record.id }
-          });
-        }
-        return {};
-      }}
-      onFinish={async (values) => {
-        if (onSubmit) {
-          return await onSubmit(values, editor.mode, editor.record);
-        }
-      }}
-    >
-      <RemoteSchema name={schema} params={{ mode: editor.mode }} />
-    </ModalForm>
-  );
-
-  return { modal, open };
-}
-
-// 使用
-const { modal, open } = useDataTableEditor({
-  recordKey: 'users',
-  schema: 'user_form',
-  onSubmit: async (values, mode, record) => {
-    if (mode === 'edit') {
-      await api.put('/api/data-tables/users', values, {
-        params: { id: record.id }
-      });
-    } else {
-      await api.post('/api/data-tables/users', values);
+```json
+{
+  "list": [          // ProTable 的 dataSource
+    {
+      "id": 1,
+      "name": "张三",
+      "email": "zhangsan@example.com",
+      "created_at": "2024-01-01 12:00:00"
     }
-    tableRef.current?.reload();
-    return true;
-  },
-});
+  ],
+  "total": 100,      // 总记录数，用于分页
+  "current": 1,      // 当前页码
+  "pageSize": 20    // 每页大小
+}
 ```
+
+这个结构直接对应 ProTable 的 `request` 返回格式要求。
+
+#### 2. DataTable Meta 响应结构
+
+后端 DataTable 的 `meta` 操作返回的列配置：
+
+```json
+{
+  "columns": [
+    {
+      "dataIndex": "name",        // 对应 ProTable columns 的 dataIndex
+      "title": "姓名",             // 对应 ProTable columns 的 title
+      "valueType": "text",        // 对应 ProTable columns 的 valueType
+      "search": true,             // 是否可搜索
+      "sorter": true,             // 是否可排序
+      "width": 150,               // 列宽度
+      "ellipsis": true,           // 文本溢出省略
+      "copyable": true,           // 是否可复制
+      "hideInTable": false,       // 是否在表格中隐藏
+      "hideInSearch": false,      // 是否在搜索表单中隐藏
+      "hideInForm": false,        // 是否在表单中隐藏
+      "formItemProps": {          // 表单项属性
+        "rules": [
+          { "required": true, "message": "请输入姓名" }
+        ]
+      },
+      "fieldProps": {             // 字段属性
+        "placeholder": "请输入姓名"
+      }
+    },
+    {
+      "dataIndex": "status",
+      "title": "状态",
+      "valueType": "select",
+      "valueEnum": {              // 枚举值，用于 select、radio 等
+        "active": { "text": "启用", "status": "Success" },
+        "inactive": { "text": "禁用", "status": "Default" }
+      },
+      "filters": [                // 表格筛选器
+        { "text": "启用", "value": "active" },
+        { "text": "禁用", "value": "inactive" }
+      ]
+    },
+    {
+      "dataIndex": "created_at",
+      "title": "创建时间",
+      "valueType": "dateTime",    // 日期时间类型
+      "sorter": true,
+      "hideInForm": true,         // 在表单中隐藏
+      "hideInSearch": false,
+      "search": {
+        "transform": (value) => ({ // 搜索值转换
+          "created_at_start": value[0],
+          "created_at_end": value[1]
+        })
+      }
+    }
+  ],
+  "title": "用户管理",              // DataTable 标题
+  "description": "管理系统用户",     // DataTable 描述
+  "permissions": {                 // 权限配置
+    "create": true,
+    "update": true,
+    "delete": true,
+    "export": true
+  },
+  "batchActions": [                // 批量操作
+    {
+      "key": "delete",
+      "label": "批量删除",
+      "type": "danger",
+      "confirm": "确定要删除选中的记录吗？"
+    }
+  ]
+}
+```
+
+#### 3. RemoteSchema 表单字段响应结构
+
+RemoteSchema 的 `fields` 操作返回的表单结构：
+
+```json
+{
+  "columns": [      // BetaSchemaForm 的 columns 配置
+    {
+      "title": "基本信息",
+      "valueType": "group",        // 分组类型
+      "columns": [
+        {
+          "dataIndex": "username",
+          "title": "用户名",
+          "valueType": "text",
+          "formItemProps": {
+            "rules": [
+              { "required": true, "message": "请输入用户名" },
+              { "min": 3, "max": 20, "message": "用户名长度3-20个字符" }
+            ]
+          },
+          "fieldProps": {
+            "placeholder": "请输入用户名"
+          }
+        },
+        {
+          "dataIndex": "email",
+          "title": "邮箱",
+          "valueType": "email",
+          "formItemProps": {
+            "rules": [
+              { "required": true, "message": "请输入邮箱" },
+              { "type": "email", "message": "请输入有效的邮箱地址" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "dataIndex": "role",
+      "title": "角色",
+      "valueType": "select",
+      "request": async () => {     // 动态请求选项
+        // 返回选项数据
+        return [
+          { "label": "管理员", "value": "admin" },
+          { "label": "普通用户", "value": "user" }
+        ];
+      },
+      "dependencies": ["department"], // 依赖其他字段
+      "params": {                      // 请求参数
+        "departmentId": "{{department}}"
+      }
+    },
+    {
+      "dataIndex": "permissions",
+      "title": "权限配置",
+      "valueType": "dependency",    // 依赖渲染
+      "name": ["role"],              // 依赖的字段
+      "columns": ({ role }) => {     // 动态返回字段
+        // 根据 role 值返回不同的字段配置
+      }
+    }
+  ]
+}
+```
+
+#### 4. 适配器转换逻辑
+
+AntDesignProAdapter 负责将 Showcase 的 UI 组件描述转换为 Pro Components 需要的格式：
+
+**Column 转换映射：**
+- `UI::column()` 的配置 → ProTable 的 `columns` 配置
+- `type` → `valueType`（text, number, date, select 等）
+- `searchable` → `search: true/false`
+- `sortable` → `sorter: true/false`
+- `properties.valueEnum` → `valueEnum`（用于下拉选项）
+- `properties.filters` → `filters`（表格筛选器）
+
+**Field 转换映射：**
+- `UI::field()` 的配置 → SchemaForm 的 `columns` 配置
+- `type` → `valueType`
+- `placeholder` → `fieldProps.placeholder`
+- `rules` → `formItemProps.rules`
+- `properties.options` → `valueEnum` 或 `request`
+
+#### 5. 请求参数格式
+
+ProTable 发送的请求参数格式：
+
+```json
+{
+  "current": 1,           // 当前页
+  "pageSize": 20,         // 每页大小
+  "keyword": "搜索关键词",  // 搜索关键词
+  "name": "张",           // 具体字段搜索
+  "status": "active",     // 筛选条件
+  "sorter": {             // 排序
+    "field": "created_at",
+    "order": "descend"
+  },
+  "filter": {             // 过滤条件
+    "status": ["active", "pending"]
+  }
+}
+```
+
+后端通过 `QueryHelper` 处理这些参数：
+
+```php
+public function query(Request $request): Builder
+{
+    $query = $this->model()::query();
+    
+    // 处理搜索
+    $query->when(...QueryHelper::searchLike($request, ['name', 'email']));
+    
+    // 处理筛选
+    $query->when(...QueryHelper::applyCondition($request, 'status'));
+    
+    // 处理排序
+    $query->when(...QueryHelper::applySorter($request));
+    
+    return $query;
+}
+```
+
+#### 6. 数据流程说明
+
+1. **初始化流程：**
+   - 前端请求 `/api/data-tables/{key}/meta` 获取列配置
+   - 后端返回 columns 结构，直接用于 ProTable 的 columns 属性
+
+2. **数据加载流程：**
+   - ProTable 自动发送请求到 `/api/data-tables/{key}`
+   - 携带分页、搜索、排序参数
+   - 后端返回符合 ProTable 格式的数据
+
+3. **表单加载流程：**
+   - 前端请求 `/api/remote-schema/{name}/fields`
+   - 后端返回 SchemaForm 需要的 columns 结构
+   - SchemaForm 自动渲染表单
+
+4. **数据提交流程：**
+   - SchemaForm 收集表单数据
+   - 发送到对应的创建/更新接口
+   - 后端处理并返回结果
 
 ## QueryHelper 辅助工具
 
@@ -2000,235 +1858,241 @@ class DynamicFormSchema extends RemoteSchema
 - `tags` - 标签输入
 - `color` - 颜色选择
 
-### Pro Components 高级特性
+### Pro Components 高级特性支持
 
-#### 1. BetaSchemaForm 的强大功能
+#### 1. 后端支持的高级配置
 
-```typescript
-// BetaSchemaForm 支持的列配置
-const columns: ProFormColumnsType[] = [
-  {
-    title: '用户名',
-    dataIndex: 'username',
-    valueType: 'text',
-    formItemProps: {
-      rules: [{ required: true, message: '请输入用户名' }],
-    },
-  },
-  {
-    title: '角色',
-    dataIndex: 'role',
-    valueType: 'select',
-    request: async () => {
-      // 动态加载选项
-      const res = await api.get('/api/roles');
-      return res.data.map(item => ({
-        label: item.name,
-        value: item.id,
-      }));
-    },
-    dependencies: ['department'], // 依赖其他字段
-    params: { departmentId: '{{department}}' }, // 动态参数
-  },
-  {
-    title: '权限',
-    dataIndex: 'permissions',
-    valueType: 'dependency', // 动态渲染
-    name: ['role'], // 依赖字段
-    columns: ({ role }) => {
-      if (role === 'admin') {
-        return [
-          {
-            title: '全部权限',
-            dataIndex: 'all_permissions',
-            valueType: 'switch',
-          },
-        ];
-      }
-      return [
-        {
-          title: '权限选择',
-          dataIndex: 'permissions',
-          valueType: 'checkbox',
-          valueEnum: {
-            read: '读取',
-            write: '写入',
-            delete: '删除',
-          },
-        },
-      ];
-    },
-  },
-];
+Showcase 后端可以生成支持 Pro Components 高级特性的配置：
+
+**动态字段依赖配置：**
+```php
+public function fields(Request $request): array
+{
+    return [
+        UI::field('role')->title('角色')
+            ->type('select')
+            ->properties([
+                'request' => '/api/roles',  // 动态加载选项的接口
+                'dependencies' => ['department'], // 依赖字段
+                'params' => ['departmentId' => '{{department}}'], // 动态参数
+            ]),
+        
+        UI::field('permissions')->title('权限')
+            ->type('dependency')  // 依赖类型
+            ->properties([
+                'name' => ['role'],  // 依赖的字段
+                'columns' => [       // 根据条件返回不同配置
+                    'admin' => [
+                        ['dataIndex' => 'all_permissions', 'valueType' => 'switch']
+                    ],
+                    'default' => [
+                        ['dataIndex' => 'permissions', 'valueType' => 'checkbox']
+                    ]
+                ]
+            ])
+    ];
+}
 ```
 
-#### 2. ProTable 高级搜索
-
-```typescript
-// 自定义搜索表单
-<DataTable
-  name="orders"
-  search={{
-    labelWidth: 'auto',
-    span: 6,
-    collapseRender: false,
-    searchText: '查询',
-    resetText: '重置',
-    optionRender: (searchConfig, formProps, dom) => [
-      ...dom.reverse(),
-      <Button key="export" onClick={handleExport}>
-        导出
-      </Button>,
-    ],
-  }}
-  // 自定义表单项
-  beforeSearchSubmit={(params) => {
-    // 转换搜索参数
-    if (params.dateRange) {
-      params.startDate = params.dateRange[0];
-      params.endDate = params.dateRange[1];
-      delete params.dateRange;
-    }
-    return params;
-  }}
-/>
+**搜索表单配置：**
+```php
+public function meta(Request $request): array
+{
+    $meta = parent::meta($request);
+    
+    $meta['search'] = [
+        'labelWidth' => 'auto',
+        'span' => 6,
+        'collapseRender' => false,
+        'searchText' => '查询',
+        'resetText' => '重置',
+        'transform' => [  // 参数转换规则
+            'dateRange' => ['startDate', 'endDate']
+        ]
+    ];
+    
+    return $meta;
+}
 ```
 
-#### 3. 批量操作和工具栏
+#### 2. 批量操作支持
 
-```typescript
-const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+后端提供批量操作配置：
 
-<DataTable
-  name="users"
-  rowSelection={{
-    selectedRowKeys,
-    onChange: setSelectedRowKeys,
-    alwaysShowAlert: true,
-  }}
-  tableAlertRender={({ selectedRowKeys, selectedRows }) => (
-    <Space size={16}>
-      <span>
-        已选 {selectedRowKeys.length} 项
-        <a style={{ marginInlineStart: 8 }} onClick={() => setSelectedRowKeys([])}>
-          取消选择
-        </a>
-      </span>
-    </Space>
-  )}
-  tableAlertOptionRender={() => (
-    <Space size={16}>
-      <Button onClick={() => handleBatchDelete(selectedRowKeys)}>
-        批量删除
-      </Button>
-      <Button onClick={() => handleBatchExport(selectedRowKeys)}>
-        批量导出
-      </Button>
-    </Space>
-  )}
-  toolBarRender={(action, { selectedRows }) => [
-    <Button
-      key="create"
-      type="primary"
-      onClick={() => handleCreate()}
-    >
-      新建
-    </Button>,
-    <Dropdown
-      key="menu"
-      menu={{
-        items: [
-          { key: 'import', label: '导入数据' },
-          { key: 'export', label: '导出全部' },
-          { key: 'template', label: '下载模板' },
+```php
+protected function getBatchActions(Request $request): array
+{
+    return [
+        [
+            'key' => 'delete',
+            'label' => '批量删除',
+            'type' => 'danger',
+            'confirm' => '确定要删除选中的记录吗？',
+            'api' => '/api/data-tables/users/batch-delete'
         ],
-        onClick: ({ key }) => handleMenuClick(key),
-      }}
-    >
-      <Button>
-        更多操作 <DownOutlined />
-      </Button>
-    </Dropdown>,
-  ]}
-/>
+        [
+            'key' => 'export',
+            'label' => '批量导出',
+            'type' => 'default',
+            'api' => '/api/data-tables/users/export'
+        ]
+    ];
+}
 ```
 
-#### 4. 嵌套表格和展开行
-
-```typescript
-<DataTable
-  name="categories"
-  expandable={{
-    expandedRowRender: (record) => (
-      <DataTable
-        name="products"
-        params={{ categoryId: record.id }}
-        search={false}
-        toolBarRender={false}
-        pagination={false}
-      />
-    ),
-  }}
-/>
+前端接收到的响应结构：
+```json
+{
+  "batchActions": [
+    {
+      "key": "delete",
+      "label": "批量删除",
+      "type": "danger",
+      "confirm": "确定要删除选中的记录吗？",
+      "api": "/api/data-tables/users/batch-delete"
+    }
+  ],
+  "rowSelection": {
+    "type": "checkbox",
+    "alwaysShowAlert": true
+  }
+}
 ```
 
-#### 5. 编辑表格
+#### 3. 嵌套表格支持
 
-```typescript
-<ProTable
-  columns={[
-    {
-      title: '名称',
-      dataIndex: 'name',
-      valueType: 'text',
-    },
-    {
-      title: '价格',
-      dataIndex: 'price',
-      valueType: 'money',
-    },
-    {
-      title: '操作',
-      valueType: 'option',
-      render: (_, record, index, action) => [
-        <a
-          key="edit"
-          onClick={() => {
-            action?.startEditable?.(record.id);
-          }}
-        >
-          编辑
-        </a>,
-      ],
-    },
-  ]}
-  editable={{
-    type: 'multiple',
-    onSave: async (rowKey, data) => {
-      await api.put(`/api/products/${rowKey}`, data);
-    },
-    onChange: setEditableRowKeys,
-  }}
-/>
+后端提供嵌套表格的配置：
+
+```php
+public function meta(Request $request): array
+{
+    $meta = parent::meta($request);
+    
+    $meta['expandable'] = [
+        'childDataTable' => 'products',  // 子表格的 DataTable key
+        'params' => ['categoryId' => '{{id}}'],  // 传递给子表格的参数
+        'hideSearch' => true,
+        'hideToolBar' => true,
+        'hidePagination' => true
+    ];
+    
+    return $meta;
+}
 ```
 
-#### 6. 拖拽排序
+#### 4. 行内编辑支持
 
-```typescript
-import { DragSortTable } from '@ant-design/pro-components';
+后端配置支持行内编辑：
 
-<DragSortTable
-  columns={columns}
-  dataSource={dataSource}
-  dragSortKey="sort"
-  onDragSortEnd={(newDataSource) => {
-    setDataSource(newDataSource);
-    // 保存排序
-    api.post('/api/sort', {
-      ids: newDataSource.map(item => item.id),
-    });
-  }}
-/>
+```php
+public function columns(Request $request): array
+{
+    return [
+        UI::column('name')->title('名称')
+            ->editable(true)  // 可编辑
+            ->properties([
+                'editableType' => 'text',
+                'rules' => ['required' => true]
+            ]),
+        UI::column('price')->title('价格')
+            ->type('money')
+            ->editable(true)
+            ->properties([
+                'editableType' => 'number',
+                'min' => 0
+            ])
+    ];
+}
+
+public function meta(Request $request): array
+{
+    $meta = parent::meta($request);
+    
+    $meta['editable'] = [
+        'type' => 'multiple',  // single 或 multiple
+        'actionRender' => true, // 显示保存和取消按钮
+        'onSave' => '/api/data-tables/products/update'  // 保存接口
+    ];
+    
+    return $meta;
+}
+```
+
+#### 5. 拖拽排序支持
+
+后端提供拖拽排序配置：
+
+```php
+public function meta(Request $request): array
+{
+    $meta = parent::meta($request);
+    
+    $meta['dragSort'] = [
+        'enabled' => true,
+        'key' => 'sort',  // 排序字段
+        'api' => '/api/data-tables/products/sort'  // 排序保存接口
+    ];
+    
+    return $meta;
+}
+
+// 处理排序请求
+public function sort(Request $request): mixed
+{
+    $ids = $request->input('ids');
+    
+    foreach ($ids as $index => $id) {
+        $this->model()::where('id', $id)
+            ->update(['sort' => $index]);
+    }
+    
+    return ['success' => true];
+}
+```
+
+#### 6. 工具栏配置
+
+后端提供工具栏按钮配置：
+
+```php
+public function meta(Request $request): array
+{
+    $meta = parent::meta($request);
+    
+    $meta['toolBar'] = [
+        'actions' => [
+            [
+                'key' => 'create',
+                'label' => '新建',
+                'type' => 'primary',
+                'icon' => 'plus',
+                'action' => 'modal',  // modal, drawer, link
+                'schema' => 'user_form'  // RemoteSchema key
+            ],
+            [
+                'key' => 'import',
+                'label' => '导入',
+                'type' => 'default',
+                'action' => 'upload',
+                'api' => '/api/data-tables/users/import'
+            ]
+        ],
+        'menu' => [  // 下拉菜单
+            [
+                'key' => 'export',
+                'label' => '导出全部',
+                'api' => '/api/data-tables/users/export'
+            ],
+            [
+                'key' => 'template',
+                'label' => '下载模板',
+                'link' => '/api/templates/users.xlsx'
+            ]
+        ]
+    ];
+    
+    return $meta;
+}
 ```
 
 ### 高级特性
