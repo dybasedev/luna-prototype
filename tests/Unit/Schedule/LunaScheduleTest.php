@@ -26,11 +26,11 @@ afterEach(function () {
     app('cache.store')->forget('schedule-task:enabled');
 });
 
-it('可以创建调度实例', function () {
+test('可以创建调度实例', function () {
     expect($this->schedule)->toBeInstanceOf(LunaSchedule::class);
 });
 
-it('可以获取活动任务', function () {
+test('可以获取活动任务', function () {
     // 创建一些测试任务
     ScheduleTask::create([
         'name' => 'test-task-1',
@@ -70,7 +70,7 @@ it('可以获取活动任务', function () {
     expect($activeTasks[0]->enabled)->toBeTrue();
 });
 
-it('缓存活动任务', function () {
+test('缓存活动任务', function () {
     $cache = app('cache.store');
     
     // 创建任务
@@ -96,7 +96,7 @@ it('缓存活动任务', function () {
     expect(count($tasks1))->toBe(count($tasks2));
 });
 
-it('可以获取可用命令', function () {
+test('可以获取可用命令', function () {
     $availableCommands = $this->schedule->availableCommands();
     
     expect($availableCommands)->toBeArray();
@@ -111,7 +111,7 @@ it('可以获取可用命令', function () {
     expect($firstCommand['arguments'])->toBeArray();
 });
 
-it('通过白名单过滤命令', function () {
+test('通过白名单过滤命令', function () {
     // 创建一个自定义配置，只允许特定命令
     $customConfigure = LunaScheduleConfigure::create()
         ->commandWhiteList(['inspire', 'queue:*'])
@@ -133,7 +133,7 @@ it('通过白名单过滤命令', function () {
     }
 });
 
-it('可以注册 Laravel 调度', function () {
+test('可以注册 Laravel 调度', function () {
     // 创建测试任务
     ScheduleTask::create([
         'name' => 'test-inspire',
@@ -169,7 +169,7 @@ it('可以注册 Laravel 调度', function () {
     expect($ourEvent->timezone)->toBe('UTC');
 });
 
-it('处理任务执行日志', function () {
+test('处理任务执行日志', function () {
     // 创建一个简单的测试任务
     ScheduleTask::create([
         'name' => 'test-logging-task',
@@ -191,7 +191,7 @@ it('处理任务执行日志', function () {
     expect($events[0]->expression)->toBe('* * * * *');
 });
 
-it('可以正确处理任务选项', function () {
+test('可以正确处理任务选项', function () {
     // 创建带有各种选项的任务
     ScheduleTask::create([
         'name' => 'test-options-task',
@@ -221,7 +221,7 @@ it('可以正确处理任务选项', function () {
     expect($event->timezone)->toBe('UTC');
 });
 
-it('可以编译任务参数', function () {
+test('可以编译任务参数', function () {
     // 创建带参数的任务
     $task = ScheduleTask::create([
         'name' => 'test-queue-worker',
@@ -242,7 +242,7 @@ it('可以编译任务参数', function () {
     expect($compiledParams['--queue'])->toBe('high');
 });
 
-it('优雅地处理禁用的调度系统', function () {
+test('优雅地处理禁用的调度系统', function () {
     // 清除缓存以确保重新检查
     app('cache.store')->forget('schedule-task:enabled');
     

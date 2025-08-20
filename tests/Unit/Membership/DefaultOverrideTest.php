@@ -94,7 +94,7 @@ class DefaultOverrideTestUser implements SessionHolder
     }
 }
 
-it('默认启用配置覆盖', function () {
+test('默认启用配置覆盖', function () {
     // 创建处理器记录
     Handler::query()->forceCreate([
         'id' => 4000,
@@ -140,7 +140,7 @@ it('默认启用配置覆盖', function () {
     expect($advanced->getMeta('color'))->toBe('blue');
 });
 
-it('在 handler 中禁用配置覆盖', function () {
+test('在 handler 中禁用配置覆盖', function () {
     // 创建处理器记录
     Handler::query()->forceCreate([
         'id' => 4001,
@@ -180,7 +180,7 @@ it('在 handler 中禁用配置覆盖', function () {
     expect($basic->getMeta('color'))->toBe('gray'); // 原始颜色
 });
 
-it('evaluate 方法使用最终的里程碑等级', function () {
+test('evaluate 方法使用最终的里程碑等级', function () {
     // 创建处理器记录
     Handler::query()->forceCreate([
         'id' => 4002,

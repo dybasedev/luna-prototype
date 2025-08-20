@@ -30,7 +30,7 @@ afterEach(function () {
     }
 });
 
-it('可以创建新任务', function () {
+test('可以创建新任务', function () {
     $task = $this->schedule->createTask(
         'test-task',
         'test:command',
@@ -56,7 +56,7 @@ it('可以创建新任务', function () {
     expect($task->enabled)->toBeTrue();
 });
 
-it('验证命令白名单', function () {
+test('验证命令白名单', function () {
     expect(fn() => $this->schedule->createTask(
         'dangerous-task',
         'dangerous:command',
@@ -64,7 +64,7 @@ it('验证命令白名单', function () {
     ))->toThrow(\InvalidArgumentException::class, "Command 'dangerous:command' is not in the whitelist.");
 });
 
-it('可以更新任务', function () {
+test('可以更新任务', function () {
     $task = $this->schedule->createTask('update-test', 'test:command', '* * * * *');
     
     $updated = $this->schedule->updateTask($task, [
@@ -82,7 +82,7 @@ it('可以更新任务', function () {
     expect($updated->payload['dont_overlap'])->toBeTrue();
 });
 
-it('可以通过名称更新任务', function () {
+test('可以通过名称更新任务', function () {
     $this->schedule->createTask('named-task', 'test:command', '* * * * *');
     
     $updated = $this->schedule->updateTask('named-task', [
@@ -92,7 +92,7 @@ it('可以通过名称更新任务', function () {
     expect($updated->description)->toBe('通过名称更新');
 });
 
-it('可以删除任务', function () {
+test('可以删除任务', function () {
     $task = $this->schedule->createTask('delete-test', 'test:command', '* * * * *');
     
     $result = $this->schedule->deleteTask($task);
@@ -102,7 +102,7 @@ it('可以删除任务', function () {
     expect($found)->toBeNull();
 });
 
-it('可以手动执行任务', function () {
+test('可以手动执行任务', function () {
     // Mock Artisan
     $artisan = \Mockery::mock(Kernel::class);
     $artisan->shouldReceive('call')
@@ -132,7 +132,7 @@ it('可以手动执行任务', function () {
     expect($log->end_at)->not->toBeNull();
 });
 
-it('记录失败的任务执行', function () {
+test('记录失败的任务执行', function () {
     // Mock Artisan 返回失败
     $artisan = \Mockery::mock(Kernel::class);
     $artisan->shouldReceive('call')
@@ -157,7 +157,7 @@ it('记录失败的任务执行', function () {
     expect($log->output)->toContain('Error: Command failed');
 });
 
-it('可以切换任务状态', function () {
+test('可以切换任务状态', function () {
     $task = $this->schedule->createTask('toggle-test', 'test:command', '* * * * *');
     
     // 禁用
@@ -169,7 +169,7 @@ it('可以切换任务状态', function () {
     expect($enabled->enabled)->toBeTrue();
 });
 
-it('可以获取任务列表', function () {
+test('可以获取任务列表', function () {
     $this->schedule->createTask('task1', 'test:1', '* * * * *');
     $this->schedule->createTask('task2', 'test:2', '* * * * *', ['enabled' => false]);
     $this->schedule->createTask('task3', 'test:3', '* * * * *');
@@ -182,7 +182,7 @@ it('可以获取任务列表', function () {
 });
 
 
-it('可以执行命令并记录日志', function () {
+test('可以执行命令并记录日志', function () {
     $artisan = \Mockery::mock(Kernel::class);
     $artisan->shouldReceive('call')
         ->with('cache:clear', ['--force' => true])
@@ -213,7 +213,7 @@ it('可以执行命令并记录日志', function () {
     expect($log->operator_type)->toBe(hash_code('system'));
 });
 
-it('可以获取任务统计', function () {
+test('可以获取任务统计', function () {
     $task = $this->schedule->createTask('stats-test', 'test:command', '* * * * *');
     
     // 创建一些执行日志
@@ -255,7 +255,7 @@ it('可以获取任务统计', function () {
     expect($stats['last_run'])->not->toBeNull();
 });
 
-it('可以清理旧日志', function () {
+test('可以清理旧日志', function () {
     $task = $this->schedule->createTask('clean-test', 'test:command', '* * * * *');
     
     // 创建旧的任务日志
@@ -308,7 +308,7 @@ it('可以清理旧日志', function () {
     expect($remainingCommandLogs)->toBe(0);
 });
 
-it('任务日志可以格式化持续时间', function () {
+test('任务日志可以格式化持续时间', function () {
     $log = new ScheduleTaskLog();
     
     $log->duration = 0.5;

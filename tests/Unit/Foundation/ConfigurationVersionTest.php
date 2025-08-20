@@ -22,7 +22,7 @@ beforeEach(function () {
     $this->systemGroup = $this->lunaConfiguration->group('system');
 });
 
-it('can create configuration with initial version', function () {
+test('可以创建带初始版本的配置', function () {
     // 创建配置
     $config = $this->systemGroup->create(
         name: 'app',
@@ -47,7 +47,7 @@ it('can create configuration with initial version', function () {
     expect(strlen($versionId))->toBe(40); // SHA1 hash length
 });
 
-it('can get version list', function () {
+test('可以获取版本列表', function () {
     // 创建配置
     $this->systemGroup->create('app', '应用配置', [
         'name' => 'Test App',
@@ -75,7 +75,7 @@ it('can get version list', function () {
     expect($versions[1]['created_at']->greaterThanOrEqualTo($versions[2]['created_at']))->toBeTrue();
 });
 
-it('can get specific version', function () {
+test('可以获取特定版本', function () {
     // 创建配置
     $this->systemGroup->create('app', '应用配置', [
         'name' => 'Test App',
@@ -105,7 +105,7 @@ it('can get specific version', function () {
     expect($currentVersion->get('debug'))->toBeFalse();
 });
 
-it('can switch version', function () {
+test('可以切换版本', function () {
     // 创建配置
     $this->systemGroup->create('app', '应用配置', [
         'name' => 'Test App',
@@ -155,7 +155,7 @@ it('can switch version', function () {
     expect($config->get('features.feature_b'))->toBeTrue();
 });
 
-it('throws exception when switching to non existent version', function () {
+test('切换到不存在的版本时抛出异常', function () {
     // 创建配置
     $this->systemGroup->create('app', '应用配置', ['name' => 'Test App']);
 
@@ -163,7 +163,7 @@ it('throws exception when switching to non existent version', function () {
     $this->systemGroup->switchVersion('app', 'non_existent_version_id');
 })->throws(\InvalidArgumentException::class, 'Version not exists');
 
-it('returns null for non existent version', function () {
+test('获取不存在的版本时返回 null', function () {
     // 创建配置
     $this->systemGroup->create('app', '应用配置', ['name' => 'Test App']);
 
@@ -173,6 +173,6 @@ it('returns null for non existent version', function () {
     expect($version)->toBeNull();
 });
 
-it('clears cache when switching version')->skip('Known issue with cache clearing');
+test('切换版本时清除缓存')->skip('已知的缓存清除问题');
 
-it('maintains version integrity with same data')->skip('Version hash calculation includes modification state');
+test('保持相同数据的版本完整性')->skip('版本哈希计算包含修改状态');

@@ -8,7 +8,7 @@ use Dybasedev\LunaPrototype\Trade\Payment\PaymentResult;
 use Examples\Trade\MockThirdPartyPayment;
 use Dybasedev\LunaPrototype\Trade\Payment\PaymentMethodConfigurationRepository;
 
-it('可以创建支付提供者并注册支付方式', function () {
+test('可以创建支付提供者并注册支付方式', function () {
     $provider = new StandardPaymentProvider();
     
     $mockPayment = new MockThirdPartyPayment([
@@ -24,7 +24,7 @@ it('可以创建支付提供者并注册支付方式', function () {
     expect($provider->get('mock'))->toBe($mockPayment);
 });
 
-it('支付配置使用 Repository 管理', function () {
+test('支付配置使用 Repository 管理', function () {
     $config = new PaymentMethodConfigurationRepository([
         'name' => 'test',
         'display_name' => '测试支付',
@@ -44,7 +44,7 @@ it('支付配置使用 Repository 管理', function () {
     expect($array)->not->toHaveKey('api_key');
 });
 
-it('PaymentResult 使用枚举管理状态', function () {
+test('PaymentResult 使用枚举管理状态', function () {
     $result = PaymentResult::success([
         'payment_no' => 'PAY123',
         'amount' => 100.0,
@@ -64,7 +64,7 @@ it('PaymentResult 使用枚举管理状态', function () {
     expect($array['status_name'])->toBe('支付成功');
 });
 
-it('支付配置构建器可以正确构建支付提供者', function () {
+test('支付配置构建器可以正确构建支付提供者', function () {
     $configuration = PaymentConfiguration::create()
         ->setGlobalConfig([
             'test_mode' => true,
@@ -87,7 +87,7 @@ it('支付配置构建器可以正确构建支付提供者', function () {
     expect($config['timeout'])->toBe(30);
 });
 
-it('支付方式优先级排序正确', function () {
+test('支付方式优先级排序正确', function () {
     $provider = new StandardPaymentProvider();
     
     $provider->register(new MockThirdPartyPayment(['name' => 'payment1']));

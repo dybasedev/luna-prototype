@@ -149,7 +149,7 @@ afterEach(function () {
     DB::statement('DROP TABLE IF EXISTS auto_test_users');
 });
 
-it('创建里程碑类型时自动为所有用户创建无条件的初始里程碑', function () {
+test('创建里程碑类型时自动为所有用户创建无条件的初始里程碑', function () {
     // 配置会员系统绑定
     $binding = new MembershipBinding(AutoTestUser::class);
     $binding->table('auto_test_users');
@@ -178,7 +178,7 @@ it('创建里程碑类型时自动为所有用户创建无条件的初始里程�
     }
 });
 
-it('创建里程碑类型时只为满足条件的用户创建初始里程碑', function () {
+test('创建里程碑类型时只为满足条件的用户创建初始里程碑', function () {
     // 配置会员系统绑定
     $binding = new MembershipBinding(AutoTestUser::class);
     $binding->table('auto_test_users');
@@ -212,7 +212,7 @@ it('创建里程碑类型时只为满足条件的用户创建初始里程碑', f
     expect($userMilestones[4])->toBe(hash_code('silver')); // 用户4获得银牌（满足银牌条件）
 });
 
-it('禁用自动创建初始里程碑', function () {
+test('禁用自动创建初始里程碑', function () {
     // 配置会员系统绑定
     $binding = new MembershipBinding(AutoTestUser::class);
     $binding->table('auto_test_users');
@@ -236,7 +236,7 @@ it('禁用自动创建初始里程碑', function () {
     expect($milestones)->toHaveCount(0);
 });
 
-it('更新已存在的里程碑类型不会重复创建里程碑', function () {
+test('更新已存在的里程碑类型不会重复创建里程碑', function () {
     // 配置会员系统绑定
     $binding = new MembershipBinding(AutoTestUser::class);
     $binding->table('auto_test_users');
@@ -266,7 +266,7 @@ it('更新已存在的里程碑类型不会重复创建里程碑', function () {
     expect($secondCount)->toBe(4); // 数量不变
 });
 
-it('使用SessionHolder模型创建初始里程碑', function () {
+test('使用SessionHolder模型创建初始里程碑', function () {
     // 创建实现 SessionHolder 的用户模型
     $user1 = new AutoTestUser(101, 0);
     $user2 = new AutoTestUser(102, 100);

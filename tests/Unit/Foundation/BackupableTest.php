@@ -160,7 +160,7 @@ function seedTestData(): void
     ]);
 }
 
-it('测试 BackupableModel trait 的基本功能', function () {
+test('测试 BackupableModel trait 的基本功能', function () {
     // 测试 NamedId 模型
     expect(TestConfigModel::getBackupableRelationKey())->toBe('name');
     expect(TestConfigModel::getBackupableName())->toBe('test_configs');
@@ -174,7 +174,7 @@ it('测试 BackupableModel trait 的基本功能', function () {
     expect(TestProductModel::getBackupableDependencies())->toBe([TestConfigModel::class]);
 });
 
-it('测试数据备份功能', function () {
+test('测试数据备份功能', function () {
     // 配置应用
     $configure = LunaApplicationConfigure::create()
         ->registerBackupables([
@@ -207,7 +207,7 @@ it('测试数据备份功能', function () {
     expect($info['objects'][1]['count'])->toBe(2); // 2个产品
 });
 
-it('测试数据恢复功能', function () {
+test('测试数据恢复功能', function () {
     // 配置应用
     $configure = LunaApplicationConfigure::create()
         ->registerBackupables([
@@ -252,7 +252,7 @@ it('测试数据恢复功能', function () {
     expect($product->price)->toBe('99.99');
 });
 
-it('测试选择性备份和恢复', function () {
+test('测试选择性备份和恢复', function () {
     // 配置应用
     $configure = LunaApplicationConfigure::create()
         ->registerBackupables([
@@ -284,7 +284,7 @@ it('测试选择性备份和恢复', function () {
     expect(TestProductModel::count())->toBe(0); // 产品数据未恢复
 });
 
-it('测试非压缩和非 base64 编码的备份', function () {
+test('测试非压缩和非 base64 编码的备份', function () {
     $configure = LunaApplicationConfigure::create()
         ->registerBackupable(TestCustomBackupable::class)
         ->build();
@@ -314,7 +314,7 @@ it('测试非压缩和非 base64 编码的备份', function () {
     expect(TestCustomBackupable::getData())->toHaveCount(2);
 });
 
-it('测试备份提供者', function () {
+test('测试备份提供者', function () {
     // 手动提供者
     $manualProvider = BackupableManualProvider::create()
         ->register(TestConfigModel::class)
@@ -331,7 +331,7 @@ it('测试备份提供者', function () {
     expect($manualProvider->backupableObjects())->toHaveCount(1);
 });
 
-it('测试依赖关系排序', function () {
+test('测试依赖关系排序', function () {
     // 创建有循环依赖的测试类
     $configure = LunaApplicationConfigure::create()
         ->registerBackupables([
@@ -351,7 +351,7 @@ it('测试依赖关系排序', function () {
     expect($info['objects'][1]['class'])->toBe(TestProductModel::class);
 });
 
-it('测试错误处理', function () {
+test('测试错误处理', function () {
     $app = new LunaApplication(LunaApplicationConfigure::create()->build());
 
     // 测试无效的 base64 数据（看起来像 base64 但解码后不是有效数据）
@@ -361,7 +361,7 @@ it('测试错误处理', function () {
     })->toThrow(LunaException::class, 'Unserialize failed');
 });
 
-it('测试无效序列化数据的错误处理', function () {
+test('测试无效序列化数据的错误处理', function () {
     $app = new LunaApplication(LunaApplicationConfigure::create()->build());
 
     // 测试无效的序列化数据
@@ -370,7 +370,7 @@ it('测试无效序列化数据的错误处理', function () {
     })->toThrow(LunaException::class, 'Unserialize failed');
 });
 
-it('测试版本不匹配', function () {
+test('测试版本不匹配', function () {
     $app = new LunaApplication(LunaApplicationConfigure::create()->build());
 
     // 创建一个版本不匹配的备份数据

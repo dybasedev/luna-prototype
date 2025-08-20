@@ -55,7 +55,7 @@ beforeEach(function () {
     $this->owner = new TestSessionHolderForHolding(1, 1);
 });
 
-it('可以注册和检索唯一对象', function () {
+test('可以注册和检索唯一对象', function () {
     expect($this->holdingObject->hasUniqueObject('daily-checkin'))->toBeTrue();
     expect($this->holdingObject->hasUniqueObject('product-limit'))->toBeTrue();
     expect($this->holdingObject->hasUniqueObject('lottery-chance'))->toBeTrue();
@@ -65,7 +65,7 @@ it('可以注册和检索唯一对象', function () {
     expect($checkInObject)->toBeInstanceOf(DailyCheckInObject::class);
 });
 
-it('可以处理每日签到功能', function () {
+test('可以处理每日签到功能', function () {
     // 第一次签到应该成功
     $holding = $this->holdingObject->createUniqueHolding(
         $this->owner,
@@ -102,7 +102,7 @@ it('可以处理每日签到功能', function () {
     ))->toThrow(\Dybasedev\LunaPrototype\Foundation\Exception\LunaException::class);
 });
 
-it('可以处理产品购买限制', function () {
+test('可以处理产品购买限制', function () {
     // 首次购买3件
     $holding1 = $this->holdingObject->createUniqueHolding(
         $this->owner,
@@ -139,7 +139,7 @@ it('可以处理产品购买限制', function () {
     // 以便正确检查已购买数量
 });
 
-it('可以管理抽奖机会', function () {
+test('可以管理抽奖机会', function () {
     $lotteryId = 2024;
 
     // 通过每日登录获得抽奖机会
@@ -183,7 +183,7 @@ it('可以管理抽奖机会', function () {
     expect($currentHolding->quantity)->toBe('3.00000000');
 });
 
-it('可以更新持有状态', function () {
+test('可以更新持有状态', function () {
     // 创建一个持有记录
     $holding = $this->holdingObject->createUniqueHolding(
         $this->owner,
@@ -210,7 +210,7 @@ it('可以更新持有状态', function () {
     expect($updated->payload)->toHaveKey('used_at');
 });
 
-it('可以查询持有记录', function () {
+test('可以查询持有记录', function () {
     // 创建多个持有记录
     $this->holdingObject->createUniqueHolding(
         $this->owner,
@@ -260,7 +260,7 @@ it('可以查询持有记录', function () {
     expect($lotteryHoldings)->toHaveCount(1);
 });
 
-it('可以删除持有记录', function () {
+test('可以删除持有记录', function () {
     // 创建持有记录
     $holding = $this->holdingObject->createUniqueHolding(
         $this->owner,
@@ -301,7 +301,7 @@ it('可以删除持有记录', function () {
     ))->toBeFalse();
 });
 
-it('可以获取对象持有者', function () {
+test('可以获取对象持有者', function () {
     // 创建多个用户的持有记录
     $users = [];
     for ($i = 1; $i <= 3; $i++) {
@@ -330,7 +330,7 @@ it('可以获取对象持有者', function () {
     expect($holders)->toHaveCount(3);
 });
 
-it('正确验证载荷', function () {
+test('正确验证载荷', function () {
     // 缺少必需的 check_in_time
     expect(fn () => $this->holdingObject->createUniqueHolding(
         $this->owner,
@@ -340,7 +340,7 @@ it('正确验证载荷', function () {
     ))->toThrow(\Dybasedev\LunaPrototype\Foundation\Exception\LunaException::class);
 });
 
-it('防止同一天多次签到', function () {
+test('防止同一天多次签到', function () {
     // 第一次签到成功
     $this->holdingObject->createUniqueHolding(
         $this->owner,

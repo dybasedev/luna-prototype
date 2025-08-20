@@ -63,7 +63,7 @@ beforeEach(function () {
     ]);
 });
 
-it('回调数据提供者', function () {
+test('回调数据提供者', function () {
     $provider = new CallbackDataProvider(
         'test_provider',
         function (SessionHolder $owner, array $params) {
@@ -78,7 +78,7 @@ it('回调数据提供者', function () {
     expect($provider->getData($owner, ['bonus' => 50]))->toBe(550);
 });
 
-it('查询数据提供者 - 总和', function () {
+test('查询数据提供者 - 总和', function () {
     $provider = new QueryDataProvider(
         'total_amount',
         'orders',
@@ -94,7 +94,7 @@ it('查询数据提供者 - 总和', function () {
     expect($provider->getData($owner))->toBe(300.0);
 });
 
-it('查询数据提供者 - 计数', function () {
+test('查询数据提供者 - 计数', function () {
     $provider = new QueryDataProvider(
         'order_count',
         'orders',
@@ -110,7 +110,7 @@ it('查询数据提供者 - 计数', function () {
     expect($provider->getData($owner))->toBe(2);
 });
 
-it('查询数据提供者 - 批量获取', function () {
+test('查询数据提供者 - 批量获取', function () {
     $provider = new QueryDataProvider(
         'total_amount',
         'orders',
@@ -136,7 +136,7 @@ it('查询数据提供者 - 批量获取', function () {
     ]);
 });
 
-it('数据提供者注册表', function () {
+test('数据提供者注册表', function () {
     $registry = new DataProviderRegistry();
     
     $provider1 = new CallbackDataProvider('provider1', fn() => 100);
@@ -162,7 +162,7 @@ it('数据提供者注册表', function () {
     expect($registry->all())->toHaveCount(0);
 });
 
-it('数据提供者条件', function () {
+test('数据提供者条件', function () {
     $provider = new CallbackDataProvider(
         'score_provider',
         function (SessionHolder $owner, array $params) {
@@ -190,7 +190,7 @@ it('数据提供者条件', function () {
     expect($condition->getDescription())->toBe('Score >= 200');
 });
 
-it('常用数据提供者 - 用户消费总额', function () {
+test('常用数据提供者 - 用户消费总额', function () {
     $provider = CommonDataProviders::userTotalConsumption('orders', 'total_amount');
     
     $owner = new MembershipTestSessionHolder(1);
@@ -199,7 +199,7 @@ it('常用数据提供者 - 用户消费总额', function () {
     expect($provider->getData($owner))->toBe(300.0);
 });
 
-it('常用数据提供者 - 缓存', function () {
+test('常用数据提供者 - 缓存', function () {
     $callCount = 0;
     $provider = CommonDataProviders::cached(
         'cached_test',
@@ -228,7 +228,7 @@ it('常用数据提供者 - 缓存', function () {
     expect($callCount)->toBe(2);
 });
 
-it('常用数据提供者 - 组合', function () {
+test('常用数据提供者 - 组合', function () {
     $provider1 = new CallbackDataProvider('p1', fn($owner) => 100);
     $provider2 = new CallbackDataProvider('p2', fn($owner) => 200);
     $provider3 = new CallbackDataProvider('p3', fn($owner) => 300);
@@ -250,7 +250,7 @@ it('常用数据提供者 - 组合', function () {
     expect($combinedProvider->getData($owner))->toBe(600);
 });
 
-it('数据提供者条件 - 复杂操作符', function () {
+test('数据提供者条件 - 复杂操作符', function () {
     $provider = new CallbackDataProvider('test', fn() => 5);
     
     // 测试 'in' 操作符
