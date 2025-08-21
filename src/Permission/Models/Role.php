@@ -8,6 +8,7 @@ use Dybasedev\LunaPrototype\Foundation\Backupable;
 use Dybasedev\LunaPrototype\Foundation\BackupableModel;
 use Illuminate\Database\Eloquent\Model;
 use Dybasedev\LunaPrototype\Permission\PermissionSubject;
+use Dybasedev\LunaPrototype\Permission\LunaPermissionConfigure;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
@@ -75,7 +76,9 @@ class Role extends Model implements PermissionSubject, Backupable
      */
     public function policyAssignments(): HasMany
     {
-        return $this->hasMany(PolicyAssignment::class, 'subject_id')
+        $configure = app(LunaPermissionConfigure::class);
+        
+        return $this->hasMany($configure->policyAssignmentModel, 'subject_id')
             ->where('subject_type', hash_code($this->getSubjectType()));
     }
 

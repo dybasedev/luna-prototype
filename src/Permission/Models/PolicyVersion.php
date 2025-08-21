@@ -2,6 +2,7 @@
 
 namespace Dybasedev\LunaPrototype\Permission\Models;
 
+use Dybasedev\LunaPrototype\Permission\LunaPermissionConfigure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -77,7 +78,9 @@ class PolicyVersion extends Model
      */
     public function policy(): BelongsTo
     {
-        return $this->belongsTo(Policy::class, 'policy_id');
+        $configure = app(LunaPermissionConfigure::class);
+        
+        return $this->belongsTo($configure->policyModel, 'policy_id');
     }
 
     /**

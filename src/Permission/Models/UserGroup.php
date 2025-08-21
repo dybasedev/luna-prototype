@@ -82,7 +82,9 @@ class UserGroup extends Model implements UserGroupContract, PermissionSubject, B
      */
     public function policyAssignments(): HasMany
     {
-        return $this->hasMany(PolicyAssignment::class, 'subject_id')
+        $configure = app(LunaPermissionConfigure::class);
+        
+        return $this->hasMany($configure->policyAssignmentModel, 'subject_id')
             ->where('subject_type', hash_code($this->getSubjectType()));
     }
 

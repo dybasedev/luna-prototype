@@ -2,10 +2,10 @@
 
 namespace Dybasedev\LunaPrototype\Permission\Traits;
 
-use Dybasedev\LunaPrototype\Permission\PermissionSubject;
 use Dybasedev\LunaPrototype\Permission\LunaPermissionConfigure;
-use Dybasedev\LunaPrototype\Permission\Models\PolicyAssignment;
-use Dybasedev\LunaPrototype\Permission\Models\UserGroup;
+use Dybasedev\LunaPrototype\Permission\Models\Policy;
+use Dybasedev\LunaPrototype\Permission\UserGroupContract;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
@@ -24,7 +24,9 @@ trait HasPermissions
      */
     public function policyAssignments(): HasMany
     {
-        return $this->hasMany(PolicyAssignment::class, 'subject_id')
+        $configure = app(LunaPermissionConfigure::class);
+        
+        return $this->hasMany($configure->policyAssignmentModel, 'subject_id')
             ->where('subject_type', hash_code($this->getSubjectType()));
     }
 
@@ -36,7 +38,7 @@ trait HasPermissions
     public function permissionGroups(): BelongsToMany
     {
         $configure = app(LunaPermissionConfigure::class);
-        $groupModel = $configure->userGroupContract ?? UserGroup::class;
+        $groupModel = $configure->userGroupContract ?? $configure->userGroupModel;
         
         return $this->belongsToMany(
             $groupModel,
@@ -93,12 +95,14 @@ trait HasPermissions
      */
     public function getAllPolicyAssignments(): Collection
     {
+        $configure = app(LunaPermissionConfigure::class);
+        
         // 直接分配给用户的策略
         $directAssignments = $this->policyAssignments()->active()->with('policy')->get();
 
         // 通过用户组分配的策略
         $groupIds = $this->permissionGroups()->pluck('id');
-        $groupAssignments = PolicyAssignment::query()
+        $groupAssignments = $configure->policyAssignmentModel::query()
             ->where('subject_type', hash_code('group'))
             ->whereIn('subject_id', $groupIds)
             ->active()
@@ -111,25 +115,26 @@ trait HasPermissions
     /**
      * 分配策略给用户
      *
-     * @param \Dybasedev\LunaPrototype\Permission\Models\Policy|string $policy
+     * @param Policy|string $policy
      * @param array $options
-     * @return PolicyAssignment
+     * @return Model
      */
-    public function assignPolicy(\Dybasedev\LunaPrototype\Permission\Models\Policy|string $policy, array $options = []): PolicyAssignment
+    public function assignPolicy(Policy|string $policy, array $options = []): Model
     {
-        return PolicyAssignment::assign($policy, $this, $options);
+        $configure = app(LunaPermissionConfigure::class);
+        return $configure->policyAssignmentModel::assign($policy, $this, $options);
     }
 
     /**
      * 撤销策略
      *
-     * @param \Dybasedev\LunaPrototype\Permission\Models\Policy|string $policy
+     * @param Policy|string $policy
      * @return bool
      */
-    public function revokePolicy(\Dybasedev\LunaPrototype\Permission\Models\Policy|string $policy): bool
+    public function revokePolicy(Policy|string $policy): bool
     {
         if (is_string($policy)) {
-            $policy = \Dybasedev\LunaPrototype\Permission\Models\Policy::findByName($policy);
+            $policy = Policy::findByName($policy);
         }
 
         if (!$policy) {
@@ -157,14 +162,14 @@ trait HasPermissions
     /**
      * 加入用户组
      *
-     * @param \Dybasedev\LunaPrototype\Permission\Contracts\UserGroupContract|string $group
+     * @param UserGroupContract|string $group
      * @return void
      */
-    public function joinGroup(\Dybasedev\LunaPrototype\Permission\Contracts\UserGroupContract|string $group): void
+    public function joinGroup(UserGroupContract|string $group): void
     {
         if (is_string($group)) {
             $configure = app(LunaPermissionConfigure::class);
-            $groupModel = $configure->userGroupContract ?? UserGroup::class;
+            $groupModel = $configure->userGroupContract ?? $configure->userGroupModel;
             $group = $groupModel::query()->where('name', $group)->first();
         }
 
@@ -176,14 +181,14 @@ trait HasPermissions
     /**
      * 离开用户组
      *
-     * @param \Dybasedev\LunaPrototype\Permission\Contracts\UserGroupContract|string $group
+     * @param UserGroupContract|string $group
      * @return void
      */
-    public function leaveGroup(\Dybasedev\LunaPrototype\Permission\Contracts\UserGroupContract|string $group): void
+    public function leaveGroup(UserGroupContract|string $group): void
     {
         if (is_string($group)) {
             $configure = app(LunaPermissionConfigure::class);
-            $groupModel = $configure->userGroupContract ?? UserGroup::class;
+            $groupModel = $configure->userGroupContract ?? $configure->userGroupModel;
             $group = $groupModel::query()->where('name', $group)->first();
         }
 
@@ -214,7 +219,7 @@ trait HasPermissions
     {
         $cacheKey = 'user_policies:' . $this->getSubjectIdentifier();
         
-        return \Cache::remember($cacheKey, 3600, function () {
+        return cache()->remember($cacheKey, 3600, function () {
             return $this->getAllPolicyAssignments()
                 ->map(fn($assignment) => $assignment->policy)
                 ->filter()

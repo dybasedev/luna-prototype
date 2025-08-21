@@ -56,6 +56,20 @@ class LunaPermissionConfigure extends LunaModuleConfigure
     protected(set) ?string $userGroupContract = null;
 
     /**
+     * 策略分配模型类名
+     *
+     * @var class-string<Models\PolicyAssignment>
+     */
+    protected(set) string $policyAssignmentModel = Models\PolicyAssignment::class;
+
+    /**
+     * 用户组模型类名
+     *
+     * @var class-string<Models\UserGroup>
+     */
+    protected(set) string $userGroupModel = Models\UserGroup::class;
+
+    /**
      * 资源定义
      */
     protected(set) array $resources = [];
@@ -148,6 +162,30 @@ class LunaPermissionConfigure extends LunaModuleConfigure
     public function useUserGroupContract(string $contract): static
     {
         $this->userGroupContract = $contract;
+        return $this;
+    }
+
+    /**
+     * 使用自定义策略分配模型
+     *
+     * @param string $model
+     * @return $this
+     */
+    public function usePolicyAssignmentModel(string $model): static
+    {
+        $this->policyAssignmentModel = $model;
+        return $this;
+    }
+
+    /**
+     * 使用自定义用户组模型
+     *
+     * @param string $model
+     * @return $this
+     */
+    public function useUserGroupModel(string $model): static
+    {
+        $this->userGroupModel = $model;
         return $this;
     }
 

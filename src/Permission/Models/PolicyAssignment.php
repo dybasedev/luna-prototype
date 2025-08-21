@@ -73,7 +73,9 @@ class PolicyAssignment extends Model
      */
     public function policy(): BelongsTo
     {
-        return $this->belongsTo(Policy::class, 'policy_id');
+        $configure = app(LunaPermissionConfigure::class);
+        
+        return $this->belongsTo($configure->policyModel, 'policy_id');
     }
 
     /**
@@ -103,7 +105,7 @@ class PolicyAssignment extends Model
         return match ($this->subject_type) {
             hash_code(self::TYPE_USER) => $this->getUserModelClass(),
             hash_code(self::TYPE_ROLE) => $configure->roleModel,
-            hash_code(self::TYPE_GROUP) => $configure->userGroupContract ?? UserGroup::class,
+            hash_code(self::TYPE_GROUP) => $configure->userGroupContract ?? $configure->userGroupModel,
             default => null,
         };
     }
@@ -160,7 +162,7 @@ class PolicyAssignment extends Model
     /**
      * 创建策略分配
      *
-     * @param Policy|string $policy
+     * @param \Illuminate\Database\Eloquent\Model|string $policy
      * @param PermissionSubject $subject
      * @param array $options
      * @return static
@@ -168,7 +170,9 @@ class PolicyAssignment extends Model
     public static function assign($policy, PermissionSubject $subject, array $options = []): static
     {
         if (is_string($policy)) {
-            $policy = Policy::findByName($policy);
+            $configure = app(LunaPermissionConfigure::class);
+            $policyModel = $configure->policyModel;
+            $policy = $policyModel::findByName($policy);
         }
 
         if (!$policy) {
