@@ -9,27 +9,60 @@ use Illuminate\Database\Eloquent\Model;
 use Random\RandomException;
 use Throwable;
 
+/**
+ * 配置组管理类
+ *
+ * 负责管理特定配置组下的所有配置项，提供配置的创建、读取、更新、版本管理等功能。
+ * 支持缓存机制以提高性能，支持配置版本控制和切换。
+ *
+ * @package Dybasedev\LunaPrototype\Foundation\Configuration
+ */
 class ConfigurationGroup
 {
+    /**
+     * 缓存实例
+     *
+     * @var Cache|null
+     */
     protected ?Cache $cache = null;
 
     /**
+     * 配置仓库实例集合
+     *
      * @var Repository[]
      */
     protected array $repositories = [];
 
+    /**
+     * 构造函数
+     *
+     * @param LunaConfigurationConfigure $configure 配置管理器
+     * @param string $group 配置组名称
+     */
     public function __construct(
         protected LunaConfigurationConfigure $configure,
         protected string $group
     ) {
     }
 
+    /**
+     * 设置缓存实例
+     *
+     * @param Cache $cache 缓存实例
+     * @return static
+     */
     public function withCache(Cache $cache): static
     {
         $this->cache = $cache;
         return $this;
     }
 
+    /**
+     * 获取配置记录模型
+     *
+     * @param string $name 配置名称
+     * @return Configuration|null 配置模型实例，不存在时返回 null
+     */
     public function getConfigurationRecord(string $name): ?Configuration
     {
         return $this->configure->model::query()
@@ -40,7 +73,10 @@ class ConfigurationGroup
     }
 
     /**
-     * @throws RandomException
+     * 检查配置是否存在
+     *
+     * @param string $name 配置名称
+     * @return bool 配置是否存在
      */
     public function exists(string $name): bool
     {
@@ -53,8 +89,16 @@ class ConfigurationGroup
     }
 
     /**
-     * @throws RandomException
-     * @throws Throwable
+     * 创建新的配置项
+     *
+     * @param string $name 配置名称（不能包含点号）
+     * @param string $displayName 配置显示名称
+     * @param array $initialValues 初始值
+     * @param string $description 配置描述
+     * @return Repository 配置仓库实例
+     * @throws RandomException 随机数生成异常
+     * @throws Throwable 其他异常
+     * @throws LunaException
      */
     public function create(
         string $name,
@@ -87,7 +131,13 @@ class ConfigurationGroup
     }
 
     /**
-     * @throws RandomException
+     * 获取配置仓库实例
+     *
+     * 如果仓库实例已存在则直接返回，否则从数据库或缓存中加载配置并创建仓库实例。
+     *
+     * @param string $name 配置名称
+     * @return Repository 配置仓库实例
+     * @throws LunaException 配置不存在或缓存错误时抛出
      */
     public function repository(string $name): Repository
     {
@@ -132,6 +182,14 @@ class ConfigurationGroup
         }
     }
 
+    /**
+     * 解析配置键
+     *
+     * 将点分隔的配置键解析为配置名称和子键。
+     *
+     * @param string $key 配置键（如 'database.host'）
+     * @return array [配置名称, 子键]
+     */
     protected function target(string $key): array
     {
         if (str_contains($key, '.')) {
@@ -145,9 +203,14 @@ class ConfigurationGroup
     }
 
     /**
-     * @throws RandomException
+     * 获取配置值
+     *
+     * @param string $key 配置键
+     * @param mixed $default 默认值
+     * @param array $hidden 临时隐藏的字段
+     * @return mixed 配置值
      */
-    public function get(string $key, $default = null, array $hidden = []): mixed
+    public function get(string $key, mixed $default = null, array $hidden = []): mixed
     {
         [$name, $keys] = $this->target($key);
 
@@ -160,7 +223,12 @@ class ConfigurationGroup
     }
 
     /**
-     * @throws RandomException
+     * 设置配置值
+     *
+     * @param string $key 配置键
+     * @param mixed $value 配置值
+     * @param bool $overwrite 是否覆盖已存在的值
+     * @return static
      */
     public function set(string $key, $value, bool $overwrite = true): static
     {
@@ -172,7 +240,12 @@ class ConfigurationGroup
     }
 
     /**
-     * @throws Throwable
+     * 保存所有已修改的配置
+     *
+     * 将所有标记为脏数据的配置仓库保存到数据库，并清理相关缓存。
+     *
+     * @return void
+     * @throws Throwable 保存失败时抛出
      */
     public function save(): void
     {
@@ -204,7 +277,6 @@ class ConfigurationGroup
      * @param string $name 配置名称
      * @param string $versionId 版本ID
      * @return Repository|null
-     * @throws RandomException
      */
     public function getVersion(string $name, string $versionId): ?Repository
     {
@@ -232,7 +304,6 @@ class ConfigurationGroup
      * @param string $name 配置名称
      * @param string $versionId 版本ID
      * @return bool
-     * @throws RandomException
      */
     public function switchVersion(string $name, string $versionId): bool
     {
@@ -303,7 +374,6 @@ class ConfigurationGroup
      *
      * @param string $name 配置名称
      * @return string|null
-     * @throws RandomException
      */
     public function getCurrentVersionId(string $name): ?string
     {

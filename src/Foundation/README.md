@@ -747,8 +747,12 @@ $safeConfig = $config->toArray(); // 敏感配置会被过滤
 配置组提供了更高级的配置管理功能，支持数据库存储和版本控制：
 
 ```php
-// 1. 创建配置组
+// 1. 获取配置组（两种方式）
+// 方式一：通过配置管理对象获取
 $systemGroup = luna_configuration()->group('system');
+
+// 方式二：直接获取配置组
+$systemGroup = luna_configuration('system');
 
 // 2. 创建新的配置项（存储到数据库）
 $appConfig = $systemGroup->create(
@@ -793,11 +797,23 @@ $systemGroup->create('email', '邮件配置', [
 // 获取邮件配置
 $mailDriver = $systemGroup->get('email.driver'); // "smtp"
 $mailFrom = $systemGroup->get('email.from.address'); // "noreply@example.com"
+
+// 7. 使用快捷方式直接操作配置组
+luna_configuration('system')->set('app.debug', true);
+luna_configuration('system')->save();
+
+// 快速读取配置
+$appName = luna_configuration('system')->get('app.name');
 ```
 
 #### 自定义配置仓库
 
-可以创建自定义配置仓库来提供类型安全的配置访问：
+可以创建自定义配置仓库来提供类型安全的配置访问。系统支持为特定的配置组和配置名绑定自定义仓库类，这样可以：
+
+1. **类型安全**：通过方法返回类型约束确保配置值的类型正确
+2. **IDE 支持**：自定义方法可以被 IDE 识别和自动补全
+3. **业务逻辑封装**：在仓库中封装配置相关的业务逻辑
+4. **一致性保证**：所有地方获取的配置都使用相同的仓库类
 
 ```php
 // 1. 定义应用配置仓库
@@ -863,20 +879,32 @@ class PaymentConfigRepository extends Repository
 }
 
 // 3. 注册自定义仓库
-$configure = LunaConfigurationConfigure::create()
-    ->bindRepository('system', 'app', AppConfigRepository::class)
-    ->bindRepository('payment', 'config', PaymentConfigRepository::class)
-    ->build();
+$configure = app(LunaConfigurationConfigure::class);
+$configure->bindRepository('system', 'app', AppConfigRepository::class);
+$configure->bindRepository('payment', 'config', PaymentConfigRepository::class);
 
-// 4. 使用自定义仓库
+// 4. 创建配置时自动使用绑定的仓库
+$systemGroup = luna_configuration('system');
+
+// create 方法会返回绑定的自定义仓库实例
 /** @var AppConfigRepository $appConfig */
-$appConfig = luna_configuration()->group('system')->repository('app');
+$appConfig = $systemGroup->create('app', '应用配置', [
+    'name' => 'My App',
+    'version' => '1.0.0',
+    'debug' => false
+]);
+
+// 直接使用自定义方法
 $appName = $appConfig->getAppName();
 $isDebug = $appConfig->isDebugMode();
 
-/** @var PaymentConfigRepository $paymentConfig */
-$paymentConfig = luna_configuration()->group('payment')->repository('config');
-$alipayConfig = $paymentConfig->getGatewayConfig('alipay');
+// 5. 后续获取配置也会使用绑定的仓库
+/** @var AppConfigRepository $appConfig */
+$appConfig = $systemGroup->repository('app');
+
+// 6. 版本管理也支持自定义仓库
+$oldVersion = $systemGroup->getVersion('app', $versionId);
+// $oldVersion 也是 AppConfigRepository 实例
 ```
 
 #### 配置版本管理
@@ -1761,7 +1789,7 @@ Foundation 提供了以下辅助函数：
 
 - `hash_code(string $str): int` - 将字符串转换为整数哈希值
 - `short_hash_code(string $str): int` - 生成 0-254 范围内的短哈希码
-- `luna_config(?string $group = null)` - 获取配置对象或配置组
+- `luna_configuration(?string $group = null)` - 获取配置管理对象或直接获取配置组
 - `luna_response(...)` - 生成标准化的 JSON 响应
 - `err(Throwable|string $throwable)` - 生成错误响应
 - `ok(...)` - 生成成功响应

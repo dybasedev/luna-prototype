@@ -303,7 +303,7 @@ if (!function_exists('luna_handler')) {
 
 if (!function_exists('luna_configuration')) {
     /**
-     * 获取 Luna 配置管理对象
+     * 获取 Luna 配置管理对象或配置组
      *
      * Luna 配置管理系统提供了灵活的配置存储和版本控制功能，支持分组管理、
      * 缓存优化和动态配置更新。配置数据存储在数据库中，支持配置版本历史记录。
@@ -320,8 +320,13 @@ if (!function_exists('luna_configuration')) {
      * // 获取配置管理实例
      * $config = luna_configuration();
      * 
-     * // 创建配置组和配置项
+     * // 直接获取配置组
+     * $appGroup = luna_configuration('app');
+     * 
+     * // 或者通过配置管理实例获取配置组
      * $appGroup = $config->group('app');
+     * 
+     * // 创建配置项
      * $appGroup->create('settings', '应用设置', [
      *     'theme' => 'light',
      *     'language' => 'zh-CN',
@@ -348,13 +353,21 @@ if (!function_exists('luna_configuration')) {
      * }
      * ```
      *
-     * @return LunaConfiguration 配置管理对象实例
+     * @param string|null $group 配置组名称，如果提供则直接返回对应的配置组实例
+     * @return LunaConfiguration|ConfigurationGroup 当 $group 为 null 时返回配置管理实例，否则返回配置组实例
      * @see ConfigurationGroup 配置组管理类
      * @see Repository 配置仓库类
      */
-    function luna_configuration(): LunaConfiguration
+    function luna_configuration(?string $group): LunaConfiguration|ConfigurationGroup
     {
-        return app('luna.config');
+        /** @var LunaConfiguration $configuration */
+        $configuration = app('luna.config');
+
+        if ($group) {
+            return $configuration->group($group);
+        }
+
+        return $configuration;
     }
 }
 
