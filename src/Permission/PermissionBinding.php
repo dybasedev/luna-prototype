@@ -17,12 +17,20 @@ class PermissionBinding extends SessionHolderBinding
     /**
      * 绑定标识符
      */
-    protected(set) ?string $identifier = null;
+    protected(set) ?string $identifier = null {
+        get {
+            return $this->identifier;
+        }
+    }
 
     /**
      * 绑定描述
      */
-    protected(set) ?string $description = null;
+    protected(set) ?string $description = null {
+        get {
+            return $this->description;
+        }
+    }
 
     /**
      * 构造函数
@@ -83,26 +91,6 @@ class PermissionBinding extends SessionHolderBinding
     {
         $this->description = $description;
         return $this;
-    }
-
-    /**
-     * 获取标识符
-     *
-     * @return string|null
-     */
-    public function getIdentifier(): ?string
-    {
-        return $this->identifier;
-    }
-
-    /**
-     * 获取描述
-     *
-     * @return string|null
-     */
-    public function getDescription(): ?string
-    {
-        return $this->description;
     }
 
     /**

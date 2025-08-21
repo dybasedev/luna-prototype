@@ -140,7 +140,7 @@ class Role extends Model implements PermissionSubject, Backupable
      */
     public static function createSystemRole(string $name, string $displayName, array $attributes = []): static
     {
-        return static::create(array_merge([
+        return static::query()->create(array_merge([
             'name' => $name,
             'display_name' => $displayName,
             'is_system' => true,

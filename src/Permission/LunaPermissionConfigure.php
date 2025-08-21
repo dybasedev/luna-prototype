@@ -8,6 +8,7 @@ use Dybasedev\LunaPrototype\Foundation\Handler\LunaHandler;
 use Dybasedev\LunaPrototype\Permission\UserGroupContract;
 use Dybasedev\LunaPrototype\Permission\Handlers\PermissionHandler;
 use Dybasedev\LunaPrototype\Permission\Resources\ResourceRegistry;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 
 /**
@@ -17,7 +18,7 @@ class LunaPermissionConfigure extends LunaModuleConfigure
 {
     /**
      * 权限绑定实例集合
-     * 
+     *
      * @var PermissionBinding[]
      */
     protected(set) array $bindings = [] {
@@ -28,28 +29,28 @@ class LunaPermissionConfigure extends LunaModuleConfigure
 
     /**
      * 策略模型类名
-     * 
+     *
      * @var class-string<Models\Policy>
      */
     protected(set) string $policyModel = Models\Policy::class;
 
     /**
      * 策略版本模型类名
-     * 
+     *
      * @var class-string<Models\PolicyVersion>
      */
     protected(set) string $policyVersionModel = Models\PolicyVersion::class;
 
     /**
      * 角色模型类名
-     * 
+     *
      * @var class-string<Models\Role>
      */
     protected(set) string $roleModel = Models\Role::class;
 
     /**
      * 用户组接口实现
-     * 
+     *
      * @var class-string<UserGroupContract>|null
      */
     protected(set) ?string $userGroupContract = null;
@@ -61,7 +62,7 @@ class LunaPermissionConfigure extends LunaModuleConfigure
 
     /**
      * 资源提供者
-     * 
+     *
      * @var Support\AttributeResourceProvider|null
      */
     protected(set) ?Support\AttributeResourceProvider $resourceProvider = null;
@@ -73,7 +74,7 @@ class LunaPermissionConfigure extends LunaModuleConfigure
 
     /**
      * 默认权限处理器类
-     * 
+     *
      * @var class-string<Handlers\BasePermissionHandler>
      */
     protected(set) string $defaultHandlerClass = PermissionHandler::class;
@@ -265,6 +266,7 @@ class LunaPermissionConfigure extends LunaModuleConfigure
      *
      * @param Container $container
      * @return void
+     * @throws BindingResolutionException
      */
     public function boot(Container $container): void
     {
@@ -282,15 +284,15 @@ class LunaPermissionConfigure extends LunaModuleConfigure
     public function getResourceRegistry(): ResourceRegistry
     {
         static $registry = null;
-        
+
         if ($registry === null) {
             $registry = new ResourceRegistry();
-            
+
             // 注册手动定义的资源
             foreach ($this->resources as $name => $definition) {
                 $registry->register($name, $definition);
             }
-            
+
             // 从资源提供者获取资源
             if ($this->resourceProvider) {
                 $scannedResources = $this->resourceProvider->getResources();
@@ -299,7 +301,7 @@ class LunaPermissionConfigure extends LunaModuleConfigure
                 }
             }
         }
-        
+
         return $registry;
     }
 
@@ -307,26 +309,26 @@ class LunaPermissionConfigure extends LunaModuleConfigure
      * 获取权限处理器
      *
      * @return PermissionHandler
-     * @deprecated 使用 LunaHandler 获取处理器实例
+     * @throws BindingResolutionException
      */
     public function getPermissionHandler(): PermissionHandler
     {
         static $handler = null;
-        
+
         if ($handler === null) {
             // 通过 Handler 系统获取纯处理器实例，可以使用别名
             /** @var PermissionHandler $handler */
-            $handler = app()->make(LunaHandler::class)->getPureHandler('permission.default');
-            
+            $handler = luna_handler()->getPureHandler('permission.default');
+
             // 设置资源注册器
             $handler->withResourceRegistry($this->getResourceRegistry());
-            
+
             // 如果设置了超级管理员检查器，注入到处理器
             if ($this->superAdminChecker) {
                 $handler->withSuperAdminChecker($this->superAdminChecker);
             }
         }
-        
+
         return $handler;
     }
 
@@ -338,13 +340,8 @@ class LunaPermissionConfigure extends LunaModuleConfigure
      */
     public function getBindingByModel(string $modelClass): ?PermissionBinding
     {
-        foreach ($this->bindings as $binding) {
-            if ($binding->getTargetClass() === $modelClass) {
-                return $binding;
-            }
-        }
-        
-        return null;
+        return array_find($this->bindings, fn($binding) => $binding->getTargetClass() === $modelClass);
+
     }
 
     /**
@@ -355,13 +352,8 @@ class LunaPermissionConfigure extends LunaModuleConfigure
      */
     public function getBindingByIdentifier(string $identifier): ?PermissionBinding
     {
-        foreach ($this->bindings as $binding) {
-            if ($binding->getIdentifier() === $identifier) {
-                return $binding;
-            }
-        }
-        
-        return null;
+        return array_find($this->bindings, fn($binding) => $binding->identifier === $identifier);
+
     }
 
     /**
@@ -380,7 +372,7 @@ class LunaPermissionConfigure extends LunaModuleConfigure
         } catch (\Throwable $e) {
             // 忽略错误
         }
-        
+
         return null;
     }
 }
