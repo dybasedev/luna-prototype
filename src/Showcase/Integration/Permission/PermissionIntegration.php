@@ -28,14 +28,16 @@ class PermissionIntegration
      */
     public static function getCurrentHolder(): ?SessionHolder
     {
-        // 从Permission组件获取当前绑定的用户
-        $configure = luna_module_configure(LunaPermissionConfigure::class);
+        if (!self::isAvailable()) {
+            return null;
+        }
         
-        foreach ($configure->getBindings() as $binding) {
-            if ($holder = $binding->getCurrentUser()) {
-                if ($holder instanceof SessionHolder) {
-                    return $holder;
-                }
+        // 从Permission组件的bindings获取operator
+        $permission = luna_permission();
+        if (property_exists($permission, 'bindings')) {
+            $bindings = $permission->bindings;
+            if (is_object($bindings) && method_exists($bindings, 'get')) {
+                return $bindings->get('operator');
             }
         }
         
