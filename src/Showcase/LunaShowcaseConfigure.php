@@ -5,6 +5,8 @@ namespace Dybasedev\LunaPrototype\Showcase;
 use Dybasedev\LunaPrototype\Foundation\LunaModuleConfigure;
 use Dybasedev\LunaPrototype\Showcase\DataTable\DataTableRegistry;
 use Dybasedev\LunaPrototype\Showcase\RemoteSchema\RemoteSchemaRegistry;
+use Dybasedev\LunaPrototype\Showcase\Integration\Permission\PermissionIntegrationBuilder;
+use Dybasedev\LunaPrototype\Showcase\Integration\Permission\PermissionIntegrationConfig;
 use Illuminate\Contracts\Container\Container;
 
 /**
@@ -43,6 +45,13 @@ class LunaShowcaseConfigure extends LunaModuleConfigure
      * @var string
      */
     protected(set) string $defaultAdapter = 'ant-design-pro';
+
+    /**
+     * Permission 集成配置
+     * 
+     * @var PermissionIntegrationConfig|null
+     */
+    protected(set) ?PermissionIntegrationConfig $permissionIntegration = null;
 
     /**
      * 获取模块名称
@@ -256,6 +265,46 @@ class LunaShowcaseConfigure extends LunaModuleConfigure
             $this->remoteSchemaRegistry = new RemoteSchemaRegistry();
         }
         return $this->remoteSchemaRegistry;
+    }
+
+    /**
+     * 配置 Permission 集成
+     * 
+     * @param callable $configurator 接收 PermissionIntegrationBuilder 的闭包
+     * @return static
+     */
+    public function configurePermissionIntegration(callable $configurator): static
+    {
+        $builder = new PermissionIntegrationBuilder();
+        $configurator($builder);
+        $this->permissionIntegration = $builder->build();
+        return $this;
+    }
+    
+    /**
+     * 应用 Permission 集成配置
+     * 
+     * @param PermissionIntegrationConfig $config
+     * @return static
+     */
+    public function withPermissionIntegration(PermissionIntegrationConfig $config): static
+    {
+        $this->permissionIntegration = $config;
+        return $this;
+    }
+    
+    /**
+     * 是否启用了 Permission 集成
+     */
+    public bool $isPermissionIntegrationEnabled {
+        get => $this->permissionIntegration?->enabled ?? false;
+    }
+    
+    /**
+     * 获取权限集成配置
+     */
+    public ?PermissionIntegrationConfig $permissionConfig {
+        get => $this->permissionIntegration;
     }
 
 }

@@ -18,7 +18,8 @@
       "src/Trade/helpers.php",
       "src/HoldingObject/helpers.php",
       "src/Permission/helpers.php",
-      "src/Content/helpers.php"
+      "src/Content/helpers.php",
+      "src/Showcase/Integration/Permission/helpers.php"
     ]
   },
   "autoload-dev": {

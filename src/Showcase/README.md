@@ -832,7 +832,7 @@ $configure->registerAdapter('element-plus', ElementPlusAdapter::class);
 
 ## 权限控制
 
-### 全局权限
+### 基础权限控制
 
 在 DataTable 中控制：
 
@@ -873,6 +873,117 @@ public function mapListRecord(mixed $record, Request $request): mixed
     ];
 }
 ```
+
+### Permission 组件集成（高级）
+
+Showcase 提供了与 Permission 组件的可选集成，支持更复杂的权限控制场景。
+
+#### 配置集成
+
+在 AppServiceProvider 中配置：
+
+```php
+use Dybasedev\LunaPrototype\Showcase\LunaShowcaseConfigure;
+
+class AppServiceProvider extends LunaServiceProvider
+{
+    public function customRegister(): void
+    {
+        $this->registerModule(
+            LunaShowcaseConfigure::create()
+                ->configurePermissionIntegration(function ($builder) {
+                    $builder->enable()
+                        ->withResourcePattern('admin.{key}')  // 资源命名模式
+                        ->withOwnerFields('owner_type', 'owner_id')  // 所有者字段
+                        ->enableOwnerFilter()  // 启用所有者过滤
+                        ->mapResource('users', 'users');  // 自定义资源映射
+                })
+                ->registerDataTables([
+                    'users' => UserDataTable::class,
+                ])
+                ->build()
+        );
+    }
+}
+```
+
+#### 使用 PermissionAwareDataTable
+
+```php
+use Dybasedev\LunaPrototype\Showcase\DataTable\CrudDataTable;
+use Dybasedev\LunaPrototype\Showcase\Integration\Permission\PermissionAwareDataTable;
+
+class UserDataTable extends CrudDataTable
+{
+    use PermissionAwareDataTable;
+    
+    /**
+     * 配置权限
+     */
+    protected function configurePermissions(): void
+    {
+        // 设置权限资源名称
+        $this->permissionResource = 'admin.users';
+        
+        // 启用所有者过滤（只显示当前用户创建的记录）
+        $this->enableOwnerFilter = true;
+        
+        // 配置列权限（某些列需要特定权限才能查看）
+        $this->columnPermissions = [
+            'email' => 'view_email',
+            'phone' => 'view_phone',
+            'balance' => [
+                'action' => 'view_financial',
+                'resource' => 'admin.users.financial'
+            ],
+        ];
+    }
+    
+    /**
+     * 定义列（使用 defineColumns 而不是 columns）
+     */
+    protected function defineColumns(Request $request): array
+    {
+        return [
+            UI::column('ID', 'id'),
+            UI::column('姓名', 'name'),
+            UI::column('邮箱', 'email'),  // 会根据权限自动过滤
+            UI::column('电话', 'phone'),   // 会根据权限自动过滤
+            UI::column('余额', 'balance'), // 会根据权限自动过滤
+        ];
+    }
+    
+    /**
+     * 构建查询（使用 buildQuery 而不是 query）
+     */
+    protected function buildQuery(Request $request): Builder
+    {
+        return User::query()->with(['profile']);
+    }
+    
+    /**
+     * 定义操作按钮（使用 defineActions 而不是 getActions）
+     */
+    protected function defineActions(Request $request): array
+    {
+        return [
+            ['key' => 'create', 'label' => '新建'],
+            ['key' => 'edit', 'label' => '编辑'],
+            ['key' => 'delete', 'label' => '删除'],
+        ];
+    }
+}
+```
+
+#### 主要特性
+
+- **多层级权限**：支持表级、列级、行级、操作级权限控制
+- **所有者过滤**：自动过滤只显示用户拥有的记录
+- **列权限控制**：根据权限动态显示/隐藏列
+- **操作权限过滤**：自动过滤用户无权限的操作按钮
+- **自动降级**：Permission 组件不可用时正常工作
+
+详细文档请参考 [Permission 集成文档](Integration/Permission/README.md)。
 
 ## 最佳实践
 
