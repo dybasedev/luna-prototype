@@ -21,7 +21,6 @@ class PermissionIntegrationSimpleTest extends TestCase
         $builder = new PermissionIntegrationBuilder();
         
         $config = $builder
-            ->enable()
             ->withResourcePattern('test.{key}')
             ->withOwnerFields('author_type', 'author_id')
             ->enableOwnerFilter()
@@ -29,7 +28,6 @@ class PermissionIntegrationSimpleTest extends TestCase
             ->build();
         
         $this->assertInstanceOf(PermissionIntegrationConfig::class, $config);
-        $this->assertTrue($config->enabled);
         $this->assertEquals('test.{key}', $config->resourcePattern);
         $this->assertEquals('author_type', $config->defaultOwnerTypeField);
         $this->assertEquals('author_id', $config->defaultOwnerIdField);
@@ -49,12 +47,12 @@ class PermissionIntegrationSimpleTest extends TestCase
         $this->assertFalse($configure->isPermissionIntegrationEnabled);
         $this->assertNull($configure->permissionConfig);
         
-        // 使用闭包配置
-        $configure->configurePermissionIntegration(function ($builder) {
-            $builder->enable()
-                ->withResourcePattern('app.{key}')
-                ->enableOwnerFilter();
-        });
+        // 使用 builder 配置
+        $builder = PermissionIntegrationBuilder::create()
+            ->withResourcePattern('app.{key}')
+            ->enableOwnerFilter();
+        
+        $configure->configurePermissionIntegration($builder);
         
         $this->assertTrue($configure->isPermissionIntegrationEnabled);
         $this->assertNotNull($configure->permissionConfig);
@@ -167,7 +165,9 @@ class PermissionIntegrationSimpleTest extends TestCase
     public function test_configuration_method_chaining()
     {
         $configure = LunaShowcaseConfigure::create()
-            ->configurePermissionIntegration(fn($b) => $b->enable())
+            ->configurePermissionIntegration(
+                PermissionIntegrationBuilder::create()
+            )
             ->setDefaultAdapter('ant-design-pro');
         
         $this->assertInstanceOf(LunaShowcaseConfigure::class, $configure);
@@ -180,7 +180,9 @@ class PermissionIntegrationSimpleTest extends TestCase
     public function test_minimal_configuration()
     {
         $configure = new LunaShowcaseConfigure();
-        $configure->configurePermissionIntegration(fn($b) => $b->enable());
+        $configure->configurePermissionIntegration(
+            new PermissionIntegrationBuilder()
+        );
         
         $this->assertTrue($configure->isPermissionIntegrationEnabled);
         $config = $configure->permissionConfig;

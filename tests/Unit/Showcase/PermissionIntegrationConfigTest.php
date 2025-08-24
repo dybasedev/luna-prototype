@@ -9,19 +9,17 @@ use Orchestra\Testbench\TestCase;
 
 class PermissionIntegrationConfigTest extends TestCase
 {
-    public function test_configure_permission_integration_with_closure()
+    public function test_configure_permission_integration_with_builder()
     {
         $configure = new LunaShowcaseConfigure();
         
-        $configure->configurePermissionIntegration(function ($builder) {
-            $this->assertInstanceOf(PermissionIntegrationBuilder::class, $builder);
-            
-            $builder->enable()
-                ->withResourcePattern('test.{key}')
-                ->withOwnerFields('custom_type', 'custom_id')
-                ->enableOwnerFilter()
-                ->mapResource('users', 'custom.users');
-        });
+        $builder = PermissionIntegrationBuilder::create()
+            ->withResourcePattern('test.{key}')
+            ->withOwnerFields('custom_type', 'custom_id')
+            ->enableOwnerFilter()
+            ->mapResource('users', 'custom.users');
+        
+        $configure->configurePermissionIntegration($builder);
         
         $this->assertTrue($configure->isPermissionIntegrationEnabled);
         $this->assertNotNull($configure->permissionConfig);
@@ -37,11 +35,12 @@ class PermissionIntegrationConfigTest extends TestCase
     {
         $configure = new LunaShowcaseConfigure();
         
-        $configure->configurePermissionIntegration(fn($builder) => $builder->enable());
+        $configure->configurePermissionIntegration(
+            PermissionIntegrationBuilder::create()
+        );
         
         $this->assertTrue($configure->isPermissionIntegrationEnabled);
         $this->assertNotNull($configure->permissionConfig);
-        $this->assertTrue($configure->permissionConfig->enabled);
         
         // Check default values
         $this->assertEquals('{key}', $configure->permissionConfig->resourcePattern);
@@ -56,7 +55,6 @@ class PermissionIntegrationConfigTest extends TestCase
         $configure = new LunaShowcaseConfigure();
         
         $config = (new PermissionIntegrationBuilder())
-            ->enable()
             ->withResourcePattern('direct.{key}')
             ->build();
         
@@ -70,7 +68,9 @@ class PermissionIntegrationConfigTest extends TestCase
     public function test_method_chaining()
     {
         $configure = LunaShowcaseConfigure::create()
-            ->configurePermissionIntegration(fn($b) => $b->enable())
+            ->configurePermissionIntegration(
+                PermissionIntegrationBuilder::create()
+            )
             ->setDefaultAdapter('ant-design-pro');
         
         $this->assertInstanceOf(LunaShowcaseConfigure::class, $configure);
@@ -79,12 +79,23 @@ class PermissionIntegrationConfigTest extends TestCase
         // Test that configure can be called in different order
         $configure2 = LunaShowcaseConfigure::create()
             ->setDefaultAdapter('ant-design-pro')
-            ->configurePermissionIntegration(function ($builder) {
-                $builder->enable()
-                    ->withResourcePattern('chained.{key}');
-            });
+            ->configurePermissionIntegration(
+                PermissionIntegrationBuilder::create()
+                    ->withResourcePattern('chained.{key}')
+            );
         
         $this->assertTrue($configure2->isPermissionIntegrationEnabled);
         $this->assertEquals('chained.{key}', $configure2->permissionConfig->resourcePattern);
+    }
+    
+    public function test_builder_static_factory()
+    {
+        $builder = PermissionIntegrationBuilder::create();
+        $this->assertInstanceOf(PermissionIntegrationBuilder::class, $builder);
+        
+        $builder->withResourcePattern('factory.{key}');
+        $config = $builder->build();
+        
+        $this->assertEquals('factory.{key}', $config->resourcePattern);
     }
 }

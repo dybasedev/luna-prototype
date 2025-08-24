@@ -270,13 +270,11 @@ class LunaShowcaseConfigure extends LunaModuleConfigure
     /**
      * 配置 Permission 集成
      * 
-     * @param callable $configurator 接收 PermissionIntegrationBuilder 的闭包
+     * @param PermissionIntegrationBuilder $builder Permission 集成构建器实例
      * @return static
      */
-    public function configurePermissionIntegration(callable $configurator): static
+    public function configurePermissionIntegration(PermissionIntegrationBuilder $builder): static
     {
-        $builder = new PermissionIntegrationBuilder();
-        $configurator($builder);
         $this->permissionIntegration = $builder->build();
         return $this;
     }
@@ -297,7 +295,7 @@ class LunaShowcaseConfigure extends LunaModuleConfigure
      * 是否启用了 Permission 集成
      */
     public bool $isPermissionIntegrationEnabled {
-        get => $this->permissionIntegration?->enabled ?? false;
+        get => $this->permissionIntegration !== null;
     }
     
     /**

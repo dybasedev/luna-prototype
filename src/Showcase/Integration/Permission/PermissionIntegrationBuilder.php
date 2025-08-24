@@ -7,7 +7,6 @@ namespace Dybasedev\LunaPrototype\Showcase\Integration\Permission;
  */
 class PermissionIntegrationBuilder
 {
-    protected(set) bool $enabled = false;
     protected(set) string $resourcePattern = '{key}';
     protected(set) string $ownerTypeField = 'owner_type';
     protected(set) string $ownerIdField = 'owner_id';
@@ -16,12 +15,13 @@ class PermissionIntegrationBuilder
     protected(set) array $resourceMappings = [];
     
     /**
-     * 启用集成
+     * 创建新的构建器实例
+     * 
+     * @return static
      */
-    public function enable(): static
+    public static function create(): static
     {
-        $this->enabled = true;
-        return $this;
+        return new static();
     }
     
     /**

@@ -10,11 +10,6 @@ namespace Dybasedev\LunaPrototype\Showcase\Integration\Permission;
 class PermissionIntegrationConfig
 {
     /**
-     * 是否启用集成
-     */
-    public bool $enabled = false;
-    
-    /**
      * 资源命名模式
      * 
      * 使用 {key} 作为占位符，例如 'admin.{key}' 会生成 'admin.users'
@@ -54,7 +49,6 @@ class PermissionIntegrationConfig
     public static function fromBuilder(PermissionIntegrationBuilder $builder): static
     {
         $config = new static();
-        $config->enabled = $builder->enabled;
         $config->resourcePattern = $builder->resourcePattern;
         $config->defaultOwnerTypeField = $builder->ownerTypeField;
         $config->defaultOwnerIdField = $builder->ownerIdField;

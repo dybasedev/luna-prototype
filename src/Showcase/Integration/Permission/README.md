@@ -18,6 +18,7 @@ Showcase 组件提供了与 Permission 组件的可选集成，为 DataTable 添
 
 ```php
 use Dybasedev\LunaPrototype\Showcase\LunaShowcaseConfigure;
+use Dybasedev\LunaPrototype\Showcase\Integration\Permission\PermissionIntegrationBuilder;
 use Dybasedev\LunaPrototype\Foundation\LunaServiceProvider;
 
 class AppServiceProvider extends LunaServiceProvider
@@ -26,14 +27,14 @@ class AppServiceProvider extends LunaServiceProvider
     {
         $this->registerModule(
             LunaShowcaseConfigure::create()
-                ->configurePermissionIntegration(function ($builder) {
-                    $builder->enable()
+                ->configurePermissionIntegration(
+                    PermissionIntegrationBuilder::create()
                         ->withResourcePattern('admin.{key}')  // 资源命名模式
                         ->withOwnerFields('owner_type', 'owner_id')  // 所有者字段
                         ->enableOwnerFilter()  // 启用所有者过滤
                         ->mapResource('users', 'users')  // 自定义资源映射
-                        ->mapResource('posts', 'content.posts');
-                })
+                        ->mapResource('posts', 'content.posts')
+                )
                 ->registerDataTables([
                     'users' => UserDataTable::class,
                     'posts' => PostDataTable::class,
@@ -51,7 +52,9 @@ class AppServiceProvider extends LunaServiceProvider
 ```php
 $this->registerModule(
     LunaShowcaseConfigure::create()
-        ->configurePermissionIntegration(fn($builder) => $builder->enable())
+        ->configurePermissionIntegration(
+            PermissionIntegrationBuilder::create()
+        )
         ->registerDataTables([
             'users' => UserDataTable::class,
         ])
@@ -62,31 +65,37 @@ $this->registerModule(
 #### 高级配置示例
 
 ```php
+// 方式一：使用静态工厂方法
+$permissionConfig = PermissionIntegrationBuilder::create()
+    ->withResourcePattern('app.{key}')
+    ->withOwnerFields('creator_type', 'creator_id')
+    ->enableOwnerFilter()
+    ->disableAutoCheck()
+    ->mapResource('users', 'system.users')
+    ->mapResource('posts', 'content.posts')
+    ->mapResource('orders', 'shop.orders');
+
 $this->registerModule(
     LunaShowcaseConfigure::create()
-        ->configurePermissionIntegration(function ($builder) {
-            $builder->enable()
-                // 设置资源命名模式，{key} 会被替换为 DataTable key
-                ->withResourcePattern('app.{key}')
-                
-                // 自定义所有者字段名（如果不同于默认的 owner_type 和 owner_id）
-                ->withOwnerFields('creator_type', 'creator_id')
-                
-                // 全局启用所有者过滤
-                ->enableOwnerFilter()
-                
-                // 禁用自动权限检查（如果想手动控制）
-                ->disableAutoCheck()
-                
-                // 自定义资源映射（覆盖 resourcePattern 的生成规则）
-                ->mapResource('users', 'system.users')
-                ->mapResource('posts', 'content.posts')
-                ->mapResource('orders', 'shop.orders');
-        })
+        ->configurePermissionIntegration($permissionConfig)
         ->registerDataTablesFromDirectory(
             app_path('DataTables'),
             'App\\DataTables'
         )
+        ->build()
+);
+
+// 方式二：使用 new 实例化
+$permissionConfig = new PermissionIntegrationBuilder();
+$permissionConfig
+    ->withResourcePattern('app.{key}')
+    ->withOwnerFields('creator_type', 'creator_id')
+    ->enableOwnerFilter();
+
+$this->registerModule(
+    LunaShowcaseConfigure::create()
+        ->configurePermissionIntegration($permissionConfig)
+        ->registerDataTables([/* ... */])
         ->build()
 );
 ```
@@ -192,24 +201,28 @@ class Post extends Model
 构建器提供以下配置方法：
 
 ```php
-// 方式一：使用闭包配置（推荐）
-$configure->configurePermissionIntegration(function ($builder) {
-    $builder->enable()
-        ->withResourcePattern('admin.{key}')
-        ->withOwnerFields('owner_type', 'owner_id')
-        ->enableOwnerFilter()
-        ->disableAutoCheck()
-        ->mapResource('users', 'users');
-});
-
-// 方式二：手动构建配置对象
-$config = (new PermissionIntegrationBuilder())
-    ->enable()
+// 方式一：使用静态工厂方法（推荐）
+$builder = PermissionIntegrationBuilder::create()
     ->withResourcePattern('admin.{key}')
     ->withOwnerFields('owner_type', 'owner_id')
     ->enableOwnerFilter()
     ->disableAutoCheck()
-    ->mapResource('users', 'users')
+    ->mapResource('users', 'users');
+
+$configure->configurePermissionIntegration($builder);
+
+// 方式二：使用 new 实例化
+$builder = new PermissionIntegrationBuilder();
+$builder
+    ->withResourcePattern('admin.{key}')
+    ->withOwnerFields('owner_type', 'owner_id')
+    ->enableOwnerFilter();
+
+$configure->configurePermissionIntegration($builder);
+
+// 方式三：手动构建配置对象（用于需要复用配置的场景）
+$config = PermissionIntegrationBuilder::create()
+    ->withResourcePattern('admin.{key}')
     ->build();
 
 $configure->withPermissionIntegration($config);
@@ -219,7 +232,6 @@ $configure->withPermissionIntegration($config);
 
 配置对象包含以下属性：
 
-- `enabled` - 是否启用集成
 - `resourcePattern` - 资源命名模式，使用 `{key}` 作为占位符
 - `defaultOwnerTypeField` - 默认所有者类型字段名
 - `defaultOwnerIdField` - 默认所有者ID字段名

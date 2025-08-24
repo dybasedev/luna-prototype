@@ -884,6 +884,7 @@ Showcase 提供了与 Permission 组件的可选集成，支持更复杂的权�
 
 ```php
 use Dybasedev\LunaPrototype\Showcase\LunaShowcaseConfigure;
+use Dybasedev\LunaPrototype\Showcase\Integration\Permission\PermissionIntegrationBuilder;
 
 class AppServiceProvider extends LunaServiceProvider
 {
@@ -891,13 +892,13 @@ class AppServiceProvider extends LunaServiceProvider
     {
         $this->registerModule(
             LunaShowcaseConfigure::create()
-                ->configurePermissionIntegration(function ($builder) {
-                    $builder->enable()
+                ->configurePermissionIntegration(
+                    PermissionIntegrationBuilder::create()
                         ->withResourcePattern('admin.{key}')  // 资源命名模式
                         ->withOwnerFields('owner_type', 'owner_id')  // 所有者字段
                         ->enableOwnerFilter()  // 启用所有者过滤
-                        ->mapResource('users', 'users');  // 自定义资源映射
-                })
+                        ->mapResource('users', 'users')  // 自定义资源映射
+                )
                 ->registerDataTables([
                     'users' => UserDataTable::class,
                 ])

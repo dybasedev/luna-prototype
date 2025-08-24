@@ -17,7 +17,6 @@ class PermissionIntegrationTest extends TestCase
         $builder = new PermissionIntegrationBuilder();
         
         $config = $builder
-            ->enable()
             ->withResourcePattern('admin.{key}')
             ->withOwnerFields('author_type', 'author_id')
             ->enableOwnerFilter()
@@ -26,7 +25,6 @@ class PermissionIntegrationTest extends TestCase
             ->build();
         
         $this->assertInstanceOf(PermissionIntegrationConfig::class, $config);
-        $this->assertTrue($config->enabled);
         $this->assertEquals('admin.{key}', $config->resourcePattern);
         $this->assertEquals('author_type', $config->defaultOwnerTypeField);
         $this->assertEquals('author_id', $config->defaultOwnerIdField);
@@ -43,11 +41,11 @@ class PermissionIntegrationTest extends TestCase
         $this->assertFalse($configure->isPermissionIntegrationEnabled);
         $this->assertNull($configure->permissionConfig);
         
-        // Test with closure configuration
-        $configure->configurePermissionIntegration(function ($builder) {
-            $builder->enable()
-                ->withResourcePattern('test.{key}');
-        });
+        // Test with builder configuration
+        $builder = new PermissionIntegrationBuilder();
+        $builder->withResourcePattern('test.{key}');
+        
+        $configure->configurePermissionIntegration($builder);
         
         $this->assertTrue($configure->isPermissionIntegrationEnabled);
         $this->assertNotNull($configure->permissionConfig);
