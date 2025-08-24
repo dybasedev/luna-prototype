@@ -46,21 +46,19 @@ class UserDataTable extends CrudDataTable
                 
             UI::column('邮箱', 'email')->searchable(true)->copyable(true),
                 
-            UI::column('角色', 'role')->filters([
-                    ['text' => '管理员', 'value' => 'admin'],
-                    ['text' => '普通用户', 'value' => 'user'],
-                    ['text' => '访客', 'value' => 'guest'],
-                ]),
+            UI::column('角色', 'role')
+                ->searchable(true),  // 改用实际存在的方法
                 
-            UI::column('状态', 'status')->type('badge')->valueEnum([
-                    'active' => ['text' => '正常', 'status' => 'success'],
-                    'inactive' => ['text' => '禁用', 'status' => 'error'],
-                    'pending' => ['text' => '待激活', 'status' => 'warning'],
-                ]),
+            UI::column('状态', 'status')
+                ->type('text')  // badge 类型可能由前端处理
+                ->searchable(false),
                 
             UI::column('创建时间', 'created_at')->type('dateTime')->sortable(true)->width(180),
                 
-            UI::column('操作', 'actions')->type('option')->fixed('right')->width(200),
+            UI::column('操作', 'actions')
+                ->type('text')  // option 类型可能由前端处理
+                ->width(200)
+                ->searchable(false),
         ];
     }
 
@@ -317,18 +315,26 @@ class UserDataTable extends CrudDataTable
         return [
             UI::field('创建时间', 'dateRange')->type('dateRange'),
                 
-            UI::field('角色', 'role')->type('select')->options([
-                    ['label' => '全部', 'value' => ''],
-                    ['label' => '管理员', 'value' => 'admin'],
-                    ['label' => '普通用户', 'value' => 'user'],
-                    ['label' => '访客', 'value' => 'guest'],
+            UI::field('角色', 'role')
+                ->type('select')
+                ->properties([
+                    'options' => [
+                        ['label' => '全部', 'value' => ''],
+                        ['label' => '管理员', 'value' => 'admin'],
+                        ['label' => '普通用户', 'value' => 'user'],
+                        ['label' => '访客', 'value' => 'guest'],
+                    ]
                 ]),
                 
-            UI::field('状态', 'status')->type('radioButton')->options([
-                    ['label' => '全部', 'value' => ''],
-                    ['label' => '正常', 'value' => 'active'],
-                    ['label' => '禁用', 'value' => 'inactive'],
-                    ['label' => '待激活', 'value' => 'pending'],
+            UI::field('状态', 'status')
+                ->type('text')  // radioButton 类型可能由前端处理
+                ->properties([
+                    'options' => [
+                        ['label' => '全部', 'value' => ''],
+                        ['label' => '正常', 'value' => 'active'],
+                        ['label' => '禁用', 'value' => 'inactive'],
+                        ['label' => '待激活', 'value' => 'pending'],
+                    ]
                 ]),
         ];
     }

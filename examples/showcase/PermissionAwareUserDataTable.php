@@ -90,8 +90,7 @@ class PermissionAwareUserDataTable extends CrudDataTable
             UI::column('姓名', 'name')
                 ->searchable(true)
                 ->sortable(true)
-                ->copyable(true)
-                ->required(true),
+                ->copyable(true),  // required 方法不存在
                 
             UI::column('邮箱', 'email')
                 ->searchable(true)
@@ -103,36 +102,26 @@ class PermissionAwareUserDataTable extends CrudDataTable
                 ->tooltip('需要 view_phone 权限'),
                 
             UI::column('余额', 'balance')
-                ->type('money')
+                ->type('number')  // money 类型由前端处理
                 ->sortable(true)
                 ->tooltip('需要 view_financial 权限'),
                 
             UI::column('身份证号', 'id_number')
                 ->copyable(true)
-                ->hideInTable(true) // 默认隐藏
+                ->hidden(true)  // 使用 hidden 代替 hideInTable
                 ->tooltip('需要 view_sensitive_info 权限'),
                 
             UI::column('银行账号', 'bank_account')
-                ->hideInTable(true)
+                ->hidden(true)  // 使用 hidden 代替 hideInTable
                 ->tooltip('需要 view_sensitive_info 权限'),
                 
             UI::column('角色', 'role')
-                ->filters([
-                    ['text' => '管理员', 'value' => 'admin'],
-                    ['text' => '普通用户', 'value' => 'user'],
-                    ['text' => '访客', 'value' => 'guest'],
-                ]),
+                ->searchable(true),  // filters 方法不存在
                 
             UI::column('状态', 'status')
-                ->type('badge')
-                ->valueEnum([
-                    'active' => ['text' => '正常', 'status' => 'success'],
-                    'inactive' => ['text' => '禁用', 'status' => 'error'],
-                    'pending' => ['text' => '待激活', 'status' => 'warning'],
-                ]),
+                ->type('text'),  // badge 和 valueEnum 由前端处理
                 
-            UI::column('创建者', 'creator')
-                ->render('return $record->creator->name ?? "-";'),
+            UI::column('创建者', 'creator'),  // render 方法不存在，数据转换在 mapListRecord 中处理
                 
             UI::column('创建时间', 'created_at')
                 ->type('dateTime')
@@ -140,9 +129,9 @@ class PermissionAwareUserDataTable extends CrudDataTable
                 ->width(180),
                 
             UI::column('操作', 'actions')
-                ->type('option')
-                ->fixed('right')
-                ->width(200),
+                ->type('text')  // option 类型由前端处理，fixed 方法不存在
+                ->width(200)
+                ->searchable(false),
         ];
     }
     
@@ -455,20 +444,24 @@ class PermissionAwareUserDataTable extends CrudDataTable
                 
             UI::field('角色', 'role')
                 ->type('select')
-                ->options([
-                    ['label' => '全部', 'value' => ''],
-                    ['label' => '管理员', 'value' => 'admin'],
-                    ['label' => '普通用户', 'value' => 'user'],
-                    ['label' => '访客', 'value' => 'guest'],
+                ->properties([
+                    'options' => [
+                        ['label' => '全部', 'value' => ''],
+                        ['label' => '管理员', 'value' => 'admin'],
+                        ['label' => '普通用户', 'value' => 'user'],
+                        ['label' => '访客', 'value' => 'guest'],
+                    ]
                 ]),
                 
             UI::field('状态', 'status')
-                ->type('radioButton')
-                ->options([
-                    ['label' => '全部', 'value' => ''],
-                    ['label' => '正常', 'value' => 'active'],
-                    ['label' => '禁用', 'value' => 'inactive'],
-                    ['label' => '待激活', 'value' => 'pending'],
+                ->type('text')  // radioButton 类型由前端处理
+                ->properties([
+                    'options' => [
+                        ['label' => '全部', 'value' => ''],
+                        ['label' => '正常', 'value' => 'active'],
+                        ['label' => '禁用', 'value' => 'inactive'],
+                        ['label' => '待激活', 'value' => 'pending'],
+                    ]
                 ]),
         ];
     }
