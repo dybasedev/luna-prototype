@@ -46,18 +46,10 @@ trait PermissionAwareDataTable
             }
             
             // 设置默认配置
-            $this->enableOwnerFilter = $config->enableOwnerFilter;
+            if ($config->enableOwnerFilter) {
+                $this->enableOwnerFilter = true;
+            }
         }
-        
-        $this->configurePermissions();
-    }
-    
-    /**
-     * 配置权限（子类覆盖）
-     */
-    protected function configurePermissions(): void
-    {
-        // 子类实现
     }
     
     /**
@@ -202,6 +194,149 @@ trait PermissionAwareDataTable
     }
     
     /**
+     * 创建记录（添加权限检查）
+     */
+    public function create(Request $request): mixed
+    {
+        $this->checkPermission('create', '没有创建权限');
+        return parent::create($request);
+    }
+    
+    /**
+     * 更新记录（添加权限检查）
+     */
+    public function update(Request $request): mixed
+    {
+        $this->checkPermission('update', '没有更新权限');
+        $this->checkResourceOwnership($request->input('id'), 'update_all', '没有权限编辑此资源');
+        return parent::update($request);
+    }
+    
+    /**
+     * 删除记录（添加权限检查）
+     */
+    public function delete(Request $request): mixed
+    {
+        $this->checkPermission('delete', '没有删除权限');
+        $this->checkResourceOwnership($request->input('id'), 'delete_all', '没有权限删除此资源');
+        return parent::delete($request);
+    }
+    
+    /**
+     * 批量删除（添加权限检查）
+     */
+    public function batchDelete(Request $request): int
+    {
+        $this->checkPermission('delete', '没有删除权限');
+        $this->checkBatchResourceOwnership($request->input('ids', []), 'delete_all', '没有权限删除部分资源');
+        return parent::batchDelete($request);
+    }
+    
+    /**
+     * 导出（添加权限检查）
+     */
+    public function export(Request $request): mixed
+    {
+        $this->checkPermission('export', '没有导出权限');
+        return parent::export($request);
+    }
+    
+    /**
+     * 检查权限
+     */
+    protected function checkPermission(string $action, string $errorMessage): void
+    {
+        if (!$this->permissionResource || !PermissionIntegration::isAvailable()) {
+            return;
+        }
+        
+        if (!luna_permission()->can($action, $this->permissionResource)) {
+            throw \Dybasedev\LunaPrototype\Foundation\Exceptions\LunaException::create('Permission denied')
+                ->withDisplayMessage($errorMessage);
+        }
+    }
+    
+    /**
+     * 检查资源所有权
+     */
+    protected function checkResourceOwnership($id, string $overridePermission, string $errorMessage): void
+    {
+        if (!$this->enableOwnerFilter || !$id || !method_exists($this, 'model')) {
+            return;
+        }
+        
+        $model = $this->model()::find($id);
+        if (!$model || !method_exists($model, 'isOwnedBy')) {
+            return;
+        }
+        
+        $holder = PermissionIntegration::getCurrentHolder();
+        if (!$holder || $model->isOwnedBy($holder)) {
+            return;
+        }
+        
+        // 非所有者需要特殊权限
+        if (!luna_permission()->can($overridePermission, $this->permissionResource)) {
+            throw \Dybasedev\LunaPrototype\Foundation\Exceptions\LunaException::create('Permission denied')
+                ->withDisplayMessage($errorMessage);
+        }
+    }
+    
+    /**
+     * 检查批量资源所有权
+     */
+    protected function checkBatchResourceOwnership(array $ids, string $overridePermission, string $errorMessage): void
+    {
+        if (!$this->enableOwnerFilter || empty($ids) || !method_exists($this, 'model')) {
+            return;
+        }
+        
+        $holder = PermissionIntegration::getCurrentHolder();
+        if (!$holder) {
+            return;
+        }
+        
+        $models = $this->model()::whereIn('id', $ids)->get();
+        foreach ($models as $model) {
+            if (!method_exists($model, 'isOwnedBy') || $model->isOwnedBy($holder)) {
+                continue;
+            }
+            
+            // 发现非所有者的资源，检查特殊权限
+            if (!luna_permission()->can($overridePermission, $this->permissionResource)) {
+                throw \Dybasedev\LunaPrototype\Foundation\Exceptions\LunaException::create('Permission denied')
+                    ->withDisplayMessage($errorMessage);
+            }
+            break;
+        }
+    }
+    
+    /**
+     * 获取权限配置
+     * 
+     * 覆盖父类方法，集成 Permission 组件的权限检查
+     * 
+     * @param Request $request
+     * @return array
+     */
+    protected function getPermissions(Request $request): array
+    {
+        // 如果没有配置权限资源，返回默认权限（基于方法存在性）
+        if (!$this->permissionResource || !PermissionIntegration::isAvailable()) {
+            return parent::getPermissions($request);
+        }
+        
+        // 使用 Permission 组件检查权限
+        return [
+            'create' => luna_permission()->can('create', $this->permissionResource),
+            'update' => luna_permission()->can('update', $this->permissionResource),
+            'delete' => luna_permission()->can('delete', $this->permissionResource),
+            'export' => luna_permission()->can('export', $this->permissionResource),
+            'read' => luna_permission()->can('read', $this->permissionResource),
+        ];
+    }
+    
+    /**
      * 获取元数据（包含权限信息）
      */
     public function meta(Request $request): array
@@ -209,18 +344,10 @@ trait PermissionAwareDataTable
         $meta = parent::meta($request);
         
         if ($this->permissionResource && PermissionIntegration::isAvailable()) {
-            // 生成权限元数据
-            $permissions = [];
-            $actions = ['create', 'read', 'update', 'delete', 'export'];
-            
-            foreach ($actions as $action) {
-                $permissions[$action] = luna_permission()->can($action, $this->permissionResource);
-            }
-            
             $meta['permission'] = [
                 'enabled' => true,
                 'resource' => $this->permissionResource,
-                'permissions' => $permissions,
+                'permissions' => $this->getPermissions($request),
             ];
         }
         

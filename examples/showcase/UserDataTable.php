@@ -47,16 +47,16 @@ class UserDataTable extends CrudDataTable
             UI::column('邮箱', 'email')->searchable(true)->copyable(true),
                 
             UI::column('角色', 'role')
-                ->searchable(true),  // 改用实际存在的方法
+                ->searchable(true),
                 
             UI::column('状态', 'status')
-                ->type('text')  // badge 类型可能由前端处理
+                ->type('text')
                 ->searchable(false),
                 
             UI::column('创建时间', 'created_at')->type('dateTime')->sortable(true)->width(180),
                 
             UI::column('操作', 'actions')
-                ->type('text')  // option 类型可能由前端处理
+                ->type('text')
                 ->width(200)
                 ->searchable(false),
         ];
@@ -327,7 +327,7 @@ class UserDataTable extends CrudDataTable
                 ]),
                 
             UI::field('状态', 'status')
-                ->type('text')  // radioButton 类型可能由前端处理
+                ->type('text')
                 ->properties([
                     'options' => [
                         ['label' => '全部', 'value' => ''],

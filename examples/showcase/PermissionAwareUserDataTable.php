@@ -13,6 +13,13 @@ use Illuminate\Http\Request;
  * 权限感知的用户数据表格示例
  * 
  * 展示如何使用 PermissionAwareDataTable 实现权限控制
+ * 
+ * 权限检查会在以下操作中自动执行：
+ * - list: 检查 read 权限，应用所有者过滤
+ * - create: 检查 create 权限
+ * - update: 检查 update 权限和资源所有权
+ * - delete: 检查 delete 权限和资源所有权
+ * - export: 检查 export 权限
  */
 #[DataTableMeta(
     title: '用户管理（权限控制）',
@@ -30,41 +37,41 @@ class PermissionAwareUserDataTable extends CrudDataTable
     protected string $dataTableKey = 'permission_users';
     
     /**
-     * 配置权限
+     * 权限资源名称
+     * 如果不设置，会根据 configure 中的 resourcePattern 自动生成
      */
-    protected function configurePermissions(): void
-    {
-        // 设置权限资源名称
-        // 如果不设置，会根据 configure 中的 resourcePattern 自动生成
-        $this->permissionResource = 'admin.users';
+    protected ?string $permissionResource = 'admin.users';
+    
+    /**
+     * 启用所有者过滤
+     * 只显示当前用户创建的记录（除非有 view_all 权限）
+     */
+    protected bool $enableOwnerFilter = true;
+    
+    /**
+     * 列权限配置
+     * 某些敏感列需要特定权限才能查看
+     */
+    protected array $columnPermissions = [
+        // 简单权限：直接指定权限名称
+        'email' => 'view_email',
         
-        // 启用所有者过滤
-        // 只显示当前用户创建的记录（除非有 view_all 权限）
-        $this->enableOwnerFilter = true;
+        // 复杂权限：指定action和resource
+        'phone' => [
+            'action' => 'view_phone',
+            'resource' => 'admin.users.sensitive'
+        ],
         
-        // 配置列权限
-        // 某些敏感列需要特定权限才能查看
-        $this->columnPermissions = [
-            // 简单权限：直接指定权限名称
-            'email' => 'view_email',
-            
-            // 复杂权限：指定action和resource
-            'phone' => [
-                'action' => 'view_phone',
-                'resource' => 'admin.users.sensitive'
-            ],
-            
-            // 余额字段需要特殊权限
-            'balance' => [
-                'action' => 'view_financial',
-                'resource' => 'admin.users.financial'
-            ],
-            
-            // 敏感信息
-            'id_number' => 'view_sensitive_info',
-            'bank_account' => 'view_sensitive_info',
-        ];
-    }
+        // 余额字段需要特殊权限
+        'balance' => [
+            'action' => 'view_financial',
+            'resource' => 'admin.users.financial'
+        ],
+        
+        // 敏感信息
+        'id_number' => 'view_sensitive_info',
+        'bank_account' => 'view_sensitive_info',
+    ];
     
     /**
      * 获取模型类名
@@ -90,7 +97,7 @@ class PermissionAwareUserDataTable extends CrudDataTable
             UI::column('姓名', 'name')
                 ->searchable(true)
                 ->sortable(true)
-                ->copyable(true),  // required 方法不存在
+                ->copyable(true),
                 
             UI::column('邮箱', 'email')
                 ->searchable(true)
@@ -102,26 +109,26 @@ class PermissionAwareUserDataTable extends CrudDataTable
                 ->tooltip('需要 view_phone 权限'),
                 
             UI::column('余额', 'balance')
-                ->type('number')  // money 类型由前端处理
+                ->type('number')
                 ->sortable(true)
                 ->tooltip('需要 view_financial 权限'),
                 
             UI::column('身份证号', 'id_number')
                 ->copyable(true)
-                ->hidden(true)  // 使用 hidden 代替 hideInTable
+                ->hidden(true)
                 ->tooltip('需要 view_sensitive_info 权限'),
                 
             UI::column('银行账号', 'bank_account')
-                ->hidden(true)  // 使用 hidden 代替 hideInTable
+                ->hidden(true)
                 ->tooltip('需要 view_sensitive_info 权限'),
                 
             UI::column('角色', 'role')
-                ->searchable(true),  // filters 方法不存在
+                ->searchable(true),
                 
             UI::column('状态', 'status')
-                ->type('text'),  // badge 和 valueEnum 由前端处理
+                ->type('text'),
                 
-            UI::column('创建者', 'creator'),  // render 方法不存在，数据转换在 mapListRecord 中处理
+            UI::column('创建者', 'creator'),
                 
             UI::column('创建时间', 'created_at')
                 ->type('dateTime')
@@ -129,7 +136,7 @@ class PermissionAwareUserDataTable extends CrudDataTable
                 ->width(180),
                 
             UI::column('操作', 'actions')
-                ->type('text')  // option 类型由前端处理，fixed 方法不存在
+                ->type('text')
                 ->width(200)
                 ->searchable(false),
         ];
@@ -454,7 +461,7 @@ class PermissionAwareUserDataTable extends CrudDataTable
                 ]),
                 
             UI::field('状态', 'status')
-                ->type('text')  // radioButton 类型由前端处理
+                ->type('text')
                 ->properties([
                     'options' => [
                         ['label' => '全部', 'value' => ''],

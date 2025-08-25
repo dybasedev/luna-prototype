@@ -111,26 +111,26 @@ class UserDataTable extends CrudDataTable
     use PermissionAwareDataTable;
     
     /**
-     * 配置权限
+     * 权限资源名称
      */
-    protected function configurePermissions(): void
-    {
-        // 设置权限资源名称
-        $this->permissionResource = 'admin.users';
-        
-        // 启用所有者过滤（只显示当前用户创建的记录）
-        $this->enableOwnerFilter = true;
-        
-        // 配置列权限（某些列需要特定权限才能查看）
-        $this->columnPermissions = [
-            'email' => 'view_email',  // 简单权限
-            'phone' => [  // 复杂权限
-                'action' => 'view_phone',
-                'resource' => 'admin.users.sensitive'
-            ],
-            'balance' => 'view_financial',
-        ];
-    }
+    protected ?string $permissionResource = 'admin.users';
+    
+    /**
+     * 启用所有者过滤（只显示当前用户创建的记录）
+     */
+    protected bool $enableOwnerFilter = true;
+    
+    /**
+     * 配置列权限（某些列需要特定权限才能查看）
+     */
+    protected array $columnPermissions = [
+        'email' => 'view_email',  // 简单权限
+        'phone' => [  // 复杂权限
+            'action' => 'view_phone',
+            'resource' => 'admin.users.sensitive'
+        ],
+        'balance' => 'view_financial',
+    ];
     
     /**
      * 定义列（使用 defineColumns 而不是 columns）
@@ -250,6 +250,25 @@ $configure->withPermissionIntegration($config);
 - `$enableOwnerFilter` - 是否启用所有者过滤
 
 ### 方法覆盖
+
+trait 会自动覆盖以下方法来集成权限功能：
+
+- `getPermissions()` - 使用 Permission 组件检查权限，替代基于方法存在性的默认逻辑
+- `authorized()` - 检查用户是否有访问 DataTable 的权限
+- `create()` - 在创建前检查 create 权限
+- `update()` - 在更新前检查 update 权限，如果启用所有者过滤还会检查资源所有权
+- `delete()` - 在删除前检查 delete 权限，如果启用所有者过滤还会检查资源所有权
+- `batchDelete()` - 在批量删除前检查 delete 权限和资源所有权
+- `export()` - 在导出前检查 export 权限
+
+### 权限检查流程
+
+1. **基础权限检查**：首先检查用户是否有对应的操作权限（create、update、delete、export）
+2. **所有者权限检查**：如果启用了 `enableOwnerFilter`，对于 update 和 delete 操作还会检查：
+   - 用户是否是资源的所有者
+   - 如果不是所有者，是否有 `update_all` 或 `delete_all` 权限
+
+### 需要使用的替代方法
 
 使用此 trait 后，需要使用以下方法替代原有方法：
 
@@ -536,11 +555,8 @@ class TenantDataTable extends CrudDataTable
 {
     use PermissionAwareDataTable;
     
-    protected function configurePermissions(): void
-    {
-        $this->permissionResource = 'tenant.resources';
-        $this->enableOwnerFilter = true;
-    }
+    protected ?string $permissionResource = 'tenant.resources';
+    protected bool $enableOwnerFilter = true;
     
     protected function buildQuery(Request $request): Builder
     {
@@ -557,10 +573,10 @@ class ArticleDataTable extends CrudDataTable
 {
     use PermissionAwareDataTable;
     
-    protected function configurePermissions(): void
+    protected ?string $permissionResource = 'content.articles';
+    
+    public function __construct()
     {
-        $this->permissionResource = 'content.articles';
-        
         // 作者只能看到自己的文章
         $this->enableOwnerFilter = !auth()->user()->hasRole('editor');
         
@@ -582,17 +598,14 @@ class TransactionDataTable extends CrudDataTable
 {
     use PermissionAwareDataTable;
     
-    protected function configurePermissions(): void
-    {
-        $this->permissionResource = 'finance.transactions';
-        
-        // 财务信息需要特殊权限
-        $this->columnPermissions = [
-            'amount' => 'finance.view_amount',
-            'account_number' => 'finance.view_account',
-            'balance' => 'finance.view_balance',
-        ];
-    }
+    protected ?string $permissionResource = 'finance.transactions';
+    
+    // 财务信息需要特殊权限
+    protected array $columnPermissions = [
+        'amount' => 'finance.view_amount',
+        'account_number' => 'finance.view_account',
+        'balance' => 'finance.view_balance',
+    ];
     
     protected function defineActions(Request $request): array
     {
