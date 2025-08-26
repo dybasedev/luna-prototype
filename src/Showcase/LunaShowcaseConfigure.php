@@ -70,7 +70,7 @@ class LunaShowcaseConfigure extends LunaModuleConfigure
      */
     public function serviceProvider(): ?string
     {
-        return null; // TODO: 如果有专门的 ServiceProvider，这里应该返回类名
+        return null;
     }
 
     /**

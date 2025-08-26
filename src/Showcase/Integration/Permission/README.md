@@ -625,6 +625,104 @@ class TransactionDataTable extends CrudDataTable
 }
 ```
 
+## 安装预设策略
+
+Showcase Permission 集成提供了可选的预设安装器，用于初始化 DataTable 相关的权限策略。这些策略为 DataTable 的权限控制提供基础支持。
+
+### 注册安装器
+
+在业务端的 `AppServiceProvider` 中注册安装器：
+
+```php
+use Dybasedev\LunaPrototype\Foundation\LunaApplicationConfigure;
+use Dybasedev\LunaPrototype\Showcase\Integration\Permission\ShowcasePermissionInstaller;
+
+class AppServiceProvider extends LunaServiceProvider
+{
+    public function customRegister(): void
+    {
+        // 注册 Showcase 组件
+        $this->registerModule(
+            LunaShowcaseConfigure::create()
+                ->configurePermissionIntegration(
+                    PermissionIntegrationBuilder::create()
+                        ->withResourcePattern('datatable.{key}')
+                )
+                ->registerDataTables([/* ... */])
+                ->build()
+        );
+        
+        // 注册 Showcase Permission 预设安装器
+        // 这是可选的，只有在需要预设策略时才注册
+        $this->extendModule(function() {
+            return LunaApplicationConfigure::create()
+                ->installation(ShowcasePermissionInstaller::class)
+                ->build();
+        });
+    }
+}
+```
+
+### 执行安装
+
+运行安装命令以创建预设策略：
+
+```bash
+php artisan app:install
+```
+
+### 预设策略说明
+
+安装器会创建以下预设策略：
+
+#### 基础操作策略
+
+- `datatable-admin`: DataTable 完全管理权限
+- `datatable-crud`: 标准 CRUD 权限（create、read、update、delete、list、export）
+- `datatable-readonly`: 只读权限（仅 read、list）
+- `datatable-editor`: 编辑权限（不含删除）
+- `datatable-owner`: 自有数据管理权限（配合 enableOwnerFilter 使用）
+- `datatable-export`: 数据导出权限
+
+#### 示例角色
+
+- `datatable-admin`: DataTable 管理员
+- `datatable-editor`: DataTable 编辑员
+- `datatable-viewer`: DataTable 查看者
+
+### 自定义安装器
+
+如果需要自定义预设策略，可以继承 `ShowcasePermissionInstaller`：
+
+```php
+use Dybasedev\LunaPrototype\Showcase\Integration\Permission\ShowcasePermissionInstaller;
+use Dybasedev\LunaPrototype\Permission\PolicyBuilder;
+
+class CustomShowcaseInstaller extends ShowcasePermissionInstaller
+{
+    public function install(): void
+    {
+        parent::install(); // 安装基础策略
+        
+        // 添加自定义策略
+        $this->createPolicyFromBuilder(
+            PolicyBuilder::create('datatable-custom')
+                ->description('自定义 DataTable 权限')
+                ->allow(['read', 'update'])
+                ->on('datatable.products')
+                ->withCondition(['department' => 'sales'])
+        );
+    }
+}
+```
+
+### 注意事项
+
+1. **可选安装**：预设安装器是可选的，不注册也不会影响 Permission 集成的基本功能
+2. **依赖关系**：ShowcasePermissionInstaller 依赖 PermissionInstallation，会自动处理安装顺序
+3. **幂等性**：安装器支持重复执行，已存在的策略会被跳过
+4. **自定义策略**：业务系统应根据实际需求创建自己的策略，预设策略仅作为参考
+
 ## 故障排除
 
 ### Permission 组件不可用
