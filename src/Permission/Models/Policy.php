@@ -118,8 +118,16 @@ class Policy extends Model implements Backupable
     public function createVersion(array $statement, ?string $comment = null): void
     {
         // 验证策略声明
-        $policyStatement = new PolicyStatement($statement);
-        $policyStatement->validate();
+        // 如果是多语句格式，验证每个语句
+        if (isset($statement['statements']) && is_array($statement['statements'])) {
+            foreach ($statement['statements'] as $stmt) {
+                $policyStatement = new PolicyStatement($stmt);
+                $policyStatement->validate();
+            }
+        } else {
+            $policyStatement = new PolicyStatement($statement);
+            $policyStatement->validate();
+        }
         
         // 使用 VersionControl 的方法创建版本
         $this->createVersionValue([

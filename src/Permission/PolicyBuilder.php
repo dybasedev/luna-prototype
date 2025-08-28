@@ -252,10 +252,10 @@ class PolicyBuilder
             throw new \InvalidArgumentException('Policy must have at least one statement');
         }
 
-        // 多个声明时作为数组传递
+        // 如果只有一个声明，直接使用；多个声明时使用 statements 包装
         $statement = count($this->statements) === 1 
             ? $this->statements[0] 
-            : $this->statements;
+            : ['statements' => $this->statements];
 
         $policy = Policy::create([
             'name' => $this->name,
