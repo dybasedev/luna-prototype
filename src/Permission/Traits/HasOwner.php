@@ -97,9 +97,9 @@ trait HasOwner
             $context['resource_id'] = $this->getKey();
         }
         
-        // 添加额外的权限属性
+        // 添加额外的权限属性 - 直接合并到上下文中
         if (method_exists($this, 'getPermissionAttributes')) {
-            $context['resource_attributes'] = $this->getPermissionAttributes();
+            $context = array_merge($context, $this->getPermissionAttributes());
         }
         
         return $context;
